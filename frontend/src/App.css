@@ -1,3 +1,37 @@
+.nav-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  background-color: darkcyan;
+}
+
+.nav-bar ul {
+  display: flex;
+  flex-direction: row;
+  margin: 1rem 2rem;
+  padding: 0;
+}
+
+.nav-bar ul li {
+  display: inline;
+  margin: 0 0.5rem;
+}
+
+
+.nav-bar ul li a, .nav-bar ul li a:link, .nav-bar ul li a:active, .nav-bar ul li a:visited {
+  color: azure;
+  text-decoration: none;
+}
+
+.nav-bar ul li:first-of-type {
+  margin-left: 0;
+}
+
+.nav-bar ul li:last-of-type {
+  margin-right: 0;
+}
+
 .App {
   text-align: center;
 }
