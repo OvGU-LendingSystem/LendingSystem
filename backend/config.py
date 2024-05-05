@@ -8,7 +8,7 @@ import configparser
 # Read config from file
 config = configparser.ConfigParser()
 config.read('/var/www/LendingSystem/config.ini') # Path to config file
-db_pw = config.get('DB', 'db_LendingSite_password')
+db_pw = config.get('DB', 'db_LendingSystem_password')
 
 # Create Flask app
 app = Flask(__name__)
