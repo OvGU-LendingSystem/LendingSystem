@@ -1,8 +1,20 @@
-import flask
-from flask import request, jsonify
+from flask_graphql import GraphQLView
+from config import app, db
+from schema import schema
 
-app = flask.Flask(__name__)
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=schema,
+        graphiql=True
+    )
+)
 
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "Hello, World!"})
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.remove()
+
+# for local testing
+if __name__ == '__main__':
+    app.run()
