@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
-import ComboBox from '../components/Filter';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -10,34 +9,37 @@ interface Product {
   description: string;
   price: string;
   imageUrl: string;
-  startDate?: Date; // Add startDate property
-  endDate?: Date; // Add endDate property
-  amount?: number; // Add amount property
+  startDate?: Date;
+  endDate?: Date;
+  amount?: number;
+  category?: string;
 }
-
 
 export function Borrowing(): JSX.Element {
   const products: Product[] = [
     {
       id: 1,
-      name: 'Objekt 1',
+      name: 'Maus',
       description: 'Beschreibung für Objekt 1',
       price: 'Kaution: 10€',
       imageUrl: 'https://via.placeholder.com/300',
+      category: 'Elektronik'
     },
     {
       id: 2,
-      name: 'Objekt 2',
+      name: 'Maus2',
       description: 'Beschreibung für Objekt 2',
       price: 'Kaution: 20€',
       imageUrl: 'https://via.placeholder.com/300',
+      category: 'Elektronik'
     },
     {
       id: 3,
-      name: 'Objekt 3',
+      name: 'Tastatur',
       description: 'Beschreibung für Objekt 3',
       price: 'Kaution: 30€',
       imageUrl: 'https://via.placeholder.com/300',
+      category: 'Office'
     },
   ];
 
@@ -47,29 +49,101 @@ export function Borrowing(): JSX.Element {
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [amount, setAmount] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
 
-  const handleSelect = (selectedOptions: string[]) => {
-    // Your implementation for handleSelect
-  };
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownVisible(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   const openModal = (product: Product) => {
-    // Your implementation for openModal
+    setSelectedProduct(product);
+    setShowModal(true);
   };
 
   const closeModal = () => {
-    // Your implementation for closeModal
+    setShowModal(false);
+    setSelectedProduct(null);
   };
 
   const addToCart = () => {
-    // Your implementation for addToCart
+    if (selectedProduct) {
+      setSelectedItems([
+        ...selectedItems,
+        { ...selectedProduct, startDate, endDate, amount }
+      ]);
+      closeModal();
+    }
   };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories(prevCategories =>
+      prevCategories.includes(category)
+        ? prevCategories.filter(c => c !== category)
+        : [...prevCategories, category]
+    );
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
+    (selectedCategories.length === 0 || selectedCategories.includes(product.category || ''))
+  );
 
   return (
     <>
       <Header pageTitleProp="Ausleihen" />
       <div style={{ padding: '20px' }}>
+        <div style={filterContainerStyle}>
+          <input
+            type="text"
+            placeholder="Suchen"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={searchInputStyle}
+          />
+          <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+            <button
+              style={dropdownButtonStyle}
+              onClick={() => setDropdownVisible(!dropdownVisible)}
+            >
+              Filter
+            </button>
+            {dropdownVisible && (
+              <div style={dropdownContentStyle}>
+                <label style={checkboxLabelStyle}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes('Elektronik')}
+                    onChange={() => handleCategoryChange('Elektronik')}
+                  />
+                  Elektronik
+                </label>
+                <label style={checkboxLabelStyle}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes('Office')}
+                    onChange={() => handleCategoryChange('Office')}
+                  />
+                  Office
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
         <div style={{ marginTop: '20px' }}>
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <div key={product.id} style={productCardStyle}>
               <img src={product.imageUrl} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
@@ -89,14 +163,13 @@ export function Borrowing(): JSX.Element {
         {selectedItems.length > 0 && (
           <div style={{ marginTop: '20px' }}>
             <ul>
-            {selectedItems.map((item, index) => (
-  <li key={index}>
-    {products.find((product) => product.id === item.id)?.name} -{' '}
-    {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
-    {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
-  </li>
-))}
-
+              {selectedItems.map((item, index) => (
+                <li key={index}>
+                  {products.find((product) => product.id === item.id)?.name} -{' '}
+                  {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
+                  {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
+                </li>
+              ))}
             </ul>
           </div>
         )}
@@ -146,6 +219,43 @@ export function Borrowing(): JSX.Element {
     </>
   );
 }
+
+const filterContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  marginBottom: '20px',
+};
+
+const searchInputStyle: React.CSSProperties = {
+  padding: '10px',
+  width: '200px',
+  marginRight: '10px',
+};
+
+const dropdownButtonStyle: React.CSSProperties = {
+  padding: '10px 20px',
+  backgroundColor: '#007bff',
+  color: '#ffffff',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
+};
+
+const dropdownContentStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'absolute',
+  backgroundColor: '#f1f1f1',
+  minWidth: '160px',
+  boxShadow: '0px 8px 16px 0px rgba(0,0,0,0.2)',
+  padding: '12px 16px',
+  zIndex: 1,
+};
+
+const checkboxLabelStyle: React.CSSProperties = {
+  display: 'block',
+  marginBottom: '10px',
+};
 
 const productCardStyle: React.CSSProperties = {
   marginBottom: '20px',
@@ -222,4 +332,3 @@ const inputContainerStyle: React.CSSProperties = {
 const buttonContainerStyle: React.CSSProperties = {
   textAlign: 'right',
 };
-export {};
