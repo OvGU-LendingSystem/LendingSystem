@@ -6,11 +6,11 @@ import 'react-day-picker/dist/style.css'
 const pastMonth = new Date(2024, 5, 6);
 
 const functionMatcher: Matcher = (day: Date) => {
-    return day.getMonth() === 4 // match when month is March
+    return day.getMonth() === 4
    };
 
 
-export default function Component1() {
+export default function Calendar() {
 
     
     const css = `
