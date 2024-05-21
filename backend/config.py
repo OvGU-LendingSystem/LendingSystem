@@ -1,5 +1,9 @@
+import configparser
+import socket
+
 from flask import Flask
-from sqlalchemy  import *
+from flask_bcrypt import Bcrypt
+from sqlalchemy import *
 from sqlalchemy.orm import (scoped_session, sessionmaker)
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -25,6 +29,8 @@ if hostname == "hades":
     db = scoped_session(sessionmaker(   autocommit=False,
                                         autoflush=False,
                                         bind=engine))
+
+    bcrypt = Bcrypt(app)
 else:
     # Read config from file
     config = configparser.ConfigParser()
@@ -40,3 +46,5 @@ else:
     db = scoped_session(sessionmaker(   autocommit=False,
                                         autoflush=False,
                                         bind=engine))
+
+    bcrypt = Bcrypt(app)

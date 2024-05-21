@@ -1,3 +1,6 @@
+import Bcrypt
+from sqlalchemy.ext.hybrid import hybrid_property
+
 from config import db
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -120,38 +123,56 @@ class Order(Base):
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
     borrowers           = relationship("Borrower",          secondary = borrower_order,         back_populates = "orders")
 
-class Person(Base):
+class User(Base):
     """
-    Person is the base class for Borrower and Member
+    User is the base class for Borrower and Member
     """
-    __tablename__       = "person"
+    __tablename__       = "user"
     __mapper_args__     = {"polymorphic_on": "type",}
     type                = Column(String(60))
 
-    person_id           = Column(Integer,       primary_key = True)
+    user_id             = Column(Integer,       primary_key = True)
     first_name          = Column(String(30),    unique = False, nullable = False)
     last_name           = Column(String(30),    unique = False, nullable = False)
 
     email               = Column(String(60),    unique = True,  nullable = False)
-    password            = Column(String(60),    unique = False, nullable = False) # hashed
+    password_hash       = Column(String(60),    unique = False, nullable = False) # hashed
 
-class Borrower(Person):
+    @hybrid_property
+    def password_hash(self):
+        raise Exception("Passwort-Hashes dürfen nicht ausgelesen werden!")
+
+    @password_hash.setter
+    def password_hash(self, password):
+        password_hash = bcrypt.generate_password_hash(
+            password.encode('utf-8')
+        )
+        self.password_hash = password_hash.decode('utf-8')
+
+    def authenticate(self, password):
+        return bcrypt.check_password_hash(
+            self.password_hash, password.encode('utf-8')
+        )
+
+    serialize_rules = ('_password_hash', )
+
+class Borrower(User):
     """
-    Borrower is a person who can borrow objects
+    Borrower is a user who can borrow objects
     """
     __tablename__       = "borrower"
     __mapper_args__     = {"polymorphic_identity" : "borrower",}
-    borrow_id           = Column(Integer, ForeignKey("person.person_id"), primary_key = True)
+    borrow_id           = Column(Integer, ForeignKey("user.user_id"), primary_key = True)
 
     orders              = relationship("Order", secondary = borrower_order, back_populates = "borrowers")
 
-class Member(Person):
+class Member(User):
     """
-    Member is a person who can lend objects and is member of an organization
+    Member is a user who can lend objects and is member of an organization
     """
     __tablename__       = "member"
     __mapper_args__     = {"polymorphic_identity" : "member",}
-    member_id           = Column(Integer, ForeignKey("person.person_id"), primary_key = True)
+    member_id           = Column(Integer, ForeignKey("user.user_id"), primary_key = True)
     # Rights to edit objects, borrow objects, edit organization, etc.
 
     organizations       = relationship("Organization", secondary = organization_member, back_populates = "members")
