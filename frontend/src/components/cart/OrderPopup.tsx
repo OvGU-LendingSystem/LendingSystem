@@ -3,11 +3,12 @@ import './OrderPopup.css';
 
 type PopupProbs = {
     trigger: boolean;
+    setTrigger: any;
 }
 
 export function OrderPopup(props: PopupProbs) {
     var name, mail, number, agb;
-    return (props.trigger) ? (
+    return (props.trigger?
         <div className="popup">
             <div className="wrapper popup-inner">
                 <div> <label>Name: </label> </div>
@@ -24,10 +25,11 @@ export function OrderPopup(props: PopupProbs) {
             </div>
 
             <div>
-                <button >Abbrechen</button>
+                <button onClick={() => props.setTrigger(false)}>Abbrechen</button>
                 <button>Abschicken</button>
             </div>
 
         </div>
-    ) : <div />;
+        :<div />);
+    
 }

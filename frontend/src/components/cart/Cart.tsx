@@ -13,7 +13,7 @@ export function Cart() {
 
             <button onClick={() => SetButtonPopup(true)}>Bestellen</button>
 
-            <OrderPopup trigger={buttonPopup} />
+            <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />
         </div>
     );
 }
