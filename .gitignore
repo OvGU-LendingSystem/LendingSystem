@@ -172,4 +172,4 @@ pictures/*
 # Ignore readme (sensible)
 config.ini
 
-backend/db_setup.py
+# backend/db_setup.py

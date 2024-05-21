@@ -4,6 +4,7 @@ import socket
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from sqlalchemy import *
+from flask_cors import CORS
 from sqlalchemy.orm import (scoped_session, sessionmaker)
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -23,6 +24,7 @@ if hostname == "hades":
     # Create Flask app
     app = Flask(__name__)
     app.debug = True
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Connect to database
     engine = create_engine('mysql+mysqlconnector://administrator:' + db_pw + '@localhost/LendingSystem', convert_unicode=True)
@@ -40,6 +42,7 @@ else:
     # Create Flask app
     app = Flask(__name__)
     app.debug = True
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Connect to database
     engine = create_engine('mysql+pymysql://administrator:' + db_pw + '@hades.fritz.box:3306/LendingSystem', convert_unicode=True)
