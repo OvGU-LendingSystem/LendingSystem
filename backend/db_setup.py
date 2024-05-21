@@ -79,20 +79,20 @@ db.add(cables)
 db.add(boxes)
 db.add(amplifier)
 
-person1 = Borrower(  first_name = "Peter",
+person1 = User(     first_name = "Peter",
                     last_name = "Parker",
                     email = "peter.parker@gmail.com",
-                    password = "password")
+                    password_hash = "password")
 
-person2 = Member(  first_name = "Tony",
+person2 = User(     first_name = "Tony",
                     last_name = "Stark",
                     email = "tony.stark@gmail.com",
-                    password = "password")
+                    password_hash = "password1")
 
 db.add(person1)
 db.add(person2)
 
-Organization1.members.append(person2)
+# Organization1.members.append(person2)
 
 music_system = Group(   name = "Music System")
 
@@ -111,11 +111,11 @@ db.add(uno2_group)
 db.add(music_system)
 
 uno_order = Order(from_date = datetime.strptime("2019-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-01-02 12:00:00", "%Y-%m-%d %H:%M:%S"))
-uno_order.borrowers.append(person1)
+# uno_order.borrowers.append(person1)
 uno_order.physicalobjects.append(uno1)
 
 music_order = Order(from_date = datetime.strptime("2019-05-01 10:20:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-09-02 12:30:00", "%Y-%m-%d %H:%M:%S"))
-music_order.borrowers.append(person1)
+# music_order.borrowers.append(person1)
 music_order.physicalobjects.append(amplifier)
 music_order.physicalobjects.append(boxes)
 music_order.physicalobjects.append(cables)

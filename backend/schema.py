@@ -1,6 +1,8 @@
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
+
+from backend.mutations import MyMutations
 from config import db
 
 # Import all models here
@@ -8,13 +10,15 @@ from config import db
 # from models import    Contact as ContactModel,
 #                       nextStuff as nextStuffModel,
 #                       ...
-from models import   (PhysicalObject as PhysicalObjectModel,
-                      Tag as TagModel,
-                      Organization as OrganizationModel,
-                      Order as OrderModel,
-                      Borrower as BorrowerModel,
-                      Member as MemberModel,
-                      Group as GroupModel)
+from models import (PhysicalObject as PhysicalObjectModel,
+                    Tag as TagModel,
+                    Organization as OrganizationModel,
+                    Order as OrderModel,
+    # Borrower as BorrowerModel,
+    # Member as MemberModel,
+                    Group as GroupModel,
+                    User as UserModel)
+
 
 # class Contact(SQLAlchemyObjectType):
 #     class Meta:
@@ -41,20 +45,28 @@ class Order(SQLAlchemyObjectType):
         model = OrderModel
         interfaces = (relay.Node, )
 
-class Borrower(SQLAlchemyObjectType):
-    class Meta:
-        model = BorrowerModel
-        interfaces = (relay.Node, )
 
-class Member(SQLAlchemyObjectType):
-    class Meta:
-        model = MemberModel
-        interfaces = (relay.Node, )
+# class Borrower(SQLAlchemyObjectType):
+#     class Meta:
+#         model = BorrowerModel
+#         interfaces = (relay.Node, )
+
+# class Member(SQLAlchemyObjectType):
+#     class Meta:
+#         model = MemberModel
+#         interfaces = (relay.Node, )
 
 class Group(SQLAlchemyObjectType):
     class Meta:
         model = GroupModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
+
+
+class User(SQLAlchemyObjectType):
+    class Meta:
+        model = UserModel
+        interfaces = (relay.Node,)
+
 
 # Api Queries go here
 class Query(graphene.ObjectType):
@@ -63,12 +75,23 @@ class Query(graphene.ObjectType):
     # all_contacts = SQLAlchemyConnectionField(Contact.connection)
 
     # Queries for all
-    all_physical_objects = SQLAlchemyConnectionField( PhysicalObject.connection )
-    all_tags = SQLAlchemyConnectionField( Tag.connection )
-    all_organizations = SQLAlchemyConnectionField( Organization.connection )
-    all_orders = SQLAlchemyConnectionField( Order.connection )
-    all_borrowers = SQLAlchemyConnectionField( Borrower.connection )
-    all_members = SQLAlchemyConnectionField( Member.connection )
-    all_groups = SQLAlchemyConnectionField( Group.connection )
+    all_physical_objects = SQLAlchemyConnectionField(PhysicalObject.connection)
+    all_tags = SQLAlchemyConnectionField(Tag.connection)
+    all_organizations = SQLAlchemyConnectionField(Organization.connection)
+    all_orders = SQLAlchemyConnectionField(Order.connection)
+    # all_borrowers = SQLAlchemyConnectionField( Borrower.connection )
+    # all_members = SQLAlchemyConnectionField( Member.connection )
+    all_groups = SQLAlchemyConnectionField(Group.connection)
+    all_user = SQLAlchemyConnectionField(User.connection)
 
-schema = graphene.Schema(query=Query)
+    # user = graphene.Field(User)
+    # @staticmethod
+    # def resolve_user(args, info, user: Union[int, None] = None):
+    #     query = User.get_query(info=info)
+    #     # if user:
+    #     #     query = query.filter(UserModel == User)
+    #     user = query.first()
+    #     return user
+
+
+schema = graphene.Schema(query=Query, mutation=MyMutations)

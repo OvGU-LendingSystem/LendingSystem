@@ -1,6 +1,3 @@
-import Bcrypt
-from sqlalchemy.ext.hybrid import hybrid_property
-
 from config import db
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -36,21 +33,21 @@ physicalobject_order = Table (
     extend_existing = True,
 )
 
-borrower_order = Table (
-    'borrower_order',
-    Base.metadata,
-    Column('borrow_id',         ForeignKey('borrower.borrow_id'),           primary_key=True),
-    Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
-    extend_existing = True,
-)
-
-organization_member = Table (
-    'organization_member',
-    Base.metadata,
-    Column('organization_id',   ForeignKey('organization.organization_id'), primary_key=True),
-    Column('member_id',         ForeignKey('member.member_id'),             primary_key=True),
-    extend_existing = True,
-)
+# borrower_order = Table (
+#     'borrower_order',
+#     Base.metadata,
+#     Column('borrow_id',         ForeignKey('borrower.borrow_id'),           primary_key=True),
+#     Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
+#     extend_existing = True,
+# )
+#
+# organization_member = Table (
+#     'organization_member',
+#     Base.metadata,
+#     Column('organization_id',   ForeignKey('organization.organization_id'), primary_key=True),
+#     Column('member_id',         ForeignKey('member.member_id'),             primary_key=True),
+#     extend_existing = True,
+# )
 
 group_physicalobject = Table (
     'group_physicalobject',
@@ -121,15 +118,15 @@ class Order(Base):
     till_date           = Column(DateTime,      unique = False, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
-    borrowers           = relationship("Borrower",          secondary = borrower_order,         back_populates = "orders")
+    # borrowers           = relationship("Borrower",          secondary = borrower_order,         back_populates = "orders")
 
 class User(Base):
     """
     User is the base class for Borrower and Member
     """
     __tablename__       = "user"
-    __mapper_args__     = {"polymorphic_on": "type",}
-    type                = Column(String(60))
+    # __mapper_args__     = {"polymorphic_on": "type",}
+    # type                = Column(String(60))
 
     id                  = Column(Integer,       primary_key = True)
     first_name          = Column(String(30),    unique = False, nullable = False)
@@ -138,44 +135,26 @@ class User(Base):
     email               = Column(String(60),    unique = True,  nullable = False)
     password_hash       = Column(String(60),    unique = False, nullable = False) # hashed
 
-    @hybrid_property
-    def password_hash(self):
-        raise Exception("Passwort-Hashes dürfen nicht ausgelesen werden!")
+# class Borrower(User):
+#     """
+#     Borrower is a user who can borrow objects
+#     """
+#     __tablename__       = "borrower"
+#     __mapper_args__     = {"polymorphic_identity" : "borrower",}
+#     borrow_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
+#
+#     orders              = relationship("Order", secondary = borrower_order, back_populates = "borrowers")
 
-    @password_hash.setter
-    def password_hash(self, password):
-        password_hash = bcrypt.generate_password_hash(
-            password.encode('utf-8')
-        )
-        self.password_hash = password_hash.decode('utf-8')
-
-    def authenticate(self, password):
-        return bcrypt.check_password_hash(
-            self.password_hash, password.encode('utf-8')
-        )
-
-    serialize_rules = ('_password_hash', )
-
-class Borrower(User):
-    """
-    Borrower is a user who can borrow objects
-    """
-    __tablename__       = "borrower"
-    __mapper_args__     = {"polymorphic_identity" : "borrower",}
-    borrow_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
-
-    orders              = relationship("Order", secondary = borrower_order, back_populates = "borrowers")
-
-class Member(User):
-    """
-    Member is a user who can lend objects and is member of an organization
-    """
-    __tablename__       = "member"
-    __mapper_args__     = {"polymorphic_identity" : "member",}
-    member_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
-    # Rights to edit objects, borrow objects, edit organization, etc.
-
-    organizations       = relationship("Organization", secondary = organization_member, back_populates = "members")
+# class Member(User):
+#     """
+#     Member is a user who can lend objects and is member of an organization
+#     """
+#     __tablename__       = "member"
+#     __mapper_args__     = {"polymorphic_identity" : "member",}
+#     member_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
+#     # Rights to edit objects, borrow objects, edit organization, etc.
+#
+#     organizations       = relationship("Organization", secondary = organization_member, back_populates = "members")
 
 class Group(Base):
     """
@@ -198,5 +177,5 @@ class Organization(Base):
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
 
-    members             = relationship("Member",            secondary = organization_member,            back_populates = "organizations")
+    # members             = relationship("Member",            secondary = organization_member,            back_populates = "organizations")
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
