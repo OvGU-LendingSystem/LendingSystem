@@ -131,7 +131,7 @@ class User(Base):
     __mapper_args__     = {"polymorphic_on": "type",}
     type                = Column(String(60))
 
-    user_id             = Column(Integer,       primary_key = True)
+    id                  = Column(Integer,       primary_key = True)
     first_name          = Column(String(30),    unique = False, nullable = False)
     last_name           = Column(String(30),    unique = False, nullable = False)
 
@@ -162,7 +162,7 @@ class Borrower(User):
     """
     __tablename__       = "borrower"
     __mapper_args__     = {"polymorphic_identity" : "borrower",}
-    borrow_id           = Column(Integer, ForeignKey("user.user_id"), primary_key = True)
+    borrow_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
 
     orders              = relationship("Order", secondary = borrower_order, back_populates = "borrowers")
 
@@ -172,7 +172,7 @@ class Member(User):
     """
     __tablename__       = "member"
     __mapper_args__     = {"polymorphic_identity" : "member",}
-    member_id           = Column(Integer, ForeignKey("user.user_id"), primary_key = True)
+    member_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
     # Rights to edit objects, borrow objects, edit organization, etc.
 
     organizations       = relationship("Organization", secondary = organization_member, back_populates = "members")
