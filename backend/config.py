@@ -27,7 +27,7 @@ if hostname == "hades":
     CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Connect to database
-    engine = create_engine('mysql+mysqlconnector://administrator:' + db_pw + '@localhost/LendingSystem', convert_unicode=True)
+    engine = create_engine('mysql+mysqlconnector://administrator:' + db_pw + '@localhost/LendingSystem')
     db = scoped_session(sessionmaker(   autocommit=False,
                                         autoflush=False,
                                         bind=engine))
