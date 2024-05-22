@@ -79,25 +79,25 @@ db.add(cables)
 db.add(boxes)
 db.add(amplifier)
 
-# person1 = User(     first_name = "Peter",
-#                     last_name = "Parker",
-#                     email = "peter.parker@gmail.com",
-#                     password_hash = "password")
-#
-# person2 = User(     first_name = "Tony",
-#                     last_name = "Stark",
-#                     email = "tony.stark@gmail.com",
-#                     password_hash = "password1")
+person1 = User(     first_name = "Peter",
+                    last_name = "Parker",
+                    email = "peter.parker@gmail.com",
+                    password_hash = "$2b$12$Rz15qP9U7cR3JVVZg2uTCu2CghfqpHNqqaw4Abe7uQKdpNIYOfRzu")
+
+person2 = User(     first_name = "Tony",
+                    last_name = "Stark",
+                    email = "tony.stark@gmail.com",
+                    password_hash = "$2b$12$T79qNs7Z2HklCfChLBn28e47Ow55eeesOKU8pBNWJ/O0fH.u16ZkS")
 
 person3 = User(     first_name = "Max",
                     last_name = "Mustermann",
                     email = "max@mustermann.de",
                     password_hash = "$2b$12$NIiwz9bxK9lXoYH.bzi66eo67LgzuA6/LaJVetxhA5Co4ZblX5ZKy")
 
-# db.add(person1)
-# db.add(person2)
+db.add(person1)
+db.add(person2)
 db.add(person3)
-# Organization1.members.append(person2)
+Organization1.addUser(person2)
 
 music_system = Group(   name = "Music System")
 
@@ -116,11 +116,11 @@ db.add(uno2_group)
 db.add(music_system)
 
 uno_order = Order(from_date = datetime.strptime("2019-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-01-02 12:00:00", "%Y-%m-%d %H:%M:%S"))
-# uno_order.borrowers.append(person1)
+uno_order.users.append(person1)
 uno_order.physicalobjects.append(uno1)
 
 music_order = Order(from_date = datetime.strptime("2019-05-01 10:20:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-09-02 12:30:00", "%Y-%m-%d %H:%M:%S"))
-# music_order.borrowers.append(person1)
+music_order.users.append(person1)
 music_order.physicalobjects.append(amplifier)
 music_order.physicalobjects.append(boxes)
 music_order.physicalobjects.append(cables)
