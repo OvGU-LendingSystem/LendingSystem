@@ -1,3 +1,4 @@
+import enum
 from config import db
 from sqlalchemy import *
 from sqlalchemy.orm import *
@@ -6,6 +7,15 @@ from sqlalchemy.ext.declarative import declarative_base
 # standard, something for querying
 Base = declarative_base()
 Base.query = db.query_property()
+
+class userRights(enum.Enum):
+    """
+    Enum for different rights a user can have inside his organization
+    rights are organized in a hierarchy
+    """
+    organization_admin = 1
+    inventory_admin = 2
+    member = 3
 
 # m:n Relations go here ...
 # Like this ... 
@@ -33,19 +43,20 @@ physicalobject_order = Table (
     extend_existing = True,
 )
 
-# borrower_order = Table (
-#     'borrower_order',
-#     Base.metadata,
-#     Column('borrow_id',         ForeignKey('borrower.borrow_id'),           primary_key=True),
-#     Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
-#     extend_existing = True,
-# )
-#
-# organization_member = Table (
-#     'organization_member',
+user_order = Table (
+    'user_order',
+    Base.metadata,
+    Column('user_id',           ForeignKey('user.user_id'),                 primary_key=True),
+    Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
+    extend_existing = True,
+)
+
+# organization_user = Table (
+#     'organization_user',
 #     Base.metadata,
 #     Column('organization_id',   ForeignKey('organization.organization_id'), primary_key=True),
-#     Column('member_id',         ForeignKey('member.member_id'),             primary_key=True),
+#     Column('user_id',           ForeignKey('user.user_id'),                 primary_key=True),
+#     Column('rights',            Enum(userRights),                           nullable = False, default = 'member'),
 #     extend_existing = True,
 # )
 
@@ -65,7 +76,18 @@ physicalobject_organization = Table (
     extend_existing = True,
 )
 
+class Organization_User(Base):
+    """
+    m:n relation between organization and user
+    additionally holds the rights a user has in an organization
+    """
+    __tablename__       = "organization_user"
+    organization_id     = Column(Integer,       ForeignKey('organization.organization_id'), primary_key=True)
+    user_id             = Column(Integer,       ForeignKey('user.user_id'),                 primary_key=True)
+    rights              = Column(Enum(userRights), nullable = False, default = 'member')
 
+    organization        = relationship("Organization", back_populates = "users")
+    user                = relationship("User", back_populates = "organizations")
 
 # Classes go here ...
 # Like this ...
@@ -118,43 +140,23 @@ class Order(Base):
     till_date           = Column(DateTime,      unique = False, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
-    # borrowers           = relationship("Borrower",          secondary = borrower_order,         back_populates = "orders")
+    users               = relationship("User",              secondary = user_order,             back_populates = "orders")
 
 class User(Base):
     """
-    User is the base class for Borrower and Member
+    Users can be in organizations but don't have to
     """
     __tablename__       = "user"
-    # __mapper_args__     = {"polymorphic_on": "type",}
-    # type                = Column(String(60))
 
-    id                  = Column(Integer,       primary_key = True)
+    user_id             = Column(Integer,       primary_key = True)
     first_name          = Column(String(30),    unique = False, nullable = False)
     last_name           = Column(String(30),    unique = False, nullable = False)
 
     email               = Column(String(60),    unique = True,  nullable = False)
     password_hash       = Column(String(60),    unique = False, nullable = False) # hashed
 
-# class Borrower(User):
-#     """
-#     Borrower is a user who can borrow objects
-#     """
-#     __tablename__       = "borrower"
-#     __mapper_args__     = {"polymorphic_identity" : "borrower",}
-#     borrow_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
-#
-#     orders              = relationship("Order", secondary = borrower_order, back_populates = "borrowers")
-
-# class Member(User):
-#     """
-#     Member is a user who can lend objects and is member of an organization
-#     """
-#     __tablename__       = "member"
-#     __mapper_args__     = {"polymorphic_identity" : "member",}
-#     member_id           = Column(Integer, ForeignKey("user.id"), primary_key = True)
-#     # Rights to edit objects, borrow objects, edit organization, etc.
-#
-#     organizations       = relationship("Organization", secondary = organization_member, back_populates = "members")
+    organizations       = relationship("Organization_User",                                back_populates = "user")
+    orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
 
 class Group(Base):
     """
@@ -177,5 +179,13 @@ class Organization(Base):
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
 
-    # members             = relationship("Member",            secondary = organization_member,            back_populates = "organizations")
+    users               = relationship("Organization_User",                                             back_populates = "organization")
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
+
+    def addUser(self, user, rights = userRights.member):
+        """
+        adds a user to the organization
+        """
+        tmp = Organization_User(organization = self, user = user, rights = rights)
+        self.users.append(tmp)
+        user.organizations.append(tmp)

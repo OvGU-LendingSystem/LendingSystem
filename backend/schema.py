@@ -11,10 +11,9 @@ from models import (PhysicalObject as PhysicalObjectModel,
                     Tag as TagModel,
                     Organization as OrganizationModel,
                     Order as OrderModel,
-    # Borrower as BorrowerModel,
-    # Member as MemberModel,
                     Group as GroupModel,
-                    User as UserModel)
+                    User as UserModel,
+                    Organization_User as Organization_UserModel)
 
 # class Contact(SQLAlchemyObjectType):
 #     class Meta:
@@ -45,22 +44,12 @@ class Order(SQLAlchemyObjectType):
         interfaces = (relay.Node, )
         description = OrderModel.__doc__
 
-# class Person(SQLAlchemyObjectType):
-#     class Meta:
-#         model = PersonModel
-#         interfaces = (relay.Node, )
-#         description = "Person is the base class for Borrower and Member"
-
-
-# class Borrower(SQLAlchemyObjectType):
-#     class Meta:
-#         model = BorrowerModel
-#         interfaces = (relay.Node, )
-
-# class Member(SQLAlchemyObjectType):
-#     class Meta:
-#         model = MemberModel
-#         interfaces = (relay.Node, )
+class User(SQLAlchemyObjectType):
+    class Meta:
+        model = UserModel
+        exclude_fields = ('password_hash', )
+        interfaces = (relay.Node, )
+        description = UserModel.__doc__
 
 class Group(SQLAlchemyObjectType):
     class Meta:
@@ -68,8 +57,8 @@ class Group(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
         description = GroupModel.__doc__
 
-class User(SQLAlchemyObjectType):
+class Organization_User(SQLAlchemyObjectType):
     class Meta:
-        model = UserModel
-        interfaces = (relay.Node,)      
-
+        model = Organization_UserModel
+        interfaces = (relay.Node,)
+        description = Organization_UserModel.__doc__

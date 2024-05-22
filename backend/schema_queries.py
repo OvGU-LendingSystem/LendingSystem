@@ -4,19 +4,7 @@ from typing import Union, List, Dict
 
 # Api Queries go here
 class Query(graphene.ObjectType):
-    node = relay.Node.Field()
-    # Model Query:
-    # all_contacts = SQLAlchemyConnectionField(Contact.connection)
-
-    # Queries for all
-    # all_physical_objects = SQLAlchemyConnectionField( PhysicalObject.connection )
-    # all_tags = SQLAlchemyConnectionField( Tag.connection )
-    # all_organizations = SQLAlchemyConnectionField( Organization.connection )
-    # all_orders = SQLAlchemyConnectionField( Order.connection )
-    # all_borrowers = SQLAlchemyConnectionField( Borrower.connection )
-    # all_members = SQLAlchemyConnectionField( Member.connection )
-    # all_groups = SQLAlchemyConnectionField( Group.connection ) 
-    
+    node = relay.Node.Field()    
     
     filter_tags = graphene.List(
         #return type
@@ -63,27 +51,24 @@ class Query(graphene.ObjectType):
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        borrowers           = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
     )
 
-    # filter_persons = graphene.List(
-    #     #return type
-    #     Person,
-    #     #type params
-    #     type                = graphene.Argument(type=graphene.String, required=False),
-    #     #int params
-    #     person_id           = graphene.Argument(type=graphene.Int, required=False),
-    #     #string params
-    #     first_name          = graphene.Argument(type=graphene.String, required=False),
-    #     last_name           = graphene.Argument(type=graphene.String, required=False),
-    #     email               = graphene.Argument(type=graphene.String, required=False),
-    #     password            = graphene.Argument(type=graphene.String, required=False),
-    #     #list params for the relationships
-    #     orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-    #     organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
-    #     description         = "Returns all persons with the given parameters, List arguments get OR-ed together",
-    # )
+    filter_users = graphene.List(
+        #return type
+        User,
+        #int params
+        user_id             = graphene.Argument(type=graphene.Int, required=False),
+        #string params
+        first_name          = graphene.Argument(type=graphene.String, required=False),
+        last_name           = graphene.Argument(type=graphene.String, required=False),
+        email               = graphene.Argument(type=graphene.String, required=False),
+        #list params for the relationships
+        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        description         = "Returns all users with the given parameters, List arguments get OR-ed together",
+    )
 
     filter_groups = graphene.List(
         #return type
@@ -106,7 +91,7 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        members             = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
     )
@@ -203,7 +188,7 @@ class Query(graphene.ObjectType):
         till_date: Union[str, None] = None,
         # list params for the relationships
         physicalobjects: Union[List[str], None] = None,
-        borrowers: Union[List[str], None] = None,
+        users: Union[List[str], None] = None,
     ):
         query = Order.get_query(info=info)
 
@@ -216,51 +201,44 @@ class Query(graphene.ObjectType):
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
-        if borrowers:
-            query = query.filter(OrderModel.borrowers.any(BorrowerModel.name.in_(borrowers)))
+        if users:
+            query = query.filter(OrderModel.users.any(UserModel.name.in_(users)))
         
         orders = query.all()
         return orders
     
-    # @staticmethod
-    # def resolve_filter_persons(
-    #     args,
-    #     info,
-    #     # type params
-    #     type: Union[str, None] = None,
-    #     # int params
-    #     person_id: Union[int, None] = None,
-    #     # string params
-    #     first_name: Union[str, None] = None,
-    #     last_name: Union[str, None] = None,
-    #     email: Union[str, None] = None,
-    #     password: Union[str, None] = None,
-    #     # list params for the relationships
-    #     orders: Union[List[str], None] = None,
-    #     organizations: Union[List[str], None] = None,
-    # ):
-    #     query = Person.get_query(info=info)
+    @staticmethod
+    def resolve_filter_users(
+        args,
+        info,
+        # int params
+        user_id: Union[int, None] = None,
+        # string params
+        first_name: Union[str, None] = None,
+        last_name: Union[str, None] = None,
+        email: Union[str, None] = None,
+        # list params for the relationships
+        orders: Union[List[str], None] = None,
+        organizations: Union[List[str], None] = None,
+    ):
+        query = User.get_query(info=info)
 
-    #     if type:
-    #         query = query.filter(PersonModel.type == type)
-    #     if person_id:
-    #         query = query.filter(PersonModel.person_id == person_id)
-    #     if first_name:
-    #         query = query.filter(PersonModel.first_name == first_name)
-    #     if last_name:
-    #         query = query.filter(PersonModel.last_name == last_name)
-    #     if email:
-    #         query = query.filter(PersonModel.email == email)
-    #     if password:
-    #         query = query.filter(PersonModel.password == password)
-    #     # list params for the relationships .any() returns union (OR Statement)
-    #     if orders:
-    #         query = query.filter(BorrowerModel.orders.any(OrderModel.name.in_(orders)))
-    #     if organizations:
-    #         query = query.filter(MemberModel.organizations.any(OrganizationModel.name.in_(organizations)))
+        if user_id:
+            query = query.filter(UserModel.user_id == user_id)
+        if first_name:
+            query = query.filter(UserModel.first_name == first_name)
+        if last_name:
+            query = query.filter(UserModel.last_name == last_name)
+        if email:
+            query = query.filter(UserModel.email == email)
+        # list params for the relationships .any() returns union (OR Statement)
+        if orders:
+            query = query.filter(UserModel.orders.any(OrderModel.name.in_(orders)))
+        if organizations:
+            query = query.filter(UserModel.organizations.any(OrganizationModel.name.in_(organizations)))
         
-    #     persons = query.all()
-    #     return persons
+        users = query.all()
+        return users
     
     @staticmethod
     def resolve_filter_groups(
@@ -296,7 +274,7 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         location: Union[str, None] = None,
         # list params for the relationships
-        members: Union[List[str], None] = None,
+        users: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
     ):
         query = Organization.get_query(info=info)
@@ -308,8 +286,8 @@ class Query(graphene.ObjectType):
         if location:
             query = query.filter(OrganizationModel.location == location)
         # list params for the relationships .any() returns union (OR Statement)
-        if members:
-            query = query.filter(OrganizationModel.members.any(MemberModel.name.in_(members)))
+        if users:
+            query = query.filter(OrganizationModel.users.any(UserModel.name.in_(users)))
         if physicalobjects:
             query = query.filter(OrganizationModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
         
