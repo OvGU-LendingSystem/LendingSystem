@@ -1,8 +1,8 @@
 import email
 
 import graphene
-from backend.config import bcrypt
-from backend.models import User as UserModel
+from config import bcrypt
+from models import User as UserModel
 
 
 class sign_up(graphene.Mutation):
@@ -56,6 +56,6 @@ class login(graphene.Mutation):
                 info_text = "Die Anmeldung ist fehlgeschlagen."
             return login(ok=ok, info_text=info_text)
 
-class MyMutations(graphene.ObjectType):
+class Mutations(graphene.ObjectType):
     signup = sign_up.Field()
     login = login.Field()
