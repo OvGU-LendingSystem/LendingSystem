@@ -86,3 +86,53 @@ db.add(dan)
 
 db.commit()
 ```
+# API Query Example
+
+```graphql
+query filterPhysObjects{
+    filterPhysicalObjects(tags:["Game", "Hardware"], faults:"none", maxDeposit:5){
+        ...phyobj
+    }
+}
+
+
+fragment phyobj on PhysicalObject{
+    physId
+    invNumInternal
+    invNumExternal
+    deposit
+    picPath
+    storageLocation
+    faults
+    name
+    description
+    tags {
+        edges {
+            node {
+                name
+            }
+        }
+    }
+    orders{
+        edges{
+            node{
+                orderId
+            }
+        }
+    }
+    groups{
+        edges{
+            node{
+                name
+            }
+        }
+    }
+    organizations{
+        edges{
+            node{
+                name
+            }
+        }
+    }
+}
+```
