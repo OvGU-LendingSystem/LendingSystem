@@ -47,6 +47,7 @@ class Order(SQLAlchemyObjectType):
 class User(SQLAlchemyObjectType):
     class Meta:
         model = UserModel
+        exclude_fields = ('password_hash', )
         interfaces = (relay.Node, )
         description = UserModel.__doc__
 
