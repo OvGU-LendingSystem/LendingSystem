@@ -12,6 +12,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 ### Install Flask and GraphQL Flask for exposing the schema through HTTP
 - pip install Flask
 - pip install Flask-GraphQL
+- pip install flask_cors
 
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
@@ -36,6 +37,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 App.tsx
 ```typescript
 import './App.css';
+import React from 'react';
 import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
 
 const client = new ApolloClient({
@@ -45,13 +47,9 @@ const client = new ApolloClient({
 
 const GET_LOCATIONS = gql`
   query {
-    allTags {
-      edges {
-        node {
-          tagId
-          name
-        }
-      }
+    filterTags {
+      tagId
+      name
     }
   }
 `;
@@ -62,9 +60,11 @@ function DisplayLocations() {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  return data.allTags.edges.map(({ node }: any) => (
-    <div key={node.tagId}>
-      <p>{node.name}</p>
+  return data.filterTags.map(({ tagId, name }: { tagId: number, name: string }) => (
+    <div key={tagId}>
+      <p>
+        {tagId}: {name}
+      </p>
     </div>
   ));
 }
