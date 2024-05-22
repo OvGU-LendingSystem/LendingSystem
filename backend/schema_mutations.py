@@ -1,7 +1,7 @@
 import email
 
 import graphene
-from config import bcrypt
+from config import bcrypt, db
 from models import User as UserModel
 
 
@@ -20,13 +20,14 @@ class sign_up(graphene.Mutation):
         password_hashed = bcrypt.generate_password_hash(password.encode('utf-8')).decode('utf-8')
         user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
 
-        if user:
-            ok = True
-            info_text = "Der Nutzer wurde erfolgreich angelegt."
-        else:
-            ok = False
-            info_text = "Die angegebene E-Mail wird bereits verwendet."
-        return sign_up(ok=ok, info_text=info_text)
+        try:
+            db.add(user)
+            db.commit()
+        except Exception as e:
+            print(e)
+            return sign_up(ok=False, info_text="Die angegebene E-Mail wird bereits verwendet.")
+        
+        return sign_up(ok=True, info_text="Der Nutzer wurde erfolgreich angelegt.")
 
 
 class login(graphene.Mutation):
