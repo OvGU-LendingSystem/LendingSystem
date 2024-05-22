@@ -12,6 +12,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 ### Install Flask and GraphQL Flask for exposing the schema through HTTP
 - pip install Flask
 - pip install Flask-GraphQL
+- pip install flask_cors
 
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
