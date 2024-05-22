@@ -27,3 +27,52 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 
     Base.metadata.create_all(bind=engine)
    ``` 
+
+## For Frontend
+### Successfully query request with apollo client
+App.tsx
+```typescript
+import './App.css';
+import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
+
+const client = new ApolloClient({
+  uri: 'http://hades.fritz.box/api/graphql',
+  cache: new InMemoryCache(),
+});
+
+const GET_LOCATIONS = gql`
+  query {
+    allTags {
+      edges {
+        node {
+          tagId
+          name
+        }
+      }
+    }
+  }
+`;
+
+function DisplayLocations() {
+  const { loading, error, data } = useQuery(GET_LOCATIONS, { client });
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  return data.allTags.edges.map(({ node }: any) => (
+    <div key={node.tagId}>
+      <p>{node.name}</p>
+    </div>
+  ));
+}
+
+export default function App() {
+
+  return (
+    <div>
+      <h2>My first Apollo app 🚀</h2>
+      <br/>
+      <DisplayLocations />
+    </div>
+  );
+}	
