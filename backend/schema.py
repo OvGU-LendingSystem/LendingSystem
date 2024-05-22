@@ -6,14 +6,15 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 # from models import    Contact as ContactModel,
 #                       nextStuff as nextStuffModel,
 #                       ...
-from models import   (PhysicalObject as PhysicalObjectModel,
-                      Tag as TagModel,
-                      Organization as OrganizationModel,
-                      Order as OrderModel,
-                      Person as PersonModel,
-                      Borrower as BorrowerModel,
-                      Member as MemberModel,
-                      Group as GroupModel)
+
+from models import (PhysicalObject as PhysicalObjectModel,
+                    Tag as TagModel,
+                    Organization as OrganizationModel,
+                    Order as OrderModel,
+    # Borrower as BorrowerModel,
+    # Member as MemberModel,
+                    Group as GroupModel,
+                    User as UserModel)
 
 # class Contact(SQLAlchemyObjectType):
 #     class Meta:
@@ -50,18 +51,25 @@ class Order(SQLAlchemyObjectType):
 #         interfaces = (relay.Node, )
 #         description = "Person is the base class for Borrower and Member"
 
-class Borrower(SQLAlchemyObjectType):
-    class Meta:
-        model = BorrowerModel
-        interfaces = (relay.Node, )
 
-class Member(SQLAlchemyObjectType):
-    class Meta:
-        model = MemberModel
-        interfaces = (relay.Node, )
+# class Borrower(SQLAlchemyObjectType):
+#     class Meta:
+#         model = BorrowerModel
+#         interfaces = (relay.Node, )
+
+# class Member(SQLAlchemyObjectType):
+#     class Meta:
+#         model = MemberModel
+#         interfaces = (relay.Node, )
 
 class Group(SQLAlchemyObjectType):
     class Meta:
         model = GroupModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
         description = GroupModel.__doc__
+
+class User(SQLAlchemyObjectType):
+    class Meta:
+        model = UserModel
+        interfaces = (relay.Node,)      
+
