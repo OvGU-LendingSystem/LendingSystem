@@ -1,7 +1,5 @@
-import graphene
 from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
-from config import db
+from graphene_sqlalchemy import SQLAlchemyObjectType
 
 # Import all models here
 # Like this ...
@@ -12,6 +10,7 @@ from models import   (PhysicalObject as PhysicalObjectModel,
                       Tag as TagModel,
                       Organization as OrganizationModel,
                       Order as OrderModel,
+                      Person as PersonModel,
                       Borrower as BorrowerModel,
                       Member as MemberModel,
                       Group as GroupModel)
@@ -25,21 +24,31 @@ class PhysicalObject(SQLAlchemyObjectType):
     class Meta:
         model = PhysicalObjectModel
         interfaces = (relay.Node, )
+        description = PhysicalObjectModel.__doc__
 
 class Tag(SQLAlchemyObjectType):
     class Meta:
         model = TagModel
         interfaces = (relay.Node, )
+        description = TagModel.__doc__
 
 class Organization(SQLAlchemyObjectType):
     class Meta:
         model = OrganizationModel
         interfaces = (relay.Node, )
+        description = OrganizationModel.__doc__
 
 class Order(SQLAlchemyObjectType):
     class Meta:
         model = OrderModel
         interfaces = (relay.Node, )
+        description = OrderModel.__doc__
+
+# class Person(SQLAlchemyObjectType):
+#     class Meta:
+#         model = PersonModel
+#         interfaces = (relay.Node, )
+#         description = "Person is the base class for Borrower and Member"
 
 class Borrower(SQLAlchemyObjectType):
     class Meta:
@@ -55,20 +64,4 @@ class Group(SQLAlchemyObjectType):
     class Meta:
         model = GroupModel
         interfaces = (relay.Node, )
-
-# Api Queries go here
-class Query(graphene.ObjectType):
-    node = relay.Node.Field()
-    # Model Query:
-    # all_contacts = SQLAlchemyConnectionField(Contact.connection)
-
-    # Queries for all
-    all_physical_objects = SQLAlchemyConnectionField( PhysicalObject.connection )
-    all_tags = SQLAlchemyConnectionField( Tag.connection )
-    all_organizations = SQLAlchemyConnectionField( Organization.connection )
-    all_orders = SQLAlchemyConnectionField( Order.connection )
-    all_borrowers = SQLAlchemyConnectionField( Borrower.connection )
-    all_members = SQLAlchemyConnectionField( Member.connection )
-    all_groups = SQLAlchemyConnectionField( Group.connection )
-
-schema = graphene.Schema(query=Query)
+        description = GroupModel.__doc__

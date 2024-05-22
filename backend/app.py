@@ -1,6 +1,9 @@
+import graphene
 from flask_graphql import GraphQLView
 from config import app, db
-from schema import schema
+from schema_queries import Query
+
+schema = graphene.Schema(query=Query)
 
 app.add_url_rule(
     '/graphql',
