@@ -9,26 +9,38 @@ type PopupProbs = {
 
 export function OrderPopup(props: PopupProbs) {
     var name, mail, number, agb;
+
+    const lending = () => {
+        //TODO
+        props.setTrigger(false);
+    };
+
     return (props.trigger?
         <div className="overlay">
             <div className="popup">
                 <div>
-                    <div> <label>Name: </label> </div>
-                    <div> <input type="text" value={name} ></input> </div>
-                    <div> <label>Email: </label> </div>
-                    <div> <input type="mail" value={mail} ></input> </div>
-                    <div> <label>Telefon: </label> </div>
-                    <div> <input type="text" value={number} ></input> </div>
+                    <div style={{padding: '10px'}}>
+                        <div> <label>Name: </label> </div>
+                        <div> <input type="text" value={name} style={input}></input> </div>
+                    </div>
+                    <div style={{padding: '10px'}}>
+                        <div> <label>Email: </label> </div>
+                        <div> <input type="mail" value={mail} style={input}></input> </div>
+                    </div>
+                    <div style={{padding: '10px'}}>
+                        <div> <label>Telefon: </label> </div>
+                        <div> <input type="text" value={number} style={input}></input> </div>
+                    </div>
                 </div>
 
-                <div>
-                    <input type="checkbox" value={agb} ></input>
+                <div style={{padding: '10px'}}>
+                    <input type="checkbox" value={agb} style={inputCheckbox}></input>
                     <label>Hiermit stimme ich den AGB's zu.</label>
                 </div>
 
-                <div>
+                <div style={buttonContainerStyle}>
+                    <button className="button" onClick={() => lending()}>Abschicken</button>
                     <button onClick={() => props.setTrigger(false)} className="button">Abbrechen</button>
-                    <button className="button">Abschicken</button>
                 </div>
 
             </div>
@@ -36,3 +48,15 @@ export function OrderPopup(props: PopupProbs) {
         :<div />);
     
 }
+
+const buttonContainerStyle: React.CSSProperties = {
+    textAlign: 'right',
+};
+const input: React.CSSProperties = {
+    padding: '10px',
+    width: '100%',
+    marginRight: '10px',
+};
+const inputCheckbox: React.CSSProperties = {
+    marginRight: '10px',
+};

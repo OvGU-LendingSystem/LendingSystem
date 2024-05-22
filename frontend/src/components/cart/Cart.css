@@ -1,0 +1,42 @@
+.productCard {
+    background-color: aqua;
+    margin-bottom: 20px;
+    border: solid;
+    border-radius: 1px;
+    border-color: #ccc;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.image {
+    width: 250px;
+    height: 150px;
+    margin-right: 20px;
+}
+
+.productInfo {
+    flex: 1;
+}
+
+.description {
+    margin-bottom: 10px;
+}
+
+.descriptionButton {
+    background-color: #f0f0f0;
+    color: #333;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.descriptionContent {
+    display: none;
+}
+
+.price {
+    font-weight: bold;
+}
