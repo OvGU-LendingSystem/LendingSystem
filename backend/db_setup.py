@@ -79,19 +79,24 @@ db.add(cables)
 db.add(boxes)
 db.add(amplifier)
 
-person1 = User(     first_name = "Peter",
-                    last_name = "Parker",
-                    email = "peter.parker@gmail.com",
-                    password_hash = "password")
+# person1 = User(     first_name = "Peter",
+#                     last_name = "Parker",
+#                     email = "peter.parker@gmail.com",
+#                     password_hash = "password")
+#
+# person2 = User(     first_name = "Tony",
+#                     last_name = "Stark",
+#                     email = "tony.stark@gmail.com",
+#                     password_hash = "password1")
 
-person2 = User(     first_name = "Tony",
-                    last_name = "Stark",
-                    email = "tony.stark@gmail.com",
-                    password_hash = "password1")
+person3 = User(     first_name = "Max",
+                    last_name = "Mustermann",
+                    email = "max@mustermann.de",
+                    password_hash = "$2b$12$NIiwz9bxK9lXoYH.bzi66eo67LgzuA6/LaJVetxhA5Co4ZblX5ZKy")
 
-db.add(person1)
-db.add(person2)
-
+# db.add(person1)
+# db.add(person2)
+db.add(person3)
 # Organization1.members.append(person2)
 
 music_system = Group(   name = "Music System")

@@ -84,14 +84,5 @@ class Query(graphene.ObjectType):
     all_groups = SQLAlchemyConnectionField(Group.connection)
     all_user = SQLAlchemyConnectionField(User.connection)
 
-    # user = graphene.Field(User)
-    # @staticmethod
-    # def resolve_user(args, info, user: Union[int, None] = None):
-    #     query = User.get_query(info=info)
-    #     # if user:
-    #     #     query = query.filter(UserModel == User)
-    #     user = query.first()
-    #     return user
-
 
 schema = graphene.Schema(query=Query, mutation=MyMutations)
