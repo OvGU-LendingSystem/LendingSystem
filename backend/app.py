@@ -1,8 +1,24 @@
-import flask
-from flask import request, jsonify
+import graphene
+from flask_graphql import GraphQLView
+from config import app, db
+from schema_queries import Query
+from schema_mutations import Mutations
 
-app = flask.Flask(__name__)
+schema = graphene.Schema(query=Query, mutation=Mutations)
 
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "Hello, World!"})
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=schema,
+        graphiql=True
+    )
+)
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.remove()
+
+# for local testing
+if __name__ == '__main__':
+    app.run()

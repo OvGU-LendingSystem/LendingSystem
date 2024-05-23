@@ -164,3 +164,12 @@ cython_debug/
 
 # ignore node_modules folder
 node_modules/
+
+# Ignore content of pictures folder except readme
+pictures/*
+!pictures/readme.md
+
+# Ignore readme (sensible)
+config.ini
+
+# backend/db_setup.py
