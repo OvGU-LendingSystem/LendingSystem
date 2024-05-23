@@ -4,13 +4,13 @@ import 'react-day-picker/dist/style.css'
 import { DateRange, DayPicker, Matcher } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 
-interface Order {
+interface Dates {
   fromDate: string;
   tillDate: string;
 }
 
-interface OrdersData {
-  filterOrders: Order[];
+interface DateArray {
+  filterOrders: Dates[];
 }
 
 
@@ -29,7 +29,7 @@ query {
 `); 
 
 export default function Calendar_Querry() {
-    const { loading, error, data } = useQuery<OrdersData>(GET_DATES, {client}); 
+    const { loading, error, data } = useQuery<DateArray>(GET_DATES, {client}); 
     
     const pastMonth = new Date(2024, 5, 6);
     
