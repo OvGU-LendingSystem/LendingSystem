@@ -1,6 +1,29 @@
+import React, { useState, ReactNode } from "react";
 import "./Layout.css";
 import { MdOutlineShoppingBasket } from "react-icons/md";
 import { Link, Outlet } from "react-router-dom";
+import { Login } from "../login/Login";
+
+interface ModalProps {
+  children: ReactNode;
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+function Modal({ children, isVisible, onClose }: ModalProps) {
+  if (!isVisible) return null;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content">
+        <button className="modal-close" onClick={onClose}>
+          &times;
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 declare global{
   interface Product {
@@ -25,8 +48,18 @@ declare global{
   }
 }
 
-
 export function Layout() {
+  const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+
+  const handleLoginClick = () => {
+    setLoginModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setLoginModalVisible(false);
+  };
+
+
     return (
       <div className="layout">
         <nav className='nav-bar'>
@@ -43,9 +76,9 @@ export function Layout() {
           </ul>
   
           <ul>
-            <li>
-              <Link to='/login'>Login</Link>  
-            </li>
+          <li>
+            <button style= {{padding:"3px",}}onClick={handleLoginClick}>Login</button>
+          </li>
             <li>
               <Link to='/cart'>
                 <MdOutlineShoppingBasket size={24} />
@@ -56,7 +89,11 @@ export function Layout() {
         <main className="content">
           <div><Outlet /></div>
         </main>
+        <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
+        <Login />
+      </Modal>
       </div>
+      
     );
 }
   
