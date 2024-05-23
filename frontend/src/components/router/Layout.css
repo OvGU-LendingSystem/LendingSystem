@@ -1,0 +1,13 @@
+.layout {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 100%;
+}
+
+main {
+    overflow: scroll;
+}

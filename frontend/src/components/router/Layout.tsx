@@ -1,9 +1,10 @@
-import React from "react";
+import "./Layout.css";
 import { MdOutlineShoppingBasket } from "react-icons/md";
 import { Link, Outlet } from "react-router-dom";
 
 export function Layout() {
-    return (<>
+    return (
+      <div className="layout">
         <nav className='nav-bar'>
           <ul>
             <li>
@@ -23,8 +24,10 @@ export function Layout() {
           </ul>
         </nav>
   
-        <Outlet />
-      </>
+        <main className="content">
+          <div><Outlet /></div>
+        </main>
+      </div>
     );
 }
   

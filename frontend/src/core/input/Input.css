@@ -1,0 +1,14 @@
+.input--wrapper {
+    display: flex;
+    border: 2px solid green;
+}
+
+.input--wrapper:has(> input:invalid) {
+    border-color: red;
+}
+
+.input--wrapper input {
+    outline: none;
+    border: none;
+    appearance: textfield;
+}
