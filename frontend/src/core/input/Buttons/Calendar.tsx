@@ -5,8 +5,8 @@ import 'react-day-picker/dist/style.css'
 
 const pastMonth = new Date(2024, 5, 6);
 
-const functionMatcher: Matcher = (day: Date) => {
-    return day.getMonth() === 4
+const functionMatcher: Matcher = (day : Date) => {
+    return day.getMonth() === 4 ;
    };
 
 
