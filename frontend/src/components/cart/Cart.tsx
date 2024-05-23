@@ -4,6 +4,41 @@ import { useState } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
 
+//APOLLO STUFF ZUM TESTEN
+
+import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
+
+const client = new ApolloClient({
+  uri: 'http://hades.fritz.box/api/graphql',
+  cache: new InMemoryCache(),
+});
+
+const GET_LOCATIONS = gql`
+  query {
+    filterTags {
+      tagId
+      name
+    }
+  }
+`;
+
+function DisplayLocations() {
+  const { loading, error, data } = useQuery(GET_LOCATIONS, { client });
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  return data.filterTags.map(({ tagId, name }: { tagId: number, name: string }) => (
+    <div key={tagId}>
+      <p>
+        {tagId}: {name}
+      </p>
+    </div>
+  ));
+}
+
+//ENDE APOLLO STUFF
+
 type CartProbs = {
     selectedItems: Product[];
     removeSelectedItem: any;
@@ -29,10 +64,8 @@ export function Cart(probs: CartProbs) {
 
     return (
         
-        
-        
-
         <div>
+
             <div style={{padding: '20px'}}>
                 <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
