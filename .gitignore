@@ -169,7 +169,14 @@ node_modules/
 pictures/*
 !pictures/readme.md
 
-# Ignore readme (sensible)
+# Ignore config file (sensible)
 config.ini
 
 # backend/db_setup.py
+
+# Inore files and folders for venv
+Scripts/
+pyvenv.cfg
+
+# Alembic ini
+alembic.ini

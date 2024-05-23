@@ -13,6 +13,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 - pip install Flask
 - pip install Flask-GraphQL
 - pip install flask_cors
+- pip install alembic
 
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
@@ -31,6 +32,29 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
   from models import *
 
   Base.metadata.create_all(bind=engine)
+
+### Database evolution
+- Database migration with Alembic
+  - Initialize Alembic; folder already in git, but ini file is not
+    ```shell
+    python - m alembic.config init alembic
+    ```
+  - Edit the alembic.ini file in the alembic directory to point to the database
+    ```ini
+    sqlalchemy.url = mysql+pymysql://administrator:<DB Password>@hades.fritz.box:3306/LendingSystem
+    ```
+  - Create a migration
+    ```shell
+    python - m alembic.config revision --autogenerate -m "Comment for the migration"
+    ```
+  - Run the migration
+    ```shell
+    python - m alembic.config upgrade head
+    ```
+  - Downgrade the migration
+    ```shell
+    python - m alembic.config downgrade <relative position / version code (first four characters)>
+    ```
 
 ## For Frontend
 ### Successfully query request with apollo client
