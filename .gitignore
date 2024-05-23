@@ -177,3 +177,6 @@ config.ini
 # Inore files and folders for venv
 Scripts/
 pyvenv.cfg
+
+# Alembic ini
+alembic.ini
