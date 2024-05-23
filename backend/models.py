@@ -102,21 +102,31 @@ class PhysicalObject(Base):
     Physical Objects are the real objects which get grouped later on for borrowing
     """
     __tablename__       = "physicalobject"
-    phys_id             = Column(Integer,       unique = True,  primary_key = True)
-    # organization_id     = Column(Integer, ForeignKey('organization.organization_id'), unique = True, nullable = False)
-    inv_num_internal    = Column(Integer,       unique = False, nullable = False) # unique?
-    inv_num_external    = Column(Integer,       unique = False, nullable = False)
-    pic_path            = Column(String(600),   unique = False, nullable = True)
-    deposit             = Column(Integer,       unique = False, nullable = False)
-    storage_location    = Column(String(600),   unique = False, nullable = False)
-    faults              = Column(String(600),   unique = False, nullable = True)
-    name                = Column(String(60),    unique = False, nullable = False)
-    description         = Column(String(600),   unique = False, nullable = True)
+    phys_id             = Column(Integer,               unique = True,  primary_key = True)
+    inv_num_internal    = Column(Integer,               unique = False, nullable = False) # unique?
+    inv_num_external    = Column(Integer,               unique = False, nullable = False)
+    deposit             = Column(Integer,               unique = False, nullable = False)
+    storage_location    = Column(String(600),           unique = False, nullable = False)
+    faults              = Column(String(600),           unique = False, nullable = True)
+    name                = Column(String(60),            unique = False, nullable = False)
+    description         = Column(String(600),           unique = False, nullable = True)
 
+    pictures            = relationship("Picture",                                                   back_populates = "physicalobject")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("Order",         secondary = physicalobject_order,           back_populates = "physicalobjects")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
+
+class Picture(Base):
+    """
+    Pictures are stored in the database and linked to physical objects
+    """
+    __tablename__       = "picture"
+    picture_id          = Column(Integer,      primary_key = True)
+    physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'), nullable = False)
+    path                = Column(String(600),  unique = True, nullable = False)
+
+    physicalobject      = relationship("PhysicalObject", back_populates = "pictures")
 
 class Order(Base):
     """
