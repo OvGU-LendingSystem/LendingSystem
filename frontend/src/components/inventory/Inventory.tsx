@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: string;
-  imageUrl: string;
-  startDate?: Date;
-  endDate?: Date;
-  amount?: number;
-  category?: string;
+type InventoryProbs = {
+  selectedItems: Product[];
+  setSelectedItems: any;
 }
 
-export function Inventory(): JSX.Element {
+export function Inventory(probs: InventoryProbs): JSX.Element {
   const products: Product[] = [
     {
       id: 1,
@@ -39,10 +32,27 @@ export function Inventory(): JSX.Element {
       imageUrl: 'https://via.placeholder.com/300',
       category: 'Office'
     },
+    {
+      id: 4,
+      name: 'Tastatur2',
+      description: 'Beschreibung für Objekt 4',
+      price: 'Kaution: 30€',
+      imageUrl: 'https://via.placeholder.com/300',
+      category: 'Office'
+    },
+    {
+      id: 5,
+      name: 'Beamer',
+      description: 'Beschreibung für Objekt 5',
+      price: 'Kaution: 50€',
+      imageUrl: 'https://via.placeholder.com/300',
+      category: 'Electronik'
+    },
   ];
 
   const [selectedItems, setSelectedItems] = useState<Product[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
@@ -76,10 +86,24 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
+  const openDetails = (product: Product) => {
+    setSelectedProduct(product);
+    setShowDetails(true);
+  };
+
+  const closeDetails = () => {
+    setShowDetails(false);
+    setSelectedProduct(null);
+  };
+
   const addToCart = () => {
     if (selectedProduct) {
       setSelectedItems([
         ...selectedItems,
+        { ...selectedProduct, startDate, endDate, amount }
+      ]);
+      probs.setSelectedItems([
+        ...probs.selectedItems,
         { ...selectedProduct, startDate, endDate, amount }
       ]);
       closeModal();
@@ -98,6 +122,10 @@ export function Inventory(): JSX.Element {
     product.name.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
     (selectedCategories.length === 0 || selectedCategories.includes(product.category || ''))
   );
+
+  const openMoreDetails = () => {
+
+  }
 
   return (
     <>
@@ -145,14 +173,15 @@ export function Inventory(): JSX.Element {
               <img src={product.imageUrl} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <h3>{product.name}</h3>
-                <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                  Ausleihen
-                </button>
                 <div style={descriptionStyle}>
-                  <button style={descriptionButtonStyle}>Beschreibung</button>
                   <div style={descriptionContentStyle}>{product.description}</div>
+                  <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                 </div>
                 <div style={priceStyle}>{product.price}</div>
+
+                <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                  In den Warenkorb hinzufügen
+                </button>
               </div>
             </div>
           ))}
@@ -191,6 +220,23 @@ export function Inventory(): JSX.Element {
             <div style={buttonContainerStyle}>
               <button onClick={addToCart}>Add</button>
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {showDetails && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h2>{selectedProduct?.name}</h2>
+            <div style={inputContainerStyle}>
+              <div>{selectedProduct?.description}</div>
+            </div>
+            <div style={buttonContainerStyle}>
+              <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
                 Cancel
               </button>
             </div>
@@ -264,6 +310,7 @@ const addToCartButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   cursor: 'pointer',
   marginRight: '10px',
+  marginTop: '5px',
 };
 
 const descriptionStyle: React.CSSProperties = {
@@ -271,17 +318,19 @@ const descriptionStyle: React.CSSProperties = {
 };
 
 const descriptionButtonStyle: React.CSSProperties = {
-  backgroundColor: '#f0f0f0',
-  color: '#333',
+  backgroundColor: '#fff',
+  color: '#191970',
   border: 'none',
-  padding: '5px 10px',
+  padding: '2px 4px',
   borderRadius: '4px',
   cursor: 'pointer',
   marginRight: '10px',
+  textDecoration: 'underline',
 };
 
+
 const descriptionContentStyle: React.CSSProperties = {
-  display: 'none',
+  //display: 'none',
 };
 
 const priceStyle: React.CSSProperties = {
