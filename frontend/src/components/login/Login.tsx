@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
 
 interface LoginProps {}
@@ -30,6 +31,7 @@ export function Login(props: LoginProps) {
     console.log('Register Password:', password);
     console.log('Register Email:', email);
   };
+
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setFirstName('');
@@ -71,12 +73,12 @@ export function Login(props: LoginProps) {
                 required
               />
               <span className="password-toggle" onClick={toggleShowPassword}>
-                {showPassword ? "👁️" : "🙈"}
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
               </span>
             </div>
           </div>
           <button type="submit" className="submit-button">Login</button>
-          <p>
+          <p style={{marginTop:"5px"}}>
             Kein Konto? <button type="button" className="toggle-button" onClick={toggleForm}>Registrieren</button>
           </p>
         </form>
@@ -123,9 +125,9 @@ export function Login(props: LoginProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <span className="password-toggle" onClick={toggleShowPassword}>
-                {showPassword ? "👁️" : "🙈"}
-              </span>
+             <span className="password-toggle" onClick={toggleShowPassword}>
+            {showPassword ? <FaEye /> : <FaEyeSlash />}
+            </span>
             </div>
           </div>
           <div className="form-group">
@@ -140,7 +142,7 @@ export function Login(props: LoginProps) {
           </div>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button type="submit" className="submit-button">Registrieren</button>
-          <p>
+          <p style={{marginTop:"5px"}}>
             Bereits registriert? <button type="button" className="toggle-button" onClick={toggleForm}>Zum Login</button>
           </p>
         </form>

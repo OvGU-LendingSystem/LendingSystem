@@ -16,7 +16,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
-        <button className="modal-close" onClick={onClose}>
+        <button style={{marginRight:"40px", marginTop:"5px"}}className="modal-close" onClick={onClose}>
           &times;
         </button>
         {children}
@@ -25,7 +25,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
   );
 }
 
-declare global{
+declare global {
   interface Product {
     id: number;
     name: string;
@@ -44,7 +44,7 @@ declare global{
     email: string;
     phone?: string;
     products: Product[];
-    status: string; //requested, confirmed, lended
+    status: string;
   }
 }
 
@@ -59,41 +59,38 @@ export function Layout() {
     setLoginModalVisible(false);
   };
 
-
-    return (
-      <div className="layout">
-        <nav className='nav-bar'>
-          <ul>
-            <li>
-              <Link to='/'>Home</Link>
-            </li>
-            <li>
-              <Link to='/requests'>Anfragen</Link>
-            </li>
-            <li>
-              <Link to='/todo'>Todo</Link>
-            </li>
-          </ul>
-  
-          <ul>
+  return (
+    <div className="layout">
+      <nav className='nav-bar'>
+        <ul>
           <li>
-            <button style= {{padding:"3px",}}onClick={handleLoginClick}>Login</button>
+            <Link to='/'>Home</Link>
           </li>
-            <li>
-              <Link to='/cart'>
-                <MdOutlineShoppingBasket size={24} />
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <main className="content">
-          <div><Outlet /></div>
-        </main>
-        <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
+          <li>
+            <Link to='/requests'>Anfragen</Link>
+          </li>
+          <li>
+            <Link to='/todo'>Todo</Link>
+          </li>
+        </ul>
+
+        <ul>
+          <li>
+            <button style={{ padding: "3px" }} onClick={handleLoginClick}>Login</button>
+          </li>
+          <li>
+            <Link to='/cart'>
+              <MdOutlineShoppingBasket size={24} />
+            </Link>
+          </li>
+        </ul>
+      </nav>
+      <main className="content">
+        <div><Outlet /></div>
+      </main>
+      <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
         <Login />
       </Modal>
-      </div>
-      
-    );
+    </div>
+  );
 }
-  

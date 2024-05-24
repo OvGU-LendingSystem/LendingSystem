@@ -6,14 +6,23 @@
     display: grid;
     grid-template-rows: auto 1fr;
     grid-template-columns: 100%;
-}
-
-main {
+  }
+  
+  main {
     overflow: scroll;
-}
-
-.modal-backdrop {
-    position: absolute;
+  }
+  
+  .nav-bar ul {
+    list-style-type: none;
+    display: flex;
+  }
+  
+  .nav-bar li {
+    margin-right: 20px;
+  }
+  
+  .modal-backdrop {
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -23,19 +32,16 @@ main {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-}
-
+  }
   
   .modal-content {
-    background: rgba(255, 255, 255, 0.8);
-    padding: 2px;
-    height: 50%;
-    border-radius: 5px;
+    background: rgba(255, 255, 255, 0);
+    padding: 20px;
+    border-radius: 10px;
     position: relative;
     max-width: 500px;
     width: 100%;
   }
-  
   
   .modal-close {
     position: absolute;
@@ -45,5 +51,6 @@ main {
     border: none;
     font-size: 24px;
     cursor: pointer;
+    z-index: 1001;
   }
   
