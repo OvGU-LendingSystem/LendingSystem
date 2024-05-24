@@ -14,6 +14,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 - pip install Flask-GraphQL
 - pip install flask_cors
 - pip install alembic
+- pip install flask_bcrypt
 
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
