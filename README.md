@@ -12,15 +12,21 @@
 
 ## For Backend
 ### SQLAlchemy and Graphene with SQLAlchemy support
-- pip install SQLAlchemy
-- pip install graphene_sqlalchemy
-
-### Install Flask and GraphQL Flask for exposing the schema through HTTP
-- pip install Flask
-- pip install Flask-GraphQL
-- pip install flask_cors
-- pip install alembic
-- pip install flask_bcrypt
+```shell
+pip install SQLAlchemy
+pip install graphene_sqlalchemy
+```
+### Install Flask and GraphQL Flask
+```shell
+pip install Flask
+pip install Flask-GraphQL
+```
+### Install more packages
+```shell
+pip install flask_cors
+pip install alembic
+pip install flask_bcrypt
+```
 
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
