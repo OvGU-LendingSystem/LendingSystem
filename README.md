@@ -1,36 +1,59 @@
 # LendingSystem
-
-## For Backend
-### Create a virtualenv to isolate our package dependencies locally (optional)
-virtualenv env
-source env/bin/activate  # On Windows use `env\Scripts\activate`
-
-### SQLAlchemy and Graphene with SQLAlchemy support
-- pip install SQLAlchemy
-- pip install graphene_sqlalchemy
-
-### Install Flask and GraphQL Flask for exposing the schema through HTTP
-- pip install Flask
-- pip install Flask-GraphQL
-- pip install flask_cors
-
-### For local developing
-- With connected VPN you can connect your current session to the server DB:
-- install pymysql:
-- ```shell
-  pip install pymysql
-  ```
-- you need to place a config.ini file in the root directory of the project
+## Config file
+- Create a config.ini file in the root directory of the project
   ```ini
   [DB]
   db_LendingSystem_password = <db password for administrator>
-  ```
-- Create all Tables from models:
-  ```python
-  from config import engine, db
-  from models import *
 
-  Base.metadata.create_all(bind=engine)
+  [PATHS]
+  root_directory = <directory to project location inclusive LendingSystem directory>
+  picture_directory = pictures
+  ```
+
+## For Backend
+### SQLAlchemy and Graphene with SQLAlchemy support
+```shell
+pip install SQLAlchemy
+pip install graphene_sqlalchemy
+```
+### Install Flask and GraphQL Flask
+```shell
+pip install Flask
+pip install Flask-GraphQL
+pip install flask_cors
+pip install graphene-file-upload
+```  
+### Install other packages
+```shell
+pip install pymysql 
+pip install alembic
+pip install bcrypt
+```
+### For local developing
+- With connected VPN you can connect your current session to the server DB:
+
+#### Database evolution
+- Database migration with Alembic
+  - Initialize Alembic; folder already in git, but ini file is not
+    ```shell
+    python - m alembic.config init alembic
+    ```
+  - Edit the alembic.ini file in the alembic directory to point to the database
+    ```ini
+    sqlalchemy.url = mysql+pymysql://administrator:<DB Password>@hades.fritz.box:3306/LendingSystem
+    ```
+  - Create a migration
+    ```shell
+    python - m alembic.config revision --autogenerate -m "Comment for the migration"
+    ```
+  - Run the migration
+    ```shell
+    python - m alembic.config upgrade head
+    ```
+  - Downgrade the migration
+    ```shell
+    python - m alembic.config downgrade <relative position / version code (first four characters)>
+    ```
 
 ## For Frontend
 ### Successfully query request with apollo client

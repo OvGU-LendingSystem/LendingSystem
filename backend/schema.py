@@ -13,7 +13,9 @@ from models import (PhysicalObject as PhysicalObjectModel,
                     Order as OrderModel,
                     Group as GroupModel,
                     User as UserModel,
-                    Organization_User as Organization_UserModel)
+                    Organization_User as Organization_UserModel,
+                    Picture as PictureModel,
+                    )
 
 # class Contact(SQLAlchemyObjectType):
 #     class Meta:
@@ -62,3 +64,9 @@ class Organization_User(SQLAlchemyObjectType):
         model = Organization_UserModel
         interfaces = (relay.Node,)
         description = Organization_UserModel.__doc__
+
+class Picture(SQLAlchemyObjectType):
+    class Meta:
+        model = PictureModel
+        interfaces = (relay.Node,)
+        description = PictureModel.__doc__

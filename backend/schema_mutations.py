@@ -1,7 +1,10 @@
 import email
+import os
+import time
 
 import graphene
-from config import bcrypt, db
+from graphene_file_upload.scalars import Upload
+from config import bcrypt, db, picture_directory
 from models import User as UserModel
 
 
@@ -55,7 +58,25 @@ class login(graphene.Mutation):
                 ok = False
                 info_text = "Die Anmeldung ist fehlgeschlagen."
             return login(ok=ok, info_text=info_text)
+        
+class upload_mutation(graphene.Mutation):
+    class Arguments:
+        file = Upload(required=True)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, file, **kwargs):
+        # do something with your file
+        file_name = file.filename
+        file_name = file_name.replace(" ", "_")
+        time_stamp = str(time.time())
+        file_name = time_stamp + "_" + file_name
+        file.save(os.path.join(picture_directory, file_name))
+        # file.save('./test.png')
+
+        return upload_mutation(success=True)
 
 class Mutations(graphene.ObjectType):
-    signup = sign_up.Field()
-    login = login.Field()
+    signup  = sign_up.Field()
+    login   = login.Field()
+    upload  = upload_mutation.Field()

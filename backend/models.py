@@ -17,15 +17,18 @@ class userRights(enum.Enum):
     inventory_admin = 2
     member = 3
 
+class orderStatus(enum.Enum):
+    """
+    Enum for the status of an order
+    """
+    pending  = 1
+    accepted = 2
+    rejected = 3
+    returned = 4
+
+
+
 # m:n Relations go here ...
-# Like this ... 
-# book_author = Table(
-#     'book_authors',
-#     Base.metadata,
-#     Column('author_id', ForeignKey('authors.id'), primary_key=True),
-#     Column('book_id', ForeignKey('books.id'), primary_key=True),
-#     extend_existing=True,
-# )
 
 physicalobject_tag = Table (
     'physicalobject_tag',
@@ -50,15 +53,6 @@ user_order = Table (
     Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
     extend_existing = True,
 )
-
-# organization_user = Table (
-#     'organization_user',
-#     Base.metadata,
-#     Column('organization_id',   ForeignKey('organization.organization_id'), primary_key=True),
-#     Column('user_id',           ForeignKey('user.user_id'),                 primary_key=True),
-#     Column('rights',            Enum(userRights),                           nullable = False, default = 'member'),
-#     extend_existing = True,
-# )
 
 group_physicalobject = Table (
     'group_physicalobject',
@@ -89,15 +83,9 @@ class Organization_User(Base):
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
 
-# Classes go here ...
-# Like this ...
-# class Contact(Base):
-#     __tablename__   = "contacts"
-#     id              = Column(Integer, primary_key=True)
-#     first_name      = Column(String(80), unique = False, nullable = False)
-#     last_name       = Column(String(80), unique = False, nullable = False)
-#     email           = Column(String(120), unique = True, nullable = False)
 
+
+# Classes go here ...
 
 class Tag(Base):
     """
@@ -114,30 +102,41 @@ class PhysicalObject(Base):
     Physical Objects are the real objects which get grouped later on for borrowing
     """
     __tablename__       = "physicalobject"
-    phys_id             = Column(Integer,       unique = True,  primary_key = True)
-    # organization_id     = Column(Integer, ForeignKey('organization.organization_id'), unique = True, nullable = False)
-    inv_num_internal    = Column(Integer,       unique = False, nullable = False) # unique?
-    inv_num_external    = Column(Integer,       unique = False, nullable = False)
-    pic_path            = Column(String(600),   unique = False, nullable = True)
-    deposit             = Column(Integer,       unique = False, nullable = False)
-    storage_location    = Column(String(600),   unique = False, nullable = False)
-    faults              = Column(String(600),   unique = False, nullable = True)
-    name                = Column(String(60),    unique = False, nullable = False)
-    description         = Column(String(600),   unique = False, nullable = True)
+    phys_id             = Column(Integer,               unique = True,  primary_key = True)
+    inv_num_internal    = Column(Integer,               unique = False, nullable = False) # unique?
+    inv_num_external    = Column(Integer,               unique = False, nullable = False)
+    deposit             = Column(Integer,               unique = False, nullable = False)
+    storage_location    = Column(String(600),           unique = False, nullable = False)
+    faults              = Column(String(600),           unique = False, nullable = True)
+    name                = Column(String(60),            unique = False, nullable = False)
+    description         = Column(String(600),           unique = False, nullable = True)
 
+    pictures            = relationship("Picture",                                                   back_populates = "physicalobject")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("Order",         secondary = physicalobject_order,           back_populates = "physicalobjects")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
+
+class Picture(Base):
+    """
+    Pictures are stored in the database and linked to physical objects
+    """
+    __tablename__       = "picture"
+    picture_id          = Column(Integer,      primary_key = True)
+    physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'), nullable = False)
+    path                = Column(String(600),  unique = True, nullable = False)
+
+    physicalobject      = relationship("PhysicalObject", back_populates = "pictures")
 
 class Order(Base):
     """
     Orders are the actual borrowings of physical objects for a specific time
     """
     __tablename__       = "order"
-    order_id            = Column(Integer,       primary_key = True)
-    from_date           = Column(DateTime,      unique = False, nullable = False)
-    till_date           = Column(DateTime,      unique = False, nullable = False)
+    order_id            = Column(Integer,           primary_key = True)
+    status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
+    from_date           = Column(DateTime,          unique = False, nullable = False)
+    till_date           = Column(DateTime,          unique = False, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
