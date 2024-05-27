@@ -46,6 +46,7 @@ picture_directory       = os.path.join(root_directory, tmp_picture_directory)
 # Create Flask app
 app = Flask(__name__)
 app.debug = True
+app.secret_key = "b\xe5\x90\xa3C7HC\xd2~\xff\x98\x0cJo_c"
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Add Bcrypt for hashing passwords
