@@ -152,7 +152,7 @@ class User(Base):
     last_name           = Column(String(30),    unique = False, nullable = False)
 
     email               = Column(String(60),    unique = True,  nullable = False)
-    password_hash       = Column(String(60),    unique = False, nullable = False) # hashed
+    password_hash       = Column(String(120),   unique = False, nullable = False) # hashed
 
     organizations       = relationship("Organization_User",                                back_populates = "user")
     orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
