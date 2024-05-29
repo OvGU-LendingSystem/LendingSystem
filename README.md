@@ -8,6 +8,9 @@
   [PATHS]
   root_directory = <directory to project location inclusive LendingSystem directory>
   picture_directory = pictures
+
+  [SECRET_KEY]
+  secret_key = <secret key for session management>
   ```
 
 ## For Backend
