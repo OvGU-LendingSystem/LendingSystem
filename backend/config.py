@@ -1,9 +1,7 @@
 from flask import Flask
-from flask_bcrypt import Bcrypt
 from sqlalchemy import *
 from flask_cors import CORS
 from sqlalchemy.orm import (scoped_session, sessionmaker)
-from sqlalchemy.ext.declarative import declarative_base
 
 import configparser
 import socket
@@ -46,8 +44,5 @@ picture_directory       = os.path.join(root_directory, tmp_picture_directory)
 # Create Flask app
 app = Flask(__name__)
 app.debug = True
-app.secret_key = "b\xe5\x90\xa3C7HC\xd2~\xff\x98\x0cJo_c"
+app.secret_key = config.get('SECRET_KEY', 'secret_key');
 CORS(app, resources={r"/*": {"origins": "*"}})
-
-# Add Bcrypt for hashing passwords
-bcrypt = Bcrypt(app)

@@ -1,13 +1,13 @@
-import email
 import os
 import time
 
 import graphene
 from flask import session
 from graphene_file_upload.scalars import Upload
-from config import bcrypt, db, picture_directory
+from config import db, picture_directory
 from models import User as UserModel
-
+from argon2 import PasswordHasher
+from argon2.exceptions import VerificationError
 
 class sign_up(graphene.Mutation):
     class Arguments:
@@ -21,11 +21,12 @@ class sign_up(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info, email, last_name, first_name, password):
-        password_hashed = bcrypt.generate_password_hash(password.encode('utf-8')).decode('utf-8')
         user_exists = UserModel.query.filter_by(email=email).first()
         if user_exists:
             return sign_up(ok=False, info_text="Die angegebene E-Mail wird bereits verwendet.")
         else:
+            ph = PasswordHasher()
+            password_hashed = ph.hash(password)
             user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
             db.add(user)
             db.commit()
@@ -48,15 +49,19 @@ class login(graphene.Mutation):
         if not user:
             return login(ok=False, info_text="Der Nutzer mit der angegeben E-Mail existiert nicht.")
         else:
-            authentication = bcrypt.check_password_hash(user.password_hash, password.encode('utf-8'))
-            if authentication:
-                ok = True
-                info_text = "Die Anmeldung war erfolgreich."
-                session['user_id'] = user.user_id
-            else:
-                ok = False
-                info_text = "Die Anmeldung ist fehlgeschlagen."
-            return login(ok=ok, info_text=info_text)
+            try:
+                ph = PasswordHasher()
+                ph.verify(user.password_hash, password)
+            except VerificationError:
+                return login(ok=False, info_text="Die Anmeldung ist fehlgeschlagen!")
+
+            if ph.check_needs_rehash(user.password_hash):
+                user.password_hash = ph.hash(password)
+                db.add(user)
+                db.commit()
+
+            return login(ok=True, info_text="Die Anmeldung war erfolgreich!")
+
 
 class check_session(graphene.Mutation):
     ok = graphene.Boolean()
@@ -79,6 +84,7 @@ class check_session(graphene.Mutation):
 class logout(graphene.Mutation):
     ok = graphene.Boolean()
     info_text = graphene.String()
+
     @staticmethod
     def mutate(self, info):
         session['user_id'] = None
