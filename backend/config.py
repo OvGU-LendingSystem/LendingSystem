@@ -44,5 +44,5 @@ picture_directory       = os.path.join(root_directory, tmp_picture_directory)
 # Create Flask app
 app = Flask(__name__)
 app.debug = True
-app.secret_key = config.get('SECRET_KEY', 'secret_key');
+app.secret_key = config.get('SECRET_KEY', 'secret_key')
 CORS(app, resources={r"/*": {"origins": "*"}})
