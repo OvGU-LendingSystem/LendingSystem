@@ -3,11 +3,78 @@ import time
 
 import graphene
 from flask import session
+from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory
+
 from models import User as UserModel
+from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
+
+class create_physical_object(graphene.Mutation):
+    class Arguments:
+        inv_num_internal    = graphene.Int(required=True)
+        inv_num_external    = graphene.Int(required=True)
+        deposit             = graphene.Int(required=True)
+        storage_location    = graphene.String(required=True)
+        faults              = graphene.String()
+        name                = graphene.String(required=True)
+        description         = graphene.String()
+
+        # TODO: Picture Upload
+        pictures        = graphene.String()
+        tags            = graphene.List(graphene.Int)
+        orders          = graphene.List(graphene.Int)
+        groups          = graphene.List(graphene.Int)
+        organizations   = graphene.List(graphene.Int)
+
+    physical_object = graphene.Field(lambda: PhysicalObject)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, inv_num_internal, inv_num_external, storage_location, name, 
+               tags, pictures=None, orders=None, groups=None, organizations=None, faults=None, description=None, deposit=None):
+        try:
+            db_tags             = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+
+            # create Object
+            physical_object = PhysicalObjectModel(
+                inv_num_internal    = inv_num_internal,
+                inv_num_external    = inv_num_external,
+                storage_location    = storage_location,
+                name                = name,
+                tags                = db_tags,
+            )
+
+            if pictures:
+                pass
+            if orders:
+                db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
+                physical_object.orders = db_orders
+            if groups:
+                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
+                physical_object.groups = db_groups
+            if organizations:
+                db_organizations = db.query(OrganizationModel).filter(OrganizationModel.organization_id.in_(organizations)).all()
+                physical_object.organizations = db_organizations
+            if faults:
+                physical_object.faults = faults
+            if description:
+                physical_object.description = description
+            if deposit:
+                physical_object.deposit = deposit
+
+            db.add(physical_object)
+
+        except Exception as e:
+            print(e)
+            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))
+
+        db.commit()
+        return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.")
+
 
 class sign_up(graphene.Mutation):
     class Arguments:
@@ -116,3 +183,5 @@ class Mutations(graphene.ObjectType):
     logout          = logout.Field()
     checkSession    = check_session.Field()
     upload          = upload_mutation.Field()
+
+    create_physical_object = create_physical_object.Field()
