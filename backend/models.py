@@ -99,6 +99,9 @@ class Tag(Base):
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
 
+    def __str__(self):
+        return "ID: " + self.tag_id + "; Name: " + self.name
+
 class PhysicalObject(Base):
     """
     Physical Objects are the real objects which get grouped later on for borrowing
