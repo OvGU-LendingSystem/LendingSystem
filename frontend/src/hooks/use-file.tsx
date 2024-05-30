@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 
-export function useFile(): [ File | undefined, string, React.Dispatch<React.SetStateAction<File | undefined>> ] {
+export function useFile(): [ File | undefined, string | null, React.Dispatch<React.SetStateAction<File | undefined>> ] {
     const [ file, setFile ] = useState<File>();
-    const [ fileUrl, setFileUrl ] = useState<string>('');
+    const [ fileUrl, setFileUrl ] = useState<string | null>('');
 
     useEffect(() => {
-        const url = file ? URL.createObjectURL(file) : '';
+        const url = file ? URL.createObjectURL(file) : null;
         setFileUrl(url);
 
         return () => {
-            URL.revokeObjectURL(url);
+            if (url !== null) {
+                URL.revokeObjectURL(url);
+            }
         };
     } , [file]);
 
