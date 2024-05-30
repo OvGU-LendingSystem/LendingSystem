@@ -27,7 +27,7 @@ pip install graphene-file-upload
 ```shell
 pip install pymysql 
 pip install alembic
-pip install bcrypt
+pip install argon2-cffi
 ```
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
