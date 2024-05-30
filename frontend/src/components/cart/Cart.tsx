@@ -98,9 +98,12 @@ export function Cart(probs: CartProbs) {
                 {showModal && (
                     <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
-                        <h2>Objekt bearbeiten</h2>
-                        <Calendar
-                        />
+                        <h2 //add calendar under here
+                        >Objekt bearbeiten
+                        </h2>
+                         
+                        
+
                         <div style={inputContainerStyle}>
                         <label>Menge:</label>
                         <input

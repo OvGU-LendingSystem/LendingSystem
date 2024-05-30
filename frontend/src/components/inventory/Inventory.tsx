@@ -54,8 +54,8 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -97,7 +97,7 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
   };
 
   const addToCart = () => {
-    if (selectedProduct) {
+    if (selectedProduct && startDate && endDate) {
       setSelectedItems([
         ...selectedItems,
         { ...selectedProduct, startDate, endDate, amount }
@@ -205,7 +205,7 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
             <h2>Objekt hinzufügen</h2>
-            <Calendar
+            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
             />
             <div style={inputContainerStyle}>
               <label>Menge:</label>
