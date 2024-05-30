@@ -13,9 +13,10 @@ class userRights(enum.Enum):
     Enum for different rights a user can have inside his organization
     rights are organized in a hierarchy
     """
-    organization_admin = 1
-    inventory_admin = 2
-    member = 3
+    organization_admin  = 1
+    inventory_admin     = 2
+    watcher             = 3
+    member              = 4
 
 class orderStatus(enum.Enum):
     """
@@ -23,8 +24,9 @@ class orderStatus(enum.Enum):
     """
     pending  = 1
     accepted = 2
-    rejected = 3
-    returned = 4
+    picked   = 3
+    rejected = 4
+    returned = 5
 
 
 
