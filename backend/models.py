@@ -99,8 +99,8 @@ class Tag(Base):
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
 
-    def __str__(self):
-        return "ID: " + self.tag_id + "; Name: " + self.name
+    def __repr__(self):
+        return "Tag ID: " + str(self.tag_id) + "; Name: " + self.name
 
 class PhysicalObject(Base):
     """
@@ -121,6 +121,9 @@ class PhysicalObject(Base):
     orders              = relationship("Order",         secondary = physicalobject_order,           back_populates = "physicalobjects")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
+
+    def __repr__(self):
+        return "Physical Object ID: " + str(self.phys_id) + "; Name: " + self.name
 
 class Picture(Base):
     """
