@@ -372,3 +372,7 @@ class Mutations(graphene.ObjectType):
     create_physical_object = create_physical_object.Field()
     update_physical_object = update_physical_object.Field()
     delete_physical_object = delete_physical_object.Field()
+
+    create_order = create_order.Field()
+    update_order = update_order.Field()
+    delete_order = delete_order.Field()
