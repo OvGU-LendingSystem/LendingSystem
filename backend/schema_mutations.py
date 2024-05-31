@@ -141,13 +141,12 @@ class update_physical_object(graphene.Mutation):
                 db_organizations = db.query(OrganizationModel).filter(OrganizationModel.organization_id.in_(organizations)).all()
                 physical_object.organizations = db_organizations
 
+            db.commit()
+            return update_physical_object(ok=True, info_text="Objekt erfolgreich aktualisiert.", physical_object=physical_object)
+
         except Exception as e:
             print(e)
             return update_physical_object(ok=False, info_text="Fehler beim Aktualisieren des Objekts. " + str(e))
-
-        db.commit()
-        return update_physical_object(ok=True, info_text="Objekt erfolgreich aktualisiert.",
-                                      physical_object=physical_object)
 
 class delete_physical_object(graphene.Mutation):
     class Arguments:
@@ -221,9 +220,13 @@ class update_order(graphene.Mutation):
     info_text = graphene.String()
 
     def mutate(self, order_id, from_date=None, till_date=None, status=None, physicalobjects=None, users=None):
-        order = db.query(OrderModel).get(order_id).first()
+        try:
+            order = db.query(OrderModel).get(order_id).first()
 
-        if order:
+            # Abort if object does not exist
+            if not order:
+                return update_order(ok=False, info_text="Order nicht gefunden.")
+            
             if from_date:
                 order.from_date = from_date
             if till_date:
@@ -239,8 +242,10 @@ class update_order(graphene.Mutation):
 
             db.commit()
             return update_order(ok=True, info_text="OrderStatus aktualisiert.")
-        else:
-            return update_order(ok=False, info_text="OrderStatus nicht aktualisiert. Order ID not found")
+        
+        except Exception as e:
+            print(e)
+            return update_order(ok=False, info_text="Fehler beim Aktualisieren des Orders. " + str(e))
 
 class delete_order(graphene.Mutation):
     class Arguments:
@@ -313,12 +318,12 @@ class update_tag(graphene.Mutation):
             if name:
                 tag.name = name
 
+            db.commit()
+            return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.")
+
         except Exception as e:
             print(e)
             return update_tag(ok=False, info_text="Fehler beim Aktualisieren des Tags. " + str(e))
-
-        db.commit()
-        return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.")
 
 class delete_tag(graphene.Mutation):
     class Arguments:
@@ -391,12 +396,12 @@ class update_group(graphene.Mutation):
             if name:
                 group.name = name
 
+            db.commit()
+            return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.")
+
         except Exception as e:
             print(e)
             return create_group(ok=False, info_text="Fehler beim Aktualisieren der Gruppe. " + str(e))
-
-        db.commit()
-        return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.")
 
 class delete_group(graphene.Mutation):
     class Arguments:
@@ -484,12 +489,12 @@ class update_organization(graphene.Mutation):
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
 
+            db.commit()
+            return create_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.")
+
         except Exception as e:
             print(e)
             return create_organization(ok=False, info_text="Fehler beim Aktualisieren der Organisation. " + str(e))
-
-        db.commit()
-        return create_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.")
 
 class delete_organization(graphene.Mutation):
     class Arguments:
