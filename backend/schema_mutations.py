@@ -338,6 +338,84 @@ class delete_tag(graphene.Mutation):
             return delete_tag(ok=False, info_text="Tag konnte nicht entfernt werden.")
 
 ##################################
+# Mutations for Groups           #
+##################################
+class create_group(graphene.Mutation):
+    class Arguments:
+        name            = graphene.String(required=True)
+        physicalobjects = graphene.List(graphene.Int)
+
+    group = graphene.Field(lambda: Group)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, name, physicalobjects=None):
+        try:
+            group = GroupModel(
+                name=name)
+
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                group.physicalobjects = db_physicalobjects
+
+            db.add(group)
+
+        except Exception as e:
+            print(e)
+            return create_group(ok=False, info_text="Fehler beim Erstellen der Gruppe. " + str(e))
+
+        db.commit()
+        return create_group(ok=True, info_text="Gruppe erfolgreich erstellt.")
+
+class update_group(graphene.Mutation):
+    class Arguments:
+        group_id = graphene.Int(required=True)
+        name = graphene.String()
+        physicalobjects = graphene.List(graphene.Int)
+
+    group = graphene.Field(lambda: Group)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, group_id, name=None, physicalobjects=None):
+        try:
+            group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
+
+            if not group:
+                return update_group(ok=False, info_text="Gruppe \"" + name + "\" nicht gefunden.")
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                group.physicalobjects = db_physicalobjects
+            if name:
+                group.name = name
+
+        except Exception as e:
+            print(e)
+            return create_group(ok=False, info_text="Fehler beim Aktualisieren der Gruppe. " + str(e))
+
+        db.commit()
+        return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.")
+
+class delete_group(graphene.Mutation):
+    class Arguments:
+        group_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, group_id):
+        group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
+        if group:
+            db.delete(group)
+            db.commit()
+            return delete_tag(ok=True, info_text="Gruppe erfolgreich entfernt.")
+        else:
+            return delete_tag(ok=False, info_text="Gruppe konnte nicht entfernt werden. Group ID not found.")
+
+##################################
 # Mutations for Users login      #
 ##################################
 class sign_up(graphene.Mutation):
@@ -458,3 +536,7 @@ class Mutations(graphene.ObjectType):
     create_tag = create_tag.Field()
     update_tag = update_tag.Field()
     delete_tag = delete_tag.Field()
+
+    create_group = create_group.Field()
+    update_group = update_group.Field()
+    delete_group = delete_group.Field()
