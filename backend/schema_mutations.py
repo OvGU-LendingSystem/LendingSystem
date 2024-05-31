@@ -40,7 +40,7 @@ class create_physical_object(graphene.Mutation):
     def mutate(self, info, inv_num_internal, inv_num_external, storage_location, name, 
                tags, pictures=None, orders=None, groups=None, organizations=None, faults=None, description=None, deposit=None):
         try:
-            db_tags             = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+            db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
 
             # create Object
             physical_object = PhysicalObjectModel(
@@ -416,6 +416,99 @@ class delete_group(graphene.Mutation):
             return delete_tag(ok=False, info_text="Gruppe konnte nicht entfernt werden. Group ID not found.")
 
 ##################################
+# Mutations for Organizations    #
+##################################
+class create_organization(graphene.Mutation):
+    class Arguments:
+        name            = graphene.String(required=True)
+        location        = graphene.String()
+
+        users           = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.Int)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, name, location=None, users=None, physicalobjects=None):
+        try:
+            organization = OrganizationModel(
+                name=name
+            )
+
+            if location:
+                organization.location = location
+            if users:
+                db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
+                organization.users = db_users
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                organization.physicalobjects = db_physicalobjects
+
+            db.add(organization)
+
+        except Exception as e:
+            print(e)
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
+
+        db.commit()
+        return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.")
+
+class update_organization(graphene.Mutation):
+    class Arguments:
+        organization_id     = graphene.Int()
+        name                = graphene.String()
+        location            = graphene.String()
+
+        users               = graphene.List(graphene.Int)
+        physicalobjects     = graphene.List(graphene.Int)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, organization_id, name=None, location=None, users=None, physicalobjects=None):
+        try:
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+
+            if not organization:
+                return update_organization(ok=False, info_text="Organisation nicht gefunden.")
+            if name:
+                organization.name = name
+            if location:
+                organization.location = location
+            if users:
+                db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
+                organization.users = db_users
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                organization.physicalobjects = db_physicalobjects
+
+        except Exception as e:
+            print(e)
+            return create_organization(ok=False, info_text="Fehler beim Aktualisieren der Organisation. " + str(e))
+
+        db.commit()
+        return create_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.")
+
+class delete_organization(graphene.Mutation):
+    class Arguments:
+        organization_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, organization_id):
+        organization = OrganizationModel.query.filter(OrganizationModel.organization_id.order_id == organization_id)
+        if organization:
+            db.delete(organization)
+            db.commit()
+            return delete_tag(ok=True, info_text="Organisation erfolgreich entfernt.")
+        else:
+            return delete_tag(ok=False, info_text="Organisation konnte nicht entfernt werden.")
+
+##################################
 # Mutations for Users login      #
 ##################################
 class sign_up(graphene.Mutation):
@@ -540,3 +633,7 @@ class Mutations(graphene.ObjectType):
     create_group = create_group.Field()
     update_group = update_group.Field()
     delete_group = delete_group.Field()
+
+    create_organization = create_organization.Field()
+    update_organization = update_organization.Field()
+    delete_organization = delete_organization.Field()
