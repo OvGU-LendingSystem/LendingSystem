@@ -7,11 +7,14 @@ from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory
 
-from models import User as UserModel
+from models import User as UserModel, orderStatus
 from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 
+##################################
+# Mutations for Physical Objects #
+##################################
 class create_physical_object(graphene.Mutation):
     class Arguments:
         inv_num_internal    = graphene.Int(required=True)
@@ -163,6 +166,102 @@ class delete_physical_object(graphene.Mutation):
         else:
             return delete_physical_object(ok=False, info_text="Objekt konnte nicht entfernt werden.")
 
+##################################
+# Mutations for orders           #
+##################################
+class create_order(graphene.Mutation):
+    class Arguments:
+        from_date       = graphene.Date()
+        till_date       = graphene.Date()
+        physicalobjects = graphene.List(graphene.Int)
+        users           = graphene.List(graphene.Int)
+
+    order = graphene.Field(lambda: Order)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, from_date=None, till_date=None, users=None, physicalobjects=None):
+        try:
+            order = OrderModel()
+
+            if from_date:
+                order.from_date = from_date
+            if till_date:
+                order.till_date = till_date
+            
+            if users:
+                db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
+                order.users = db_users
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                order.physicalobjects = db_physicalobjects
+
+            db.add(order)
+
+        except Exception as e:
+            print(e)
+            return create_order(ok=False, info_text="Order konnte nicht erstellt werden. " + str(e))
+
+        db.commit()
+        return create_order(ok=True, info_text="Order erfolgreich erstellt.")
+
+class update_order(graphene.Mutation):
+    class Arguments:
+        order_id    = graphene.Int(required=True)
+        from_date   = graphene.Date()
+        till_date   = graphene.Date()
+        status      = graphene.String()
+
+        physicalobjects = graphene.List(graphene.Int)
+        users = graphene.List(graphene.Int)
+
+    order = graphene.Field(lambda: Order)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    def mutate(self, order_id, from_date=None, till_date=None, status=None, physicalobjects=None, users=None):
+        order = db.query(OrderModel).get(order_id).first()
+
+        if order:
+            if from_date:
+                order.from_date = from_date
+            if till_date:
+                order.till_date = till_date
+            if status:
+                order.status = status
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                order.physicalobjects = db_physicalobjects
+            if users:
+                db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
+                order.users = db_users
+
+            db.commit()
+            return update_order(ok=True, info_text="OrderStatus aktualisiert.")
+        else:
+            return update_order(ok=False, info_text="OrderStatus nicht aktualisiert. Order ID not found")
+
+class delete_order(graphene.Mutation):
+    class Arguments:
+        order_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, order_id):
+        order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
+        if order:
+            db.delete(order)
+            db.commit()
+            return delete_order(ok=True, info_text="Order erfolgreich entfernt.")
+        else:
+            return delete_order(ok=False, info_text="Order konnte nicht entfernt werden. Order ID not found.")
+
+##################################
+# Mutations for Users login      #
+##################################
 class sign_up(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
