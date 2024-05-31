@@ -75,6 +75,93 @@ class create_physical_object(graphene.Mutation):
         db.commit()
         return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.")
 
+class update_physical_object(graphene.Mutation):
+    class Arguments:
+        phys_id             = graphene.Int(required=True)
+        inv_num_internal    = graphene.Int()
+        inv_num_external    = graphene.Int()
+        deposit             = graphene.Int()
+        storage_location    = graphene.String()
+        faults              = graphene.String()
+        name                = graphene.String()
+        description         = graphene.String()
+
+        pictures            = graphene.String()
+        tags                = graphene.List(graphene.Int)
+        orders              = graphene.List(graphene.Int)
+        groups              = graphene.List(graphene.Int)
+        organizations       = graphene.List(graphene.Int)
+
+    physical_object = graphene.Field(lambda: PhysicalObject)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, phys_id, inv_num_internal=None, inv_num_external=None, storage_location=None, name=None, pictures=None,
+               tags=None, orders=None, groups=None, organizations=None, faults=None, description=None, deposit=None):
+
+        try:
+            physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+
+            # Abort if object does not exist
+            if not physical_object:
+                return update_physical_object(ok=False, info_text="Objekt nicht gefunden.")
+            
+            if inv_num_internal:
+                physical_object.inv_num_internal = inv_num_internal
+            if inv_num_external:
+                physical_object.inv_num_external = inv_num_external
+            if deposit:
+                physical_object.deposit = deposit
+            if storage_location:
+                physical_object.storage_location = storage_location
+            if faults:
+                physical_object.faults = faults
+            if name:
+                physical_object.name = name
+            if description:
+                physical_object.description = description
+
+            # pictures noch nicht implementiert
+            if pictures:
+                physical_object.pictures = pictures
+            if tags:
+                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+                physical_object.tags = db_tags
+            if orders:
+                db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
+                physical_object.orders = db_orders
+            if groups:
+                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
+                physical_object.groups = db_groups
+            if organizations:
+                db_organizations = db.query(OrganizationModel).filter(OrganizationModel.organization_id.in_(organizations)).all()
+                physical_object.organizations = db_organizations
+
+        except Exception as e:
+            print(e)
+            return update_physical_object(ok=False, info_text="Fehler beim Aktualisieren des Objekts. " + str(e))
+
+        db.commit()
+        return update_physical_object(ok=True, info_text="Objekt erfolgreich aktualisiert.",
+                                      physical_object=physical_object)
+
+class delete_physical_object(graphene.Mutation):
+    class Arguments:
+        phys_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, phys_id):
+        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+        if physical_object:
+            db.delete(physical_object)
+            db.commit()
+            return delete_physical_object(ok=True, info_text="Objekt erfolgreich entfernt.")
+        else:
+            return delete_physical_object(ok=False, info_text="Objekt konnte nicht entfernt werden.")
 
 class sign_up(graphene.Mutation):
     class Arguments:
@@ -99,7 +186,6 @@ class sign_up(graphene.Mutation):
             db.commit()
             session['user_id'] = user.user_id
             return sign_up(ok=True, info_text="Der Nutzer wurde erfolgreich angelegt.")
-
 
 class login(graphene.Mutation):
     class Arguments:
@@ -185,3 +271,5 @@ class Mutations(graphene.ObjectType):
     upload          = upload_mutation.Field()
 
     create_physical_object = create_physical_object.Field()
+    update_physical_object = update_physical_object.Field()
+    delete_physical_object = delete_physical_object.Field()
