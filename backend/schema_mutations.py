@@ -260,6 +260,84 @@ class delete_order(graphene.Mutation):
             return delete_order(ok=False, info_text="Order konnte nicht entfernt werden. Order ID not found.")
 
 ##################################
+# Mutations for Tags             #
+##################################
+class create_tag(graphene.Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
+        physicalobjects = graphene.List(graphene.Int)
+
+    tag = graphene.Field(lambda: Tag)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, name, physicalobjects=None):
+        try:
+            tag = TagModel(
+                name=name)
+
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                tag.physicalobjects = db_physicalobjects
+
+            db.add(tag)
+
+        except Exception as e:
+            print(e)
+            return create_tag(ok=False, info_text="Fehler beim Erstellen des Tags. " + str(e))
+
+        db.commit()
+        return create_tag(ok=True, info_text="Tag erfolgreich erstellt.")
+
+class update_tag(graphene.Mutation):
+    class Arguments:
+        tag_id = graphene.Int(required=True)
+        name = graphene.String()
+        physicalobjects = graphene.List(graphene.Int)
+
+    tag = graphene.Field(lambda: Tag)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, tag_id, name=None, physicalobjects=None):
+        try:
+            tag = TagModel.query.filter(TagModel.tag_id == tag_id).first()
+
+            if not tag:
+                return update_tag(ok=False, info_text="Tag \"" + name + "\" nicht gefunden.")
+            if physicalobjects:
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                tag.physicalobjects = db_physicalobjects
+            if name:
+                tag.name = name
+
+        except Exception as e:
+            print(e)
+            return update_tag(ok=False, info_text="Fehler beim Aktualisieren des Tags. " + str(e))
+
+        db.commit()
+        return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.")
+
+class delete_tag(graphene.Mutation):
+    class Arguments:
+        tag_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, tag_id):
+        tag = TagModel.query.filter(TagModel.tag_id == tag_id).first()
+        if tag:
+            db.delete(tag)
+            db.commit()
+            return delete_tag(ok=True, info_text="Tag erfolgreich entfernt.")
+        else:
+            return delete_tag(ok=False, info_text="Tag konnte nicht entfernt werden.")
+
+##################################
 # Mutations for Users login      #
 ##################################
 class sign_up(graphene.Mutation):
@@ -376,3 +454,7 @@ class Mutations(graphene.ObjectType):
     create_order = create_order.Field()
     update_order = update_order.Field()
     delete_order = delete_order.Field()
+
+    create_tag = create_tag.Field()
+    update_tag = update_tag.Field()
+    delete_tag = delete_tag.Field()
