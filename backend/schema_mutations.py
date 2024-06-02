@@ -166,6 +166,36 @@ class delete_physical_object(graphene.Mutation):
             return delete_physical_object(ok=False, info_text="Objekt konnte nicht entfernt werden.")
 
 ##################################
+# Upload for Pictures            #
+##################################
+class upload_picture(graphene.Mutation):
+    class Arguments:
+        phys_id = graphene.Int(required=True)
+        file    = Upload(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    def mutate(self, info, file, phys_id):
+        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+
+        if not physical_object:
+            return upload_picture(ok=False, info_text="Physical Object not found.")
+        
+        file_name = file.filename
+        file_name = file_name.replace(" ", "_")
+        time_stamp = str(time.time())
+        file_name = time_stamp + "_" + file_name
+        file.save(os.path.join(picture_directory, file_name))
+
+        db_file = PictureModel(path = file_name, physicalobject = physical_object)
+
+        db.add(db_file)
+        db.commit()
+
+        return upload_picture(ok=True, info_text="Picture uploaded successfully.")
+
+##################################
 # Mutations for orders           #
 ##################################
 class create_order(graphene.Mutation):
@@ -599,33 +629,18 @@ class logout(graphene.Mutation):
         return logout(ok=ok, info_text=info_text)
 
         
-class upload_mutation(graphene.Mutation):
-    class Arguments:
-        file = Upload(required=True)
-
-    success = graphene.Boolean()
-
-    def mutate(self, info, file, **kwargs):
-        # do something with your file
-        file_name = file.filename
-        file_name = file_name.replace(" ", "_")
-        time_stamp = str(time.time())
-        file_name = time_stamp + "_" + file_name
-        file.save(os.path.join(picture_directory, file_name))
-        # file.save('./test.png')
-
-        return upload_mutation(success=True)
 
 class Mutations(graphene.ObjectType):
     signup          = sign_up.Field()
     login           = login.Field()
     logout          = logout.Field()
     checkSession    = check_session.Field()
-    upload          = upload_mutation.Field()
 
     create_physical_object = create_physical_object.Field()
     update_physical_object = update_physical_object.Field()
     delete_physical_object = delete_physical_object.Field()
+
+    upload_picture = upload_picture.Field()
 
     create_order = create_order.Field()
     update_order = update_order.Field()
