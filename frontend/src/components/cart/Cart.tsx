@@ -41,6 +41,7 @@ export function Cart() {
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
+    const [showDetails, setShowDetails] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [amount, setAmount] = useState<number>(1);
 
@@ -54,6 +55,22 @@ export function Cart() {
         setShowModal(false);
         setSelectedProduct(null);
     };
+    const openDetails = (product: Product) => {
+      setSelectedProduct(product);
+      setShowDetails(true);
+    };
+    const closeDetails = () => {
+      setShowDetails(false);
+      setSelectedProduct(null);
+    };
+    const editProduct = () => {
+      itemsInCartDispatcher({ type: 'edit', item: productNew! });
+      closeModal();
+    };
+
+    const openMoreDetails = () => {
+
+    }
 
     return (
         
@@ -70,12 +87,11 @@ export function Cart() {
                    
                    <div style={descriptionStyle}>
                      <div style={descriptionContentStyle}>{product.description}</div>
-                     <button style={descriptionButtonStyle}>Beschreibung</button>
+                     <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                    </div>
                    <div style={priceStyle}>{product.price}</div>
-                   <div>{product.startDate?.toLocaleDateString() ?? 'N/A'}</div>
-                   <div>{product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                   <div>{product.amount}</div>
+                   <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                   <div>Anzahl: {product.amount}</div>
 
                    
                    <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
@@ -91,9 +107,12 @@ export function Cart() {
                 {showModal && (
                     <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
-                        <h2>Objekt bearbeiten</h2>
-                        <Calendar
-                        />
+                        <h2 //add calendar under here
+                        >Objekt bearbeiten
+                        </h2>
+                         
+                        
+
                         <div style={inputContainerStyle}>
                         <label>Menge:</label>
                         <input
@@ -105,7 +124,7 @@ export function Cart() {
                         />
                         </div>
                         <div style={buttonContainerStyle}>
-                        <button onClick={() => itemsInCartDispatcher({ type: 'edit', item: selectedProduct! })}>Edit</button>
+                        <button onClick={() => editProduct()}>Edit</button>
                         <button onClick={closeModal} style={{ marginLeft: '10px' }}>
                             Cancel
                         </button>
@@ -113,8 +132,24 @@ export function Cart() {
                     </div>
                     </div>
                 )}
+
+                {showDetails && (
+                  <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                      <h2>{selectedProduct?.name}</h2>
+                      <div style={inputContainerStyle}>
+                        <div>{selectedProduct?.description}</div>
+                      </div>
+                      <div style={buttonContainerStyle}>
+                        <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
             
-            <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Bestellen</button>
+            <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
 
             <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />
             </div>
@@ -186,7 +221,7 @@ const filterContainerStyle: React.CSSProperties = {
     borderRadius: '4px',
     cursor: 'pointer',
     marginRight: '10px',
-    marginTop: '5px',
+    marginTop: '10px',
   };
   
   const descriptionStyle: React.CSSProperties = {

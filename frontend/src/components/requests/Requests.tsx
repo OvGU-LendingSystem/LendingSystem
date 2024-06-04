@@ -2,6 +2,49 @@ import { MdKeyboardArrowRight } from "react-icons/md";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { useState } from "react";
 
+import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+
+
+
+const GET_ORDERS = gql`
+  query {
+    filterOrders {
+      orderId
+      fromDate
+      tillDate
+      physicalobjects {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+      users {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+function DisplayLocations() {
+  const { loading, error, data } = useQuery(GET_ORDERS);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  return data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
+    <div key={orderId}>
+      <p>
+        {orderId}: {new Date(fromDate)?.toLocaleDateString() ?? 'N/A'} - {new Date(tillDate)?.toLocaleDateString() ?? 'N/A'}
+      </p>
+    </div>
+  ));
+}
+
 export function Requests() {
     const requests: Quest[] = [
         {
@@ -97,6 +140,18 @@ export function Requests() {
       ];
 
     const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+    const filteredRequests = requests.filter(request =>
+      (selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
+    );
+    const handleCategoryChange = (category: string) => {
+      setSelectedCategories(prevCategories =>
+        prevCategories.includes(category)
+          ? prevCategories.filter(c => c !== category)
+          : [...prevCategories, category]
+      );
+    };
 
     const edit = (product: Product) => {
         //TODO
@@ -116,6 +171,8 @@ export function Requests() {
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
+
+            <DisplayLocations />
           
             <button
               style={dropdownButtonStyle}
@@ -128,25 +185,31 @@ export function Requests() {
                 <label style={checkboxLabelStyle}>
                   <input
                     type="checkbox"
+                    checked={selectedCategories.includes('requested')}
+                    onChange={() => handleCategoryChange('requested')}
                   />
                   angefragt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
                     type="checkbox"
+                    checked={selectedCategories.includes('confirmed')}
+                    onChange={() => handleCategoryChange('confirmed')}
                   />
                   bestätigt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
                     type="checkbox"
+                    checked={selectedCategories.includes('lended')}
+                    onChange={() => handleCategoryChange('lended')}
                   />
                   verliehen
                 </label>
               </div>
             )}
 
-          {requests.map((request) => (
+          {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
                 {request.status=="requested" && (
                 <div style={{backgroundColor: '#ff6a6a', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
