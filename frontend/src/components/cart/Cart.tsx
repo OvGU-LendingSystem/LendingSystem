@@ -6,12 +6,7 @@ import Calendar from '../../core/input/Buttons/Calendar';
 
 //APOLLO STUFF ZUM TESTEN
 
-import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
-
-const client = new ApolloClient({
-  uri: 'http://hades.fritz.box/api/graphql',
-  cache: new InMemoryCache(),
-});
+import { useQuery, gql } from '@apollo/client';
 
 const GET_LOCATIONS = gql`
   query {
@@ -23,7 +18,7 @@ const GET_LOCATIONS = gql`
 `;
 
 function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_LOCATIONS, { client });
+  const { loading, error, data } = useQuery(GET_LOCATIONS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
@@ -114,9 +109,12 @@ export function Cart(probs: CartProbs) {
                 {showModal && (
                     <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
-                        <h2>Objekt bearbeiten</h2>
-                        <Calendar
-                        />
+                        <h2 //add calendar under here
+                        >Objekt bearbeiten
+                        </h2>
+                         
+                        
+
                         <div style={inputContainerStyle}>
                         <label>Menge:</label>
                         <input
