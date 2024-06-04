@@ -310,7 +310,7 @@ const addToCartButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   cursor: 'pointer',
   marginRight: '10px',
-  marginTop: '5px',
+  marginTop: '10px',
 };
 
 const descriptionStyle: React.CSSProperties = {

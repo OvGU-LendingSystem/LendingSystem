@@ -17,16 +17,16 @@ export function Router() {
       for (var i=0; i<itemsInCart.length; i++){
         if (itemsInCart[i].id==product.id){
           itemsInCart[i].name = "DELETED";
-          itemsInCart.splice(i,i); //TODO
+          itemsInCart.splice(i,i); //TODO funktioniert nicht
         }
       }
     };
     const editItemFromCart = (product: Product, productNew: Product) => {
-      console.log("delete item " + product.name);
+      console.log("edit item " + product.name);
       for (var i=0; i<itemsInCart.length; i++){
         if (itemsInCart[i].id==product.id){
           itemsInCart[i].name = "EDITED";
-          itemsInCart[i] = productNew; //TODO
+          itemsInCart[i] = productNew; //TODO funktioniert nicht
         }
       }
     }
