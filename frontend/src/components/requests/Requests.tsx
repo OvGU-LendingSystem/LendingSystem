@@ -2,6 +2,49 @@ import { MdKeyboardArrowRight } from "react-icons/md";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { useState } from "react";
 
+import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+
+
+
+const GET_ORDERS = gql`
+  query {
+    filterOrders {
+      orderId
+      fromDate
+      tillDate
+      physicalobjects {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+      users {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+function DisplayLocations() {
+  const { loading, error, data } = useQuery(GET_ORDERS);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  return data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
+    <div key={orderId}>
+      <p>
+        {orderId}: {new Date(fromDate)?.toLocaleDateString() ?? 'N/A'} - {new Date(tillDate)?.toLocaleDateString() ?? 'N/A'}
+      </p>
+    </div>
+  ));
+}
+
 export function Requests() {
     const requests: Quest[] = [
         {
@@ -128,6 +171,8 @@ export function Requests() {
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
+
+            <DisplayLocations />
           
             <button
               style={dropdownButtonStyle}
