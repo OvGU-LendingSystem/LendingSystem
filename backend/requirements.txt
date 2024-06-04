@@ -1,0 +1,8 @@
+SQLAlchemy
+graphene_sqlalchemy
+Flask
+Flask-GraphQL
+flask_cors
+alembic
+flask_bcrypt
+mysql-connector-python

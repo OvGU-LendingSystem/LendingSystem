@@ -56,6 +56,52 @@
     height: calc(100% - 64px);
 }
 
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #9b9595;
+    opacity: 0.2;
+}
+
+.left, .right {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    margin-top: -20px;
+}
+
+.left {
+    left: 0;
+}
+
+.right {
+    left: unset;
+    right: 0;
+}
+
+.top {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+    color: #FF0000;
+}
+
+.left:hover, .right:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+}
+
+.top:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
 .text-input {
     justify-self: center;
     align-self: center;
@@ -77,7 +123,8 @@ input:valid {
 }
 
 .currency-placeholder {
-    margin: 2px 8px;
+    margin: 0 8px;
+    user-select: none;
 }
 
 #defects {
@@ -87,9 +134,11 @@ input:valid {
 
 .multi-image-preview--wrapper {
     display: grid;
-    grid-template-columns: 30px 1fr 30px;
+    grid-template-columns: 30px auto 30px;
     grid-template-rows: 50px;
     align-items: center;
+    margin-inline: auto;   
+    max-width: 300px;
 }
 
 .multi-image-preview--image-list {

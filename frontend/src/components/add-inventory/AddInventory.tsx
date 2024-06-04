@@ -1,6 +1,6 @@
-import { DragEvent, FormEvent, ReactElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { DragEvent, ReactElement, useEffect, useRef, useState } from 'react';
 import './AddInventory.css';
-import { MdAddAPhoto, MdArrowLeft, MdArrowRight } from "react-icons/md";
+import { MdAddAPhoto, MdArrowLeft, MdArrowRight, MdDelete } from "react-icons/md";
 import { Input } from '../../core/input/Input';
 import { useFiles } from '../../hooks/use-files';
 
@@ -72,8 +72,6 @@ export function AddInventory() {
                 <label htmlFor='defects'>Mängel</label>
                 <textarea id='defects' rows={6} />
                 
-                <MultiImagePreview imageUrls={imageUrls} />
-
                 <input type="submit" value="Add Object" />
             </form>
         </div>
@@ -83,7 +81,7 @@ export function AddInventory() {
 function ImagesSelecorComponent({images, imageUrls, setImages}: {  images: File[], imageUrls: string[], setImages: React.Dispatch<React.SetStateAction<File[]>> }) {
     return (
         <div>
-            <AddImageComponent imageUrl={imageUrls.length == 0 ? null : null} setImage={(image) => image !== undefined ? setImages([...images, image]) : null} />
+            <AddImageComponent imageUrl={imageUrls.length == 0 ? null : imageUrls[0]} setImage={(image) => image !== undefined ? setImages([...images, image]) : null} />
             <MultiImagePreview imageUrls={imageUrls} />
         </div>
     )
@@ -119,6 +117,10 @@ function AddImageComponent({imageUrl, setImage}: {imageUrl: string | null, setIm
                 <input type='file' accept='image/*' ref={fileInput} onChange={onFileSelected} />
                 { imageUrl !== null || <MdAddAPhoto className='add-image--icon' onClick={getFile} /> }
             </div>
+            
+            <MdArrowLeft className='left' onClick={() => console.error("left")} />
+            <MdArrowRight className='right' />
+            <MdDelete className='top' />
         </div>
     );
 }

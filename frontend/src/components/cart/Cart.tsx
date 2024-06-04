@@ -7,6 +7,7 @@ import Calendar from '../../core/input/Buttons/Calendar';
 //APOLLO STUFF ZUM TESTEN
 
 import { useQuery, gql } from '@apollo/client';
+import { useCart, useCartDispatcher } from "../../context/CartContext";
 
 const GET_LOCATIONS = gql`
   query {
@@ -34,13 +35,10 @@ function DisplayLocations() {
 
 //ENDE APOLLO STUFF
 
-type CartProbs = {
-    selectedItems: Product[];
-    removeSelectedItem: any;
-    editSelectedItem: any;
-}
+export function Cart() {
+  const itemsInCart = useCart();
+  const itemsInCartDispatcher = useCartDispatcher();
 
-export function Cart(probs: CartProbs) {
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -64,7 +62,7 @@ export function Cart(probs: CartProbs) {
             <div style={{padding: '20px'}}>
                 <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
-                {probs.selectedItems.map((product) => (
+                {itemsInCart.map((product) => (
                  <div key={product.id} style={productCardStyle}>
                  <img src={product.imageUrl} alt={product.name} style={imageStyle} />
                  <div style={productInfoStyle}>
@@ -83,7 +81,7 @@ export function Cart(probs: CartProbs) {
                    <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                      Bearbeiten
                    </button>
-                   <button style={addToCartButtonStyle} onClick={() => probs.removeSelectedItem(product)}>
+                   <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
                      Entfernen
                    </button>
                  </div>
@@ -107,7 +105,7 @@ export function Cart(probs: CartProbs) {
                         />
                         </div>
                         <div style={buttonContainerStyle}>
-                        <button onClick={() => probs.editSelectedItem(selectedProduct, productNew)}>Edit</button>
+                        <button onClick={() => itemsInCartDispatcher({ type: 'edit', item: selectedProduct! })}>Edit</button>
                         <button onClick={closeModal} style={{ marginLeft: '10px' }}>
                             Cancel
                         </button>

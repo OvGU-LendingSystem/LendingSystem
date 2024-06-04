@@ -5,6 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import { CartProvider } from './context/CartContext';
 
 const client = new ApolloClient({
   uri: 'http://hades.fritz.box/api/graphql',
@@ -18,7 +19,9 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <ApolloProvider client={client}>
-        <App />
+        <CartProvider>
+          <App />
+        </CartProvider>
       </ApolloProvider>
     </BrowserRouter>
   </React.StrictMode>

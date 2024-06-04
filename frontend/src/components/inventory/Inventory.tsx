@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
+import { useCart, useCartDispatcher } from '../../context/CartContext';
 
-type InventoryProbs = {
-  selectedItems: Product[];
-  setSelectedItems: any;
-}
+export function Inventory(): JSX.Element {
+  const itemsInCart = useCart();
+  const itemsInCartDispatcher = useCartDispatcher();
 
-export function Inventory(probs: InventoryProbs): JSX.Element {
+
   const products: Product[] = [
     {
       id: 1,
@@ -50,7 +50,6 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
     },
   ];
 
-  const [selectedItems, setSelectedItems] = useState<Product[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -98,14 +97,10 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
 
   const addToCart = () => {
     if (selectedProduct) {
-      setSelectedItems([
-        ...selectedItems,
-        { ...selectedProduct, startDate, endDate, amount }
-      ]);
-      probs.setSelectedItems([
-        ...probs.selectedItems,
-        { ...selectedProduct, startDate, endDate, amount }
-      ]);
+      itemsInCartDispatcher({
+        type: 'add',
+        item: { ...selectedProduct, startDate, endDate, amount }
+      });
       closeModal();
     }
   };
@@ -186,10 +181,10 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
             </div>
           ))}
         </div>
-        {selectedItems.length > 0 && (
+        {itemsInCart.length > 0 && (
           <div style={{ marginTop: '20px' }}>
             <ul>
-              {selectedItems.map((item, index) => (
+              {itemsInCart.map((item, index) => (
                 <li key={index}>
                   {products.find((product) => product.id === item.id)?.name} -{' '}
                   {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
