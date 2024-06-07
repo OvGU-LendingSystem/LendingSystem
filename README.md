@@ -8,6 +8,9 @@
   [PATHS]
   root_directory = <directory to project location inclusive LendingSystem directory>
   picture_directory = pictures
+
+  [SECRET_KEY]
+  secret_key = <secret key for session management>
   ```
 
 ## For Backend
@@ -20,15 +23,14 @@ pip install graphene_sqlalchemy
 ```shell
 pip install Flask
 pip install Flask-GraphQL
-pip install flask_cors
-pip install graphene-file-upload
-```  
-### Install other packages
+```
+### Install more packages
 ```shell
-pip install pymysql 
+pip install flask_cors
 pip install alembic
 pip install argon2-cffi
 ```
+
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
 
