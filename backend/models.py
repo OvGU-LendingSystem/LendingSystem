@@ -132,7 +132,7 @@ class PhysicalObject(Base):
 
     pictures            = relationship("Picture",                                                   back_populates = "physicalobject", cascade="all, delete-orphan")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
-    orders              = relationship("Physicalobject_Order",                                      back_populates = "physicalobjects")
+    orders              = relationship("Physicalobject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
 
@@ -157,7 +157,7 @@ class Order(Base):
     __tablename__       = "order"
     order_id            = Column(Integer,           primary_key = True)
 
-    physicalobjects     = relationship("Physicalobject_Order",                                  back_populates = "orders")
+    physicalobjects     = relationship("Physicalobject_Order",                                  back_populates = "order")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
 
 class User(Base):

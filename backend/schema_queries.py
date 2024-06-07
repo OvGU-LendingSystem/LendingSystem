@@ -47,8 +47,8 @@ class Query(graphene.ObjectType):
         #int params
         order_id            = graphene.Argument(type=graphene.Int, required=False),
         #date params
-        from_date           = graphene.Argument(type=graphene.DateTime, required=False),
-        till_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        # from_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        # till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
