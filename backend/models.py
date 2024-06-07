@@ -40,14 +40,6 @@ physicalobject_tag = Table (
     extend_existing = True,
 )
 
-physicalobject_order = Table (
-    'physicalobject_order',
-    Base.metadata,
-    Column('phys_id',           ForeignKey('physicalobject.phys_id'),       primary_key=True),
-    Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
-    extend_existing = True,
-)
-
 user_order = Table (
     'user_order',
     Base.metadata,
@@ -85,7 +77,18 @@ class Organization_User(Base):
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
 
+class PhysicalObject_Order(Base):
+    """
+    m:n relation between physicalObject and order
+    additionally holds the orderStatus a physicalobject has in an order
+    """
+    __tablename__       = "physicalobject_order"
+    phys_id             = Column(Integer,       ForeignKey('physicalobject.phys_id'),   primary_key=True)
+    order_id            = Column(Integer,       ForeignKey('order.order_id'),           primary_key=True)
+    order_status        = Column(Enum(orderStatus), nullable = False, default = 'pending')
 
+    physicalobject      = relationship("PhysicalObject", back_populates = "orders")
+    order               = relationship("Order", back_populates = "physicalobjects")
 
 # Classes go here ...
 
@@ -118,7 +121,7 @@ class PhysicalObject(Base):
 
     pictures            = relationship("Picture",                                                   back_populates = "physicalobject")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
-    orders              = relationship("Order",         secondary = physicalobject_order,           back_populates = "physicalobjects")
+    orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
 
@@ -142,12 +145,20 @@ class Order(Base):
     """
     __tablename__       = "order"
     order_id            = Column(Integer,           primary_key = True)
-    status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
+    # status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
 
-    physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
+    physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
+
+    def addPhysicalObject(self, physicalobject, order_status = orderStatus.pending):
+        """
+        adds a physicalObject to the order
+        """
+        tmp = PhysicalObject_Order(order = self, physicalobject = physicalobject, order_status = order_status)
+        self.physicalobjects.append(tmp)
+        physicalobject.orders.append(tmp)
 
 class User(Base):
     """
