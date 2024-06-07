@@ -86,9 +86,12 @@ class PhysicalObject_Order(Base):
     phys_id             = Column(Integer,       ForeignKey('physicalobject.phys_id'),   primary_key=True)
     order_id            = Column(Integer,       ForeignKey('order.order_id'),           primary_key=True)
     order_status        = Column(Enum(orderStatus), nullable = False, default = 'pending')
+    delivery_time       = Column(DateTime,      nullable = True)
 
     physicalobject      = relationship("PhysicalObject", back_populates = "orders")
     order               = relationship("Order", back_populates = "physicalobjects")
+
+
 
 # Classes go here ...
 
