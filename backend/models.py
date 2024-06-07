@@ -119,7 +119,7 @@ class PhysicalObject(Base):
     name                = Column(String(60),            unique = False, nullable = False)
     description         = Column(String(600),           unique = False, nullable = True)
 
-    pictures            = relationship("Picture",                                                   back_populates = "physicalobject")
+    pictures            = relationship("Picture",                                                   back_populates = "physicalobject", cascade="all, delete-orphan")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
