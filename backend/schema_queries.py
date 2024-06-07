@@ -28,12 +28,12 @@ class Query(graphene.ObjectType):
         deposit             = graphene.Argument(type=graphene.Int, required=False, description="Deposit has to be == to this value"),
         max_deposit         = graphene.Argument(type=graphene.Int, required=False, description="Deposit has to be <= to this value"),
         #string params
-        pic_path            = graphene.Argument(type=graphene.String, required=False),
         storage_location    = graphene.Argument(type=graphene.String, required=False),
         faults              = graphene.Argument(type=graphene.String, required=False),
         name                = graphene.Argument(type=graphene.String, required=False),
         obj_description     = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
+        pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
         tags                = graphene.Argument(type=graphene.List(graphene.String), required=False),
         orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
         groups              = graphene.Argument(type=graphene.List(graphene.String), required=False),
@@ -47,8 +47,8 @@ class Query(graphene.ObjectType):
         #int params
         order_id            = graphene.Argument(type=graphene.Int, required=False),
         #date params
-        # from_date           = graphene.Argument(type=graphene.DateTime, required=False),
-        # till_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        from_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
@@ -131,12 +131,12 @@ class Query(graphene.ObjectType):
         deposit: Union[int, None] = None,
         max_deposit: Union[int, None] = None,
         # string params
-        pic_path: Union[str, None] = None,
         storage_location: Union[str, None] = None,
         faults: Union[str, None] = None,
         name: Union[str, None] = None,
         obj_description: Union[str, None] = None,
         # list params for the relationships
+        pictures: Union[List[str], None] = None,
         tags: Union[List[str], None] = None,
         orders: Union[List[str], None] = None,
         groups: Union[List[str], None] = None,
@@ -154,8 +154,6 @@ class Query(graphene.ObjectType):
             query = query.filter(PhysicalObjectModel.deposit == deposit)
         if max_deposit:
             query = query.filter(PhysicalObjectModel.deposit <= max_deposit)
-        if pic_path:
-            query = query.filter(PhysicalObjectModel.pic_path == pic_path)
         if storage_location:
             query = query.filter(PhysicalObjectModel.storage_location == storage_location)
         if faults:
@@ -165,6 +163,8 @@ class Query(graphene.ObjectType):
         if obj_description:
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
+        if pictures:
+            query = query.filter(PhysicalObjectModel.pictures.any(PictureModel.name.in_(pictures)))
         if tags:
             query = query.filter(PhysicalObjectModel.tags.any(TagModel.name.in_(tags)))
         if orders:
