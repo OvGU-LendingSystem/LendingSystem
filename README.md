@@ -28,7 +28,7 @@ pip install Flask-GraphQL
 ```shell
 pip install flask_cors
 pip install alembic
-pip install flask_bcrypt
+pip install argon2-cffi
 ```
 
 ### For local developing

@@ -13,9 +13,10 @@ class userRights(enum.Enum):
     Enum for different rights a user can have inside his organization
     rights are organized in a hierarchy
     """
-    organization_admin = 1
-    inventory_admin = 2
-    member = 3
+    organization_admin  = 1
+    inventory_admin     = 2
+    watcher             = 3
+    member              = 4
 
 class orderStatus(enum.Enum):
     """
@@ -23,8 +24,9 @@ class orderStatus(enum.Enum):
     """
     pending  = 1
     accepted = 2
-    rejected = 3
-    returned = 4
+    picked   = 3
+    rejected = 4
+    returned = 5
 
 
 
@@ -35,14 +37,6 @@ physicalobject_tag = Table (
     Base.metadata,
     Column('phys_id',           ForeignKey('physicalobject.phys_id'),       primary_key=True),
     Column('tag_id',            ForeignKey('tag.tag_id'),                   primary_key=True),
-    extend_existing = True,
-)
-
-physicalobject_order = Table (
-    'physicalobject_order',
-    Base.metadata,
-    Column('phys_id',           ForeignKey('physicalobject.phys_id'),       primary_key=True),
-    Column('order_id',          ForeignKey('order.order_id'),               primary_key=True),
     extend_existing = True,
 )
 
@@ -83,6 +77,20 @@ class Organization_User(Base):
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
 
+class PhysicalObject_Order(Base):
+    """
+    m:n relation between physicalObject and order
+    additionally holds the orderStatus a physicalobject has in an order
+    """
+    __tablename__       = "physicalobject_order"
+    phys_id             = Column(Integer,       ForeignKey('physicalobject.phys_id'),   primary_key=True)
+    order_id            = Column(Integer,       ForeignKey('order.order_id'),           primary_key=True)
+    order_status        = Column(Enum(orderStatus), nullable = False, default = 'pending')
+    delivery_time       = Column(DateTime,      nullable = True)
+
+    physicalobject      = relationship("PhysicalObject", back_populates = "orders")
+    order               = relationship("Order", back_populates = "physicalobjects")
+
 
 
 # Classes go here ...
@@ -96,6 +104,9 @@ class Tag(Base):
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
+
+    def __repr__(self):
+        return "Tag ID: " + str(self.tag_id) + "; Name: " + self.name
 
 class PhysicalObject(Base):
     """
@@ -111,11 +122,14 @@ class PhysicalObject(Base):
     name                = Column(String(60),            unique = False, nullable = False)
     description         = Column(String(600),           unique = False, nullable = True)
 
-    pictures            = relationship("Picture",                                                   back_populates = "physicalobject")
+    pictures            = relationship("Picture",                                                   back_populates = "physicalobject", cascade="all, delete-orphan")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
-    orders              = relationship("Order",         secondary = physicalobject_order,           back_populates = "physicalobjects")
+    orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
     organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
+
+    def __repr__(self):
+        return "Physical Object ID: " + str(self.phys_id) + "; Name: " + self.name
 
 class Picture(Base):
     """
@@ -134,12 +148,20 @@ class Order(Base):
     """
     __tablename__       = "order"
     order_id            = Column(Integer,           primary_key = True)
-    status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
+    # status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
 
-    physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_order,   back_populates = "orders")
+    physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
+
+    def addPhysicalObject(self, physicalobject, order_status = orderStatus.pending):
+        """
+        adds a physicalObject to the order
+        """
+        tmp = PhysicalObject_Order(order = self, physicalobject = physicalobject, order_status = order_status)
+        self.physicalobjects.append(tmp)
+        physicalobject.orders.append(tmp)
 
 class User(Base):
     """
@@ -152,7 +174,7 @@ class User(Base):
     last_name           = Column(String(30),    unique = False, nullable = False)
 
     email               = Column(String(60),    unique = True,  nullable = False)
-    password_hash       = Column(String(60),    unique = False, nullable = False) # hashed
+    password_hash       = Column(String(120),   unique = False, nullable = False) # hashed
 
     organizations       = relationship("Organization_User",                                back_populates = "user")
     orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
