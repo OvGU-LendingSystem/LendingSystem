@@ -73,6 +73,9 @@ class Organization_User(Base):
     organization_id     = Column(Integer,       ForeignKey('organization.organization_id'), primary_key=True)
     user_id             = Column(Integer,       ForeignKey('user.user_id'),                 primary_key=True)
     rights              = Column(Enum(userRights), nullable = False, default = 'member')
+    # User want to see agb only after a change
+    # Should be automatically false if agb changes (irgendwo in Mutations)
+    agb_dont_show       = Column(Boolean,       nullable = False, default = False)
 
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
@@ -138,6 +141,7 @@ class Picture(Base):
     __tablename__       = "picture"
     picture_id          = Column(Integer,      primary_key = True)
     physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'), nullable = False)
+    # String name for the picture file location
     path                = Column(String(600),  unique = True, nullable = False)
 
     physicalobject      = relationship("PhysicalObject", back_populates = "pictures")
@@ -199,6 +203,8 @@ class Organization(Base):
     organization_id     = Column(Integer,       primary_key = True)
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
+    # String name for the agb file location
+    agb                 = Column(String(600),   unique = True,  nullable = True) # Da muss eine sein, um was ausleihen zu können
 
     users               = relationship("Organization_User",                                             back_populates = "organization")
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
