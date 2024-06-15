@@ -3,6 +3,7 @@ import { OrderPopup } from "./OrderPopup";
 import { useState } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
+import AGBPopUp from "../AGB/AGBPopUp";
 
 //APOLLO STUFF ZUM TESTEN
 
@@ -150,8 +151,8 @@ export function Cart() {
                 )}
             
             <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
-
-            <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />
+            {<AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup}/>}
+            {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
             </div>
         </div>
     );
