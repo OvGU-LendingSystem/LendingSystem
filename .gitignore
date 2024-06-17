@@ -169,6 +169,10 @@ node_modules/
 pictures/*
 !pictures/readme.md
 
+# Ignore content of pdf folder except readme
+pdf/*
+!pdf/README.md
+
 # Ignore config file (sensible)
 config.ini
 
