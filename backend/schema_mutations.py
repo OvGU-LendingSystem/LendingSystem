@@ -25,12 +25,11 @@ class create_physical_object(graphene.Mutation):
         name                = graphene.String(required=True)
         description         = graphene.String()
 
-        # TODO: Picture Upload
-        pictures        = graphene.String()
-        tags            = graphene.List(graphene.Int)
-        orders          = graphene.List(graphene.Int)
-        groups          = graphene.List(graphene.Int)
-        organizations   = graphene.List(graphene.Int)
+        pictures            = graphene.String()
+        tags                = graphene.List(graphene.Int)
+        orders              = graphene.List(graphene.Int)
+        groups              = graphene.List(graphene.Int)
+        organizations       = graphene.List(graphene.Int)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
@@ -51,8 +50,6 @@ class create_physical_object(graphene.Mutation):
                 tags                = db_tags,
             )
 
-            if pictures:
-                pass
             if orders:
                 db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
                 physical_object.orders = db_orders
@@ -70,13 +67,12 @@ class create_physical_object(graphene.Mutation):
                 physical_object.deposit = deposit
 
             db.add(physical_object)
+            db.commit()
+            return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.", physical_object=physical_object)
 
         except Exception as e:
             print(e)
-            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))
-
-        db.commit()
-        return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.")
+            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))        
 
 class update_physical_object(graphene.Mutation):
     class Arguments:
@@ -163,7 +159,7 @@ class delete_physical_object(graphene.Mutation):
             db.commit()
             return delete_physical_object(ok=True, info_text="Objekt erfolgreich entfernt.")
         else:
-            return delete_physical_object(ok=False, info_text="Objekt konnte nicht entfernt werden.")
+            return delete_physical_object(ok=False, info_text="Objekt konnte nicht gefunden werden.")
 
 ##################################
 # Upload for Pictures            #
@@ -211,7 +207,7 @@ class create_order(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, from_date=None, till_date=None, users=None, physicalobjects=None):
+    def mutate(self, info, from_date=None, till_date=None, users=None, physicalobjects=None):
         try:
             order = OrderModel()
 
@@ -229,12 +225,12 @@ class create_order(graphene.Mutation):
 
             db.add(order)
 
+            db.commit()
+            return create_order(ok=True, info_text="Order erfolgreich erstellt.", order=order)
+
         except Exception as e:
             print(e)
             return create_order(ok=False, info_text="Order konnte nicht erstellt werden. " + str(e))
-
-        db.commit()
-        return create_order(ok=True, info_text="Order erfolgreich erstellt.")
 
 class update_order(graphene.Mutation):
     """
@@ -275,7 +271,7 @@ class update_order(graphene.Mutation):
                 order.users = db_users
 
             db.commit()
-            return update_order(ok=True, info_text="OrderStatus aktualisiert.")
+            return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
         
         except Exception as e:
             print(e)
@@ -311,7 +307,7 @@ class update_order_status(graphene.Mutation):
                     order.status = orderStatus[status]
 
             db.commit()
-            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.")
+            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", order=order)
         
         except Exception as e:
             print(e)
@@ -358,12 +354,12 @@ class create_tag(graphene.Mutation):
 
             db.add(tag)
 
+            db.commit()
+            return create_tag(ok=True, info_text="Tag erfolgreich erstellt.", tag=tag)
+
         except Exception as e:
             print(e)
             return create_tag(ok=False, info_text="Fehler beim Erstellen des Tags. " + str(e))
-
-        db.commit()
-        return create_tag(ok=True, info_text="Tag erfolgreich erstellt.")
 
 class update_tag(graphene.Mutation):
     class Arguments:
@@ -389,7 +385,7 @@ class update_tag(graphene.Mutation):
                 tag.name = name
 
             db.commit()
-            return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.")
+            return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.", tag=tag)
 
         except Exception as e:
             print(e)
@@ -427,8 +423,7 @@ class create_group(graphene.Mutation):
     @staticmethod
     def mutate(self, info, name, physicalobjects=None):
         try:
-            group = GroupModel(
-                name=name)
+            group = GroupModel(name=name)
 
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
@@ -436,12 +431,12 @@ class create_group(graphene.Mutation):
 
             db.add(group)
 
+            db.commit()
+            return create_group(ok=True, info_text="Gruppe erfolgreich erstellt.", group=group)
+
         except Exception as e:
             print(e)
             return create_group(ok=False, info_text="Fehler beim Erstellen der Gruppe. " + str(e))
-
-        db.commit()
-        return create_group(ok=True, info_text="Gruppe erfolgreich erstellt.")
 
 class update_group(graphene.Mutation):
     class Arguments:
@@ -467,7 +462,7 @@ class update_group(graphene.Mutation):
                 group.name = name
 
             db.commit()
-            return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.")
+            return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.", group=group)
 
         except Exception as e:
             print(e)
@@ -501,15 +496,14 @@ class create_organization(graphene.Mutation):
         users           = graphene.List(graphene.Int)
         physicalobjects = graphene.List(graphene.Int)
 
+    organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
     def mutate(self, info, name, location=None, users=None, physicalobjects=None):
         try:
-            organization = OrganizationModel(
-                name=name
-            )
+            organization = OrganizationModel(name=name)
 
             if location:
                 organization.location = location
@@ -522,12 +516,12 @@ class create_organization(graphene.Mutation):
 
             db.add(organization)
 
+            db.commit()
+            return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.", organizations=organization)
+
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
-
-        db.commit()
-        return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.")
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))     
 
 class update_organization(graphene.Mutation):
     class Arguments:
@@ -575,7 +569,7 @@ class delete_organization(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info, organization_id):
-        organization = OrganizationModel.query.filter(OrganizationModel.organization_id.order_id == organization_id)
+        organization = OrganizationModel.query.filter(OrganizationModel.organization_id.order_id == organization_id).first()
         if organization:
             db.delete(organization)
             db.commit()
