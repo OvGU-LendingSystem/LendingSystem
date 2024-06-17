@@ -128,7 +128,7 @@ class PhysicalObject(Base):
     name                = Column(String(60),            unique = False, nullable = False)
     description         = Column(String(600),           unique = False, nullable = True)
 
-    pictures            = relationship("Picture",                                                   back_populates = "physicalobject", cascade="all, delete-orphan")
+    pictures            = relationship("File",                                                      back_populates = "physicalobject", cascade="all, delete-orphan")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
@@ -137,17 +137,30 @@ class PhysicalObject(Base):
     def __repr__(self):
         return "Physical Object ID: " + str(self.phys_id) + "; Name: " + self.name
 
-class Picture(Base):
+class File(Base):
     """
-    Pictures are stored in the database and linked to physical objects
+    Stores the location of a file for pictures an pdf's to use in PhysicalObjects, groups and Organizations
     """
-    __tablename__       = "picture"
-    picture_id          = Column(Integer,      primary_key = True)
-    physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'), nullable = False)
-    # String name for the picture file location
-    path                = Column(String(600),  unique = True, nullable = False)
+    class FileType(enum.Enum):
+        """
+        Enum for the type of the file
+        """
+        picture = 0
+        agb     = 1
+        other   = 2
 
-    physicalobject      = relationship("PhysicalObject", back_populates = "pictures")
+    __tablename__       = "file"
+    file_id             = Column(Integer,      primary_key = True)
+    physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'),        nullable = True)
+    organization_id     = Column(Integer,      ForeignKey('organization.organization_id'),  nullable = True)
+    group_id            = Column(Integer,      ForeignKey('group.group_id'),                nullable = True)
+    # String name for the file location
+    path                = Column(String(600),  unique = True, nullable = False)
+    file_type           = Column(Enum(FileType), nullable = False, default = 'other')
+
+    physicalobject      = relationship("PhysicalObject",    back_populates = "pictures")
+    group               = relationship("Group",             back_populates = "pictures")
+    organization        = relationship("Organization",      back_populates = "agb")
 
 class Order(Base):
     """
@@ -213,6 +226,7 @@ class Group(Base):
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = group_physicalobject, back_populates = "groups")
+    pictures            = relationship("File",                                             back_populates = "group")
 
 class Organization(Base):
     """
@@ -224,7 +238,7 @@ class Organization(Base):
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
     # String name for the agb file location
-    agb                 = Column(String(600),   unique = True,  nullable = True) # Da muss eine sein, um was ausleihen zu können
+    agb                 = relationship("File",                                                          back_populates = "organization", cascade="all, delete-orphan")
 
     users               = relationship("Organization_User",                                             back_populates = "organization")
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
