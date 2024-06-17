@@ -5,7 +5,7 @@ import graphene
 from flask import session
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
-from config import db, picture_directory
+from config import db, picture_directory, pdf_directory
 
 from models import User as UserModel, orderStatus
 from schema import *
@@ -162,35 +162,81 @@ class delete_physical_object(graphene.Mutation):
             return delete_physical_object(ok=False, info_text="Objekt konnte nicht gefunden werden.")
 
 ##################################
-# Upload for Pictures            #
+# Upload for Files               #
 ##################################
-class upload_picture(graphene.Mutation):
+class upload_file(graphene.Mutation):
     class Arguments:
-        phys_id = graphene.Int(required=True)
-        file    = Upload(required=True)
+        phys_id         = graphene.Int()
+        organization_id = graphene.Int()
+        group_id        = graphene.Int()
+        file            = Upload(required=True)
+
+    file = graphene.Field(lambda: File)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    def mutate(self, info, file, phys_id=None, organization_id=None, group_id=None):
+        try:
+            physical_object = None
+            organization    = None
+            group           = None
+
+            physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+            organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            group           = GroupModel.query.filter(GroupModel.group_id == group_id).first()
+            
+            type = None
+            pictureFileExtensions   = ['jpg', 'jpeg', 'png', 'svg']
+            pdfFileExtensions       = ['pdf']
+            if file.filename.split('.')[-1] in pictureFileExtensions:
+                type = 'picture'
+            elif file.filename.split('.')[-1] in pdfFileExtensions:
+                type = 'pdf'
+
+            if type == None:
+                return upload_file(ok=False, info_text="File type not supported.")
+
+            file_name   = file.filename
+            file_name   = file_name.replace(" ", "_")
+            time_stamp  = str(time.time())
+            file_name   = time_stamp + "_" + file_name
+            if type == 'picture':
+                file.save(os.path.join(picture_directory, file_name))
+            elif type == 'pdf':
+                file.save(os.path.join(pdf_directory, file_name))
+
+            file = FileModel(   path            = file_name,
+                                physicalobject = physical_object,
+                                organization    = organization,
+                                group           = group,
+                                file_type       = type)
+
+            db.add(file)
+            db.commit()
+
+            return upload_file(ok=True, info_text="File uploaded successfully.", file=file)
+        except Exception as e:
+            print(e)
+            return upload_file(ok=False, info_text="Error uploading file. " + str(e))
+
+class delete_file(graphene.Mutation):
+    class Arguments:
+        file_id = graphene.Int(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
-    file_name = graphene.String()
 
-    def mutate(self, info, file, phys_id):
-        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+    @staticmethod
+    def mutate(self, info, file_id):
+        file = FileModel.query.filter(FileModel.file_id == file_id).first()
+        if file:
+            os.remove(os.path.join(picture_directory, file.path))
 
-        if not physical_object:
-            return upload_picture(ok=False, info_text="Physical Object not found.", file_name=None)
-        
-        file_name = file.filename
-        file_name = file_name.replace(" ", "_")
-        time_stamp = str(time.time())
-        file_name = time_stamp + "_" + file_name
-        file.save(os.path.join(picture_directory, file_name))
-
-        db_file = PictureModel(path = file_name, physicalobject = physical_object)
-
-        db.add(db_file)
-        db.commit()
-
-        return upload_picture(ok=True, info_text="Picture uploaded successfully.", file_name=file_name)
+            db.delete(file)
+            db.commit()
+            return delete_file(ok=True, info_text="File successfully removed.")
+        else:
+            return delete_file(ok=False, info_text="File not found.")
 
 ##################################
 # Mutations for orders           #
@@ -674,7 +720,8 @@ class Mutations(graphene.ObjectType):
     update_physical_object = update_physical_object.Field()
     delete_physical_object = delete_physical_object.Field()
 
-    upload_picture = upload_picture.Field()
+    upload_file = upload_file.Field()
+    delete_file = delete_file.Field()
 
     create_order        = create_order.Field()
     update_order        = update_order.Field()
