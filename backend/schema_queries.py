@@ -164,7 +164,7 @@ class Query(graphene.ObjectType):
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
         if pictures:
-            query = query.filter(PhysicalObjectModel.pictures.any(PictureModel.name.in_(pictures)))
+            query = query.filter(PhysicalObjectModel.pictures.any(FileModel.name.in_(pictures)))
         if tags:
             query = query.filter(PhysicalObjectModel.tags.any(TagModel.name.in_(tags)))
         if orders:
