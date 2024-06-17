@@ -682,9 +682,10 @@ class Mutations(graphene.ObjectType):
 
     upload_picture = upload_picture.Field()
 
-    create_order = create_order.Field()
-    update_order = update_order.Field()
-    delete_order = delete_order.Field()
+    create_order        = create_order.Field()
+    update_order        = update_order.Field()
+    update_order_status = update_order_status.Field()
+    delete_order        = delete_order.Field()
 
     create_tag = create_tag.Field()
     update_tag = update_tag.Field()
