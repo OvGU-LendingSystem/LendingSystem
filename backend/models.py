@@ -73,6 +73,9 @@ class Organization_User(Base):
     organization_id     = Column(Integer,       ForeignKey('organization.organization_id'), primary_key=True)
     user_id             = Column(Integer,       ForeignKey('user.user_id'),                 primary_key=True)
     rights              = Column(Enum(userRights), nullable = False, default = 'member')
+    # User want to see agb only after a change
+    # Should be automatically false if agb changes (irgendwo in Mutations)
+    agb_dont_show       = Column(Boolean,       nullable = False, default = False)
 
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
@@ -83,13 +86,16 @@ class PhysicalObject_Order(Base):
     additionally holds the orderStatus a physicalobject has in an order
     """
     __tablename__       = "physicalobject_order"
-    phys_id             = Column(Integer,       ForeignKey('physicalobject.phys_id'),   primary_key=True)
-    order_id            = Column(Integer,       ForeignKey('order.order_id'),           primary_key=True)
+    phys_id             = Column(Integer,           ForeignKey('physicalobject.phys_id'),   primary_key=True)
+    order_id            = Column(Integer,           ForeignKey('order.order_id'),           primary_key=True)
     order_status        = Column(Enum(orderStatus), nullable = False, default = 'pending')
-    delivery_time       = Column(DateTime,      nullable = True)
+    return_date         = Column(DateTime,          nullable = True)
 
-    physicalobject      = relationship("PhysicalObject", back_populates = "orders")
-    order               = relationship("Order", back_populates = "physicalobjects")
+    physicalobject      = relationship("PhysicalObject",    back_populates = "orders")
+    order               = relationship("Order",             back_populates = "physicalobjects")
+
+    def __repr__(self):
+        return "Physical Object ID: " + str(self.phys_id) + "; Order ID: " + str(self.order_id) + "; Status: " + str(self.order_status)
 
 
 
@@ -138,6 +144,7 @@ class Picture(Base):
     __tablename__       = "picture"
     picture_id          = Column(Integer,      primary_key = True)
     physicalobject_id   = Column(Integer,      ForeignKey('physicalobject.phys_id'), nullable = False)
+    # String name for the picture file location
     path                = Column(String(600),  unique = True, nullable = False)
 
     physicalobject      = relationship("PhysicalObject", back_populates = "pictures")
@@ -148,7 +155,6 @@ class Order(Base):
     """
     __tablename__       = "order"
     order_id            = Column(Integer,           primary_key = True)
-    # status              = Column(Enum(orderStatus), nullable = False, default = 'pending')
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
 
@@ -162,6 +168,24 @@ class Order(Base):
         tmp = PhysicalObject_Order(order = self, physicalobject = physicalobject, order_status = order_status)
         self.physicalobjects.append(tmp)
         physicalobject.orders.append(tmp)
+
+    def removePhysicalObject(self, physicalobject):
+        """
+        removes a physicalObject from the order
+        """
+        self.physicalobjects.remove(physicalobject)
+        physicalobject.orders.remove(physicalobject)
+
+    def removeAllPhysicalObjects(self):
+        """
+        removes all physicalObjects from the order
+        """
+        for physicalobject in self.physicalobjects:
+            self.physicalobjects.remove(physicalobject)
+            physicalobject.orders.remove(physicalobject)
+
+    def __repr__(self):
+        return "Order ID: " + str(self.order_id) + "; From: " + str(self.from_date) + "; Till: " + str(self.till_date)
 
 class User(Base):
     """
@@ -199,6 +223,8 @@ class Organization(Base):
     organization_id     = Column(Integer,       primary_key = True)
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
+    # String name for the agb file location
+    agb                 = Column(String(600),   unique = True,  nullable = True) # Da muss eine sein, um was ausleihen zu können
 
     users               = relationship("Organization_User",                                             back_populates = "organization")
     physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
