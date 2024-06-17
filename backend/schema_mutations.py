@@ -237,11 +237,13 @@ class create_order(graphene.Mutation):
         return create_order(ok=True, info_text="Order erfolgreich erstellt.")
 
 class update_order(graphene.Mutation):
+    """
+    Updates content of the order with the given order_id.
+    """
     class Arguments:
         order_id    = graphene.Int(required=True)
         from_date   = graphene.Date()
         till_date   = graphene.Date()
-        status      = graphene.String()
 
         physicalobjects = graphene.List(graphene.Int)
         users = graphene.List(graphene.Int)
@@ -250,10 +252,10 @@ class update_order(graphene.Mutation):
     ok = graphene.Boolean()
     info_text = graphene.String()
 
-    def mutate(self, order_id, from_date=None, till_date=None, status=None, physicalobjects=None, users=None):
+    @staticmethod
+    def mutate(self, info, order_id, from_date=None, till_date=None, return_date=None, status=None, physicalobjects=None, users=None):
         try:
-            order = db.query(OrderModel).get(order_id).first()
-
+            order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             # Abort if object does not exist
             if not order:
                 return update_order(ok=False, info_text="Order nicht gefunden.")
@@ -262,11 +264,12 @@ class update_order(graphene.Mutation):
                 order.from_date = from_date
             if till_date:
                 order.till_date = till_date
-            if status:
-                order.status = status
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
-                order.physicalobjects = db_physicalobjects
+                # Remove all physical objects from order to add the new ones
+                order.removePhysicalObjects()
+                for physObj in db_physicalobjects:
+                    order.addPhysicalObject(physObj)
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
@@ -276,7 +279,43 @@ class update_order(graphene.Mutation):
         
         except Exception as e:
             print(e)
-            return update_order(ok=False, info_text="Fehler beim Aktualisieren des Orders. " + str(e))
+            return update_order(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
+        
+class update_order_status(graphene.Mutation):
+    """
+    Updates the status for the given physical objects in the order.
+    """
+    class Arguments:
+        order_id        = graphene.Int(required=True)
+        physicalObjects = graphene.List(graphene.Int, required=True)
+
+        return_date     = graphene.Date()
+        status          = graphene.String()
+
+    order = graphene.Field(lambda: Order)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, order_id, physicalObjects, return_date=None, status=None):
+        try:
+            phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id, PhysicalObject_OrderModel.phys_id == physicalObjects).all()
+            # Abort if object does not exist
+            if len(phys_order) == 0:
+                return update_order_status(ok=False, info_text="Order nicht gefunden.")
+            
+            for order in phys_order:
+                if return_date:
+                    order.return_date = return_date
+                if status:
+                    order.status = orderStatus[status]
+
+            db.commit()
+            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.")
+        
+        except Exception as e:
+            print(e)
+            return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
 
 class delete_order(graphene.Mutation):
     class Arguments:
