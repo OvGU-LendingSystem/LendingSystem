@@ -175,12 +175,13 @@ class upload_picture(graphene.Mutation):
 
     ok = graphene.Boolean()
     info_text = graphene.String()
+    file_name = graphene.String()
 
     def mutate(self, info, file, phys_id):
         physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
 
         if not physical_object:
-            return upload_picture(ok=False, info_text="Physical Object not found.")
+            return upload_picture(ok=False, info_text="Physical Object not found.", file_name=None)
         
         file_name = file.filename
         file_name = file_name.replace(" ", "_")
@@ -193,7 +194,7 @@ class upload_picture(graphene.Mutation):
         db.add(db_file)
         db.commit()
 
-        return upload_picture(ok=True, info_text="Picture uploaded successfully.")
+        return upload_picture(ok=True, info_text="Picture uploaded successfully.", file_name=file_name)
 
 ##################################
 # Mutations for orders           #
