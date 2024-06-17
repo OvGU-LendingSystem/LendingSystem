@@ -3,11 +3,14 @@
 - Create a config.ini file in the root directory of the project
   ```ini
   [DB]
-  db_LendingSystem_password = <db password for administrator>
+  db_LendingSystem_Database = <Database for the application (LendingSystem)>
+  db_LendingSystem_User     = <User for Database application>
+  db_LendingSystem_Password = <Password for given User>
 
   [PATHS]
-  root_directory = <directory to project location inclusive LendingSystem directory>
+  root_directory    = <directory to project location inclusive LendingSystem directory>
   picture_directory = pictures
+  pdf_directory     = pdfs
 
   [SECRET_KEY]
   secret_key = <secret key for session management>
