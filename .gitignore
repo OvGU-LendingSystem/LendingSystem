@@ -170,8 +170,8 @@ pictures/*
 !pictures/readme.md
 
 # Ignore content of pdf folder except readme
-pdf/*
-!pdf/README.md
+pdfs/*
+!pdfs/README.md
 
 # Ignore config file (sensible)
 config.ini
