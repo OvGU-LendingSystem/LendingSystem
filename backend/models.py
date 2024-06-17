@@ -146,7 +146,7 @@ class File(Base):
         Enum for the type of the file
         """
         picture = 0
-        agb     = 1
+        pdf     = 1
         other   = 2
 
     __tablename__       = "file"
