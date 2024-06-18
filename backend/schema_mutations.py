@@ -618,6 +618,37 @@ class update_organization(graphene.Mutation):
             print(e)
             return create_organization(ok=False, info_text="Fehler beim Aktualisieren der Organisation. " + str(e))
 
+class update_organization_user(graphene.Mutation):
+    class Arguments:
+        organization_id     = graphene.Int()
+        user_id             = graphene.List(graphene.Int)
+        user_agreement      = graphene.Boolean()
+        user_rights         = graphene.String()
+
+    organization_user   = graphene.List(lambda: Organization_User)
+    ok                  = graphene.Boolean()
+    info_text           = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, organization_id, user_id, user_agreement=None, user_rights=None):
+        try:
+            organization_user = Organization_UserModel.query.filter(Organization_UserModel.organization_id == organization_id, Organization_UserModel.user_id == user_id).all()
+            if len(organization_user) == 0:
+                return update_organization_user(ok=False, info_text="No corresponding User found in Organization.")
+            
+            for org_user in organization_user:
+                if user_agreement:
+                    org_user.user_agreement = user_agreement
+                if user_rights:
+                    org_user.user_rights = user_rights
+            
+            db.commit()
+            return update_organization_user(ok=True, info_text="User updated.", organization_user=organization_user)
+        
+        except Exception as e:
+            print(e)
+            return update_organization_user(ok=False, info_text="Error updating user. " + str(e))
+ 
 class delete_organization(graphene.Mutation):
     class Arguments:
         organization_id = graphene.Int(required=True)
