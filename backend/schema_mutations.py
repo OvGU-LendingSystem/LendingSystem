@@ -823,3 +823,7 @@ class Mutations(graphene.ObjectType):
     create_organization = create_organization.Field()
     update_organization = update_organization.Field()
     delete_organization = delete_organization.Field()
+
+    create_user = create_user.Field()
+    update_user = update_user.Field()
+    delete_user = delete_user.Field()
