@@ -250,3 +250,10 @@ class Organization(Base):
         tmp = Organization_User(organization = self, user = user, rights = rights)
         self.users.append(tmp)
         user.organizations.append(tmp)
+
+    def removeUser(self, user):
+        """
+        removes a user from the organization
+        """
+        self.users.remove(user)
+        user.organizations.remove(user)
