@@ -334,9 +334,9 @@ class update_order_status(graphene.Mutation):
         return_date     = graphene.Date()
         status          = graphene.String()
 
-    order = graphene.Field(lambda: Order)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    phys_order  = graphene.List(lambda: PhysicalObject_Order)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
 
     @staticmethod
     def mutate(self, info, order_id, physicalObjects, return_date=None, status=None):
@@ -347,17 +347,18 @@ class update_order_status(graphene.Mutation):
                 return update_order_status(ok=False, info_text="Order nicht gefunden.")
             
             for order in phys_order:
+                print(order)
                 if return_date:
                     order.return_date = return_date
                 if status:
-                    order.status = orderStatus[status]
+                    order.order_status = status
 
             db.commit()
-            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", order=order)
+            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", phys_order=phys_order)
         
         except Exception as e:
             print(e)
-            return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
+            return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Order. " + str(e))
 
 class delete_order(graphene.Mutation):
     class Arguments:
