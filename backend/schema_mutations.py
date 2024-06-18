@@ -624,6 +624,90 @@ class delete_organization(graphene.Mutation):
             return delete_tag(ok=False, info_text="Organisation konnte nicht entfernt werden.")
 
 ##################################
+# Mutations for Users            #
+##################################
+class create_user(graphene.Mutation):
+    class Arguments:
+        email       = graphene.String(required=True)
+        last_name   = graphene.String(required=True)
+        first_name  = graphene.String(required=True)
+        password    = graphene.String(required=True)
+
+    user        = graphene.Field(lambda: User)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, email, last_name, first_name, password):
+        try:
+            user_exists = UserModel.query.filter_by(email=email).first()
+            if user_exists:
+                return create_user(ok=False, info_text="Die angegebene E-Mail wird bereits verwendet.")
+            else:
+                ph = PasswordHasher()
+                password_hashed = ph.hash(password)
+                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
+                db.add(user)
+                db.commit()
+                return create_user(ok=True, info_text="Der Nutzer wurde erfolgreich angelegt.", user=user)
+        except Exception as e:
+            print(e)
+            return create_user(ok=False, info_text="Fehler beim Erstellen des Nutzers. " + str(e))
+        
+class update_user(graphene.Mutation):
+    class Arguments:
+        user_id     = graphene.Int(required=True)
+        email       = graphene.String()
+        last_name   = graphene.String()
+        first_name  = graphene.String()
+        password    = graphene.String()
+
+    user        = graphene.Field(lambda: User)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None):
+        try:
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+
+            if not user:
+                return update_user(ok=False, info_text="Nutzer nicht gefunden.")
+            if email:
+                user.email = email
+            if last_name:
+                user.last_name = last_name
+            if first_name:
+                user.first_name = first_name
+            if password:
+                ph = PasswordHasher()
+                user.password_hash = ph.hash(password)
+
+            db.commit()
+            return update_user(ok=True, info_text="Nutzer erfolgreich aktualisiert.", user=user)
+
+        except Exception as e:
+            print(e)
+            return update_user(ok=False, info_text="Fehler beim Aktualisieren des Nutzers. " + str(e))
+        
+class delete_user(graphene.Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id):
+        user = UserModel.query.filter(UserModel.user_id == user_id).first()
+        if user:
+            db.delete(user)
+            db.commit()
+            return delete_user(ok=True, info_text="Nutzer erfolgreich entfernt.")
+        else:
+            return delete_user(ok=False, info_text="Nutzer konnte nicht entfernt werden.")
+        
+##################################
 # Mutations for Users login      #
 ##################################
 class sign_up(graphene.Mutation):
