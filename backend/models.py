@@ -257,3 +257,10 @@ class Organization(Base):
         """
         self.users.remove(user)
         user.organizations.remove(user)
+
+    def resetUserAgreement(self):
+        """
+        resets the agb agreement for all users in the organization
+        """
+        for user in self.users:
+            user.agb_dont_show = False
