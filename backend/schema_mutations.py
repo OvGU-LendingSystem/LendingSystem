@@ -541,15 +541,18 @@ class create_organization(graphene.Mutation):
 
         users           = graphene.List(graphene.Int)
         physicalobjects = graphene.List(graphene.Int)
+        agb             = graphene.Int()
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, name, location=None, users=None, physicalobjects=None):
+    def mutate(self, info, name, location=None, users=None, physicalobjects=None, agb=None):
         try:
             organization = OrganizationModel(name=name)
+            if agb:
+                agb = FileModel.query.filter(FileModel.file_id == agb).first()
 
             if location:
                 organization.location = location
@@ -559,6 +562,8 @@ class create_organization(graphene.Mutation):
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
+            if agb:
+                organization.agb = agb
 
             db.add(organization)
 
@@ -577,14 +582,17 @@ class update_organization(graphene.Mutation):
 
         users               = graphene.List(graphene.Int)
         physicalobjects     = graphene.List(graphene.Int)
+        agb                 = graphene.Int()
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, organization_id, name=None, location=None, users=None, physicalobjects=None):
+    def mutate(self, info, organization_id, name=None, location=None, users=None, physicalobjects=None, agb=None):
         try:
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            if agb:
+                agb = FileModel.query.filter(FileModel.file_id == agb).first()
 
             if not organization:
                 return update_organization(ok=False, info_text="Organisation nicht gefunden.")
@@ -598,6 +606,9 @@ class update_organization(graphene.Mutation):
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
+            if agb:
+                organization.resetUserAgreement()
+                organization.agb = agb
 
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.")
