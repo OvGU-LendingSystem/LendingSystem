@@ -11,6 +11,9 @@
 
   [SECRET_KEY]
   secret_key = <secret key for session management>
+
+  [TESTING]
+  testing = <0 for production / 1 for testing>
   ```
 
 ## For Backend
