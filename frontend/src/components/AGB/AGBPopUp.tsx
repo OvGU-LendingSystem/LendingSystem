@@ -93,7 +93,11 @@ return (
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >
-                    Close
+                    Accept
+                </button>
+                <button
+                    onClick={() => {props.setTrigger(false)}}>
+                    Back
                 </button>
                 
             </div>
