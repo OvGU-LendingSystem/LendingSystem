@@ -1,6 +1,6 @@
 import React from "react";
 import { OrderPopup } from "./OrderPopup";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
 import AGBPopUp from "../AGB/AGBPopUp";
@@ -45,14 +45,31 @@ export function Cart() {
     const [showDetails, setShowDetails] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [amount, setAmount] = useState<number>(1);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
 
     var productNew: Product;
 
+    useEffect(() => {
+      if (selectedProduct) {
+          setStartDate(selectedProduct.startDate ?? null);
+          setEndDate(selectedProduct.endDate ?? null);
+      }
+  }, [selectedProduct]);
+
     const openModal = (product: Product) => {
         setSelectedProduct(product);
+        setStartDate(product.startDate ?? null);
+        setEndDate(product.endDate ?? null);
+        setAmount(product.amount ?? 1);
         setShowModal(true);
     };
     const closeModal = () => {
+        if(selectedProduct){
+        setStartDate(selectedProduct?.startDate ?? null);
+        setEndDate(selectedProduct?.endDate ?? null);
+        setAmount(selectedProduct.amount ?? 1);
+        }
         setShowModal(false);
         setSelectedProduct(null);
     };
@@ -65,8 +82,12 @@ export function Cart() {
       setSelectedProduct(null);
     };
     const editProduct = () => {
-      itemsInCartDispatcher({ type: 'edit', item: productNew! });
-      closeModal();
+     if (selectedProduct && startDate && endDate){
+        productNew = {...selectedProduct!,amount,startDate : startDate ?? selectedProduct?.startDate, endDate: endDate ?? selectedProduct?.endDate  };
+        itemsInCartDispatcher({ type: 'edit', item: productNew });
+        setSelectedProduct(null);
+        closeModal();
+     }
     };
 
     const openMoreDetails = () => {
@@ -111,12 +132,13 @@ export function Cart() {
                         <h2 //add calendar under here
                         >Objekt bearbeiten
                         </h2>
-                         
+                         <Calendar setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}></Calendar>
                         
 
                         <div style={inputContainerStyle}>
                         <label>Menge:</label>
                         <input
+                            
                             type="number"
                             value={amount}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}

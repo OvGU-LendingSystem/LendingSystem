@@ -49,8 +49,8 @@ export default function Calendar(probs: CalendarProbs) {
   `;
 
  const defaultSelected: DateRange = {
-    from: pastMonth,
-    to: addDays(pastMonth, 4)
+  from: probs.fromDate!,
+  to: probs.tillDate!
   };
 
   const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
