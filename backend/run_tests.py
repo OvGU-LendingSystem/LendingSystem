@@ -20,6 +20,9 @@ class Test(unittest.TestCase):
     def test_tag_filter(self):
         filter.test_tag_filter(self.client, test_db)
 
+    def test_physicalobject_filter(self):
+        filter.test_physicalobject_filter(self.client, test_db)
+
     def tearDown(self):
         # Drop all tables in the database
         Base.metadata.drop_all(test_engine)
