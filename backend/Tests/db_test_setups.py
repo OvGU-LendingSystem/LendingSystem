@@ -15,8 +15,8 @@ def testDB_1(db):
 
     db.add(Organization1)
 
-    unopic1 = Picture(path = "Uno.jpg")
-    unopic2 = Picture(path = "Uno2.jpg")
+    unopic1 = File(path = "Uno.jpg", file_type = "picture")
+    unopic2 = File(path = "Uno2.jpg", file_type = "picture")
     uno1 = PhysicalObject(  inv_num_internal = 1, 
                             inv_num_external = 1,
                             pictures = [unopic1], 
@@ -39,7 +39,7 @@ def testDB_1(db):
                             description = "A card game for 2-10 players")
     uno2.tags.append(game_tag)
 
-    cablespic1 = Picture(path = "Cables.jpg")
+    cablespic1 = File(path = "Cables.jpg", file_type = "picture")
     cables = PhysicalObject(    inv_num_internal = 1,
                                 inv_num_external = 3,
                                 pictures = [cablespic1],
@@ -51,8 +51,8 @@ def testDB_1(db):
                                 description = "A bunch of cables")
     cables.tags.append(hardware_tag)
 
-    boxespic1 = Picture(path = "Boxes.jpg")
-    boxespic2 = Picture(path = "Boxes2.jpg")
+    boxespic1 = File(path = "Boxes.jpg", file_type = "picture")
+    boxespic2 = File(path = "Boxes2.jpg", file_type = "picture")
     boxes = PhysicalObject(  inv_num_internal = 4,
                             inv_num_external = 4,
                             pictures = [boxespic1, boxespic2],
@@ -64,8 +64,8 @@ def testDB_1(db):
                             description = "A bunch of boxes")
     boxes.tags.append(hardware_tag)
 
-    amplifierpic1 = Picture(path = "Amplifier.jpg")
-    amplifierpic2 = Picture(path = "Amplifier2.jpg")
+    amplifierpic1 = File(path = "Amplifier.jpg", file_type = "picture")
+    amplifierpic2 = File(path = "Amplifier2.jpg", file_type = "picture")
     amplifier = PhysicalObject(  inv_num_internal = 5,
                                 inv_num_external = 5,
                                 pictures = [amplifierpic1, amplifierpic2],
@@ -132,9 +132,8 @@ def testDB_1(db):
     db.add(uno_order)
     db.add(music_order)
 
-    db.commit()
-    wasserkocherpic1 = Picture(path = "Wasserkocher.jpg")
-    wasserkocherpic2 = Picture(path = "Wasserkocher2.jpg")
+    wasserkocherpic1 = File(path = "Wasserkocher.jpg", file_type = "picture")
+    wasserkocherpic2 = File(path = "Wasserkocher2.jpg", file_type = "picture")
     Wasserkocher = PhysicalObject(  inv_num_internal = 1,
                                     inv_num_external = 1,
                                     deposit = 7,
@@ -146,8 +145,8 @@ def testDB_1(db):
     Wasserkocher.pictures.append(wasserkocherpic1)
     Wasserkocher.pictures.append(wasserkocherpic2)
 
-    kaffeemaschinepic1 = Picture(path = "Kaffeemaschine.jpg")
-    kaffeemaschinepic2 = Picture(path = "Kaffeemaschine2.jpg")
+    kaffeemaschinepic1 = File(path = "Kaffeemaschine.jpg", file_type = "picture")
+    kaffeemaschinepic2 = File(path = "Kaffeemaschine2.jpg", file_type = "picture")
     Kaffeemaschine = PhysicalObject( inv_num_internal = 2,
                                     inv_num_external = 2,
                                     pictures = [kaffeemaschinepic1, kaffeemaschinepic2],
