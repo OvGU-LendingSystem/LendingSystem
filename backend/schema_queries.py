@@ -14,7 +14,7 @@ class Query(graphene.ObjectType):
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all tags with the given parameters, List arguments get OR-ed together",
     )
 
@@ -33,11 +33,11 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         obj_description     = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        tags                = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        groups              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        pictures            = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        tags                = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        groups              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all physical objects with the given parameters, List arguments get OR-ed together",
     )
 
@@ -50,8 +50,8 @@ class Query(graphene.ObjectType):
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
     )
 
@@ -65,8 +65,8 @@ class Query(graphene.ObjectType):
         last_name           = graphene.Argument(type=graphene.String, required=False),
         email               = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all users with the given parameters, List arguments get OR-ed together",
     )
 
@@ -78,7 +78,7 @@ class Query(graphene.ObjectType):
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all groups with the given parameters, List arguments get OR-ed together",
     )  
 
@@ -91,8 +91,8 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
     )
 
