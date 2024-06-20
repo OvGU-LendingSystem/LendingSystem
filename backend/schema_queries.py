@@ -14,7 +14,7 @@ class Query(graphene.ObjectType):
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all tags with the given parameters, List arguments get OR-ed together",
     )
 
@@ -33,11 +33,11 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         obj_description     = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        tags                = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        groups              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        pictures            = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        tags                = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        groups              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all physical objects with the given parameters, List arguments get OR-ed together",
     )
 
@@ -50,8 +50,8 @@ class Query(graphene.ObjectType):
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
     )
 
@@ -65,8 +65,8 @@ class Query(graphene.ObjectType):
         last_name           = graphene.Argument(type=graphene.String, required=False),
         email               = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all users with the given parameters, List arguments get OR-ed together",
     )
 
@@ -78,7 +78,7 @@ class Query(graphene.ObjectType):
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all groups with the given parameters, List arguments get OR-ed together",
     )  
 
@@ -91,8 +91,8 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
     )
 
@@ -105,7 +105,7 @@ class Query(graphene.ObjectType):
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[str], None] = None,
+        physicalobjects: Union[List[int], None] = None,
     ):
         query = Tag.get_query(info=info)
 
@@ -115,7 +115,7 @@ class Query(graphene.ObjectType):
             query = query.filter(TagModel.name == name)
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
-            query = query.filter(TagModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(TagModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         tags = query.all()
         return tags
@@ -136,11 +136,11 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         obj_description: Union[str, None] = None,
         # list params for the relationships
-        pictures: Union[List[str], None] = None,
-        tags: Union[List[str], None] = None,
-        orders: Union[List[str], None] = None,
-        groups: Union[List[str], None] = None,
-        organizations: Union[List[str], None] = None,
+        pictures: Union[List[int], None] = None,
+        tags: Union[List[int], None] = None,
+        orders: Union[List[int], None] = None,
+        groups: Union[List[int], None] = None,
+        organizations: Union[List[int], None] = None,
     ):
         query = PhysicalObject.get_query(info=info)
 
@@ -164,15 +164,15 @@ class Query(graphene.ObjectType):
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
         if pictures:
-            query = query.filter(PhysicalObjectModel.pictures.any(FileModel.name.in_(pictures)))
+            query = query.filter(PhysicalObjectModel.pictures.any(FileModel.file_id.in_(pictures)))
         if tags:
-            query = query.filter(PhysicalObjectModel.tags.any(TagModel.name.in_(tags)))
+            query = query.filter(PhysicalObjectModel.tags.any(TagModel.tag_id.in_(tags)))
         if orders:
-            query = query.filter(PhysicalObjectModel.orders.any(OrderModel.name.in_(orders)))
+            query = query.filter(PhysicalObjectModel.orders.any(PhysicalObject_OrderModel.order_id.in_(orders)))
         if groups:
-            query = query.filter(PhysicalObjectModel.groups.any(GroupModel.name.in_(groups)))
+            query = query.filter(PhysicalObjectModel.groups.any(GroupModel.group_id.in_(groups)))
         if organizations:
-            query = query.filter(PhysicalObjectModel.organizations.any(OrganizationModel.name.in_(organizations)))
+            query = query.filter(PhysicalObjectModel.organizations.any(OrganizationModel.organization_id.in_(organizations)))
         
         physical_objects = query.all()
         return physical_objects
@@ -187,8 +187,8 @@ class Query(graphene.ObjectType):
         from_date: Union[str, None] = None,
         till_date: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[str], None] = None,
-        users: Union[List[str], None] = None,
+        physicalobjects: Union[List[int], None] = None,
+        users: Union[List[int], None] = None,
     ):
         query = Order.get_query(info=info)
 
@@ -200,9 +200,9 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.till_date == till_date)
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
-            query = query.filter(OrderModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.phys_id.in_(physicalobjects)))
         if users:
-            query = query.filter(OrderModel.users.any(UserModel.name.in_(users)))
+            query = query.filter(OrderModel.users.any(UserModel.user_id.in_(users)))
         
         orders = query.all()
         return orders
@@ -218,8 +218,8 @@ class Query(graphene.ObjectType):
         last_name: Union[str, None] = None,
         email: Union[str, None] = None,
         # list params for the relationships
-        orders: Union[List[str], None] = None,
-        organizations: Union[List[str], None] = None,
+        orders: Union[List[int], None] = None,
+        organizations: Union[List[int], None] = None,
     ):
         query = User.get_query(info=info)
 
@@ -233,9 +233,9 @@ class Query(graphene.ObjectType):
             query = query.filter(UserModel.email == email)
         # list params for the relationships .any() returns union (OR Statement)
         if orders:
-            query = query.filter(UserModel.orders.any(OrderModel.name.in_(orders)))
+            query = query.filter(UserModel.orders.any(OrderModel.order_id.in_(orders)))
         if organizations:
-            query = query.filter(UserModel.organizations.any(OrganizationModel.name.in_(organizations)))
+            query = query.filter(UserModel.organizations.any(Organization_UserModel.organization_id.in_(organizations)))
         
         users = query.all()
         return users
@@ -249,7 +249,7 @@ class Query(graphene.ObjectType):
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[str], None] = None,
+        physicalobjects: Union[List[int], None] = None,
     ):
         query = Group.get_query(info=info)
 
@@ -259,7 +259,7 @@ class Query(graphene.ObjectType):
             query = query.filter(GroupModel.name == name)
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
-            query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         groups = query.all()
         return groups
@@ -274,8 +274,8 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         location: Union[str, None] = None,
         # list params for the relationships
-        users: Union[List[str], None] = None,
-        physicalobjects: Union[List[str], None] = None,
+        users: Union[List[int], None] = None,
+        physicalobjects: Union[List[int], None] = None,
     ):
         query = Organization.get_query(info=info)
 
@@ -287,9 +287,9 @@ class Query(graphene.ObjectType):
             query = query.filter(OrganizationModel.location == location)
         # list params for the relationships .any() returns union (OR Statement)
         if users:
-            query = query.filter(OrganizationModel.users.any(UserModel.name.in_(users)))
+            query = query.filter(OrganizationModel.users.any(Organization_UserModel.user_id.in_(users)))
         if physicalobjects:
-            query = query.filter(OrganizationModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(OrganizationModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         organizations = query.all()
         return organizations
