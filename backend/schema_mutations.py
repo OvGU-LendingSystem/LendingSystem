@@ -5,7 +5,7 @@ import graphene
 from flask import session
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
-from config import db, picture_directory
+from config import db, picture_directory, pdf_directory
 
 from models import User as UserModel, orderStatus
 from schema import *
@@ -25,12 +25,11 @@ class create_physical_object(graphene.Mutation):
         name                = graphene.String(required=True)
         description         = graphene.String()
 
-        # TODO: Picture Upload
-        pictures        = graphene.String()
-        tags            = graphene.List(graphene.Int)
-        orders          = graphene.List(graphene.Int)
-        groups          = graphene.List(graphene.Int)
-        organizations   = graphene.List(graphene.Int)
+        pictures            = graphene.String()
+        tags                = graphene.List(graphene.Int)
+        orders              = graphene.List(graphene.Int)
+        groups              = graphene.List(graphene.Int)
+        organizations       = graphene.List(graphene.Int)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
@@ -51,8 +50,6 @@ class create_physical_object(graphene.Mutation):
                 tags                = db_tags,
             )
 
-            if pictures:
-                pass
             if orders:
                 db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
                 physical_object.orders = db_orders
@@ -70,13 +67,12 @@ class create_physical_object(graphene.Mutation):
                 physical_object.deposit = deposit
 
             db.add(physical_object)
+            db.commit()
+            return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.", physical_object=physical_object)
 
         except Exception as e:
             print(e)
-            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))
-
-        db.commit()
-        return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.")
+            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))        
 
 class update_physical_object(graphene.Mutation):
     class Arguments:
@@ -163,38 +159,84 @@ class delete_physical_object(graphene.Mutation):
             db.commit()
             return delete_physical_object(ok=True, info_text="Objekt erfolgreich entfernt.")
         else:
-            return delete_physical_object(ok=False, info_text="Objekt konnte nicht entfernt werden.")
+            return delete_physical_object(ok=False, info_text="Objekt konnte nicht gefunden werden.")
 
 ##################################
-# Upload for Pictures            #
+# Upload for Files               #
 ##################################
-class upload_picture(graphene.Mutation):
+class upload_file(graphene.Mutation):
     class Arguments:
-        phys_id = graphene.Int(required=True)
-        file    = Upload(required=True)
+        phys_id         = graphene.Int()
+        organization_id = graphene.Int()
+        group_id        = graphene.Int()
+        file            = Upload(required=True)
+
+    file = graphene.Field(lambda: File)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    def mutate(self, info, file, phys_id=None, organization_id=None, group_id=None):
+        try:
+            physical_object = None
+            organization    = None
+            group           = None
+
+            physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+            organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            group           = GroupModel.query.filter(GroupModel.group_id == group_id).first()
+            
+            type = None
+            pictureFileExtensions   = ['jpg', 'jpeg', 'png', 'svg']
+            pdfFileExtensions       = ['pdf']
+            if file.filename.split('.')[-1] in pictureFileExtensions:
+                type = 'picture'
+            elif file.filename.split('.')[-1] in pdfFileExtensions:
+                type = 'pdf'
+
+            if type == None:
+                return upload_file(ok=False, info_text="File type not supported.")
+
+            file_name   = file.filename
+            file_name   = file_name.replace(" ", "_")
+            time_stamp  = str(time.time())
+            file_name   = time_stamp + "_" + file_name
+            if type == 'picture':
+                file.save(os.path.join(picture_directory, file_name))
+            elif type == 'pdf':
+                file.save(os.path.join(pdf_directory, file_name))
+
+            file = FileModel(   path            = file_name,
+                                physicalobject = physical_object,
+                                organization    = organization,
+                                group           = group,
+                                file_type       = type)
+
+            db.add(file)
+            db.commit()
+
+            return upload_file(ok=True, info_text="File uploaded successfully.", file=file)
+        except Exception as e:
+            print(e)
+            return upload_file(ok=False, info_text="Error uploading file. " + str(e))
+
+class delete_file(graphene.Mutation):
+    class Arguments:
+        file_id = graphene.Int(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
-    file_name = graphene.String()
 
-    def mutate(self, info, file, phys_id):
-        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+    @staticmethod
+    def mutate(self, info, file_id):
+        file = FileModel.query.filter(FileModel.file_id == file_id).first()
+        if file:
+            os.remove(os.path.join(picture_directory, file.path))
 
-        if not physical_object:
-            return upload_picture(ok=False, info_text="Physical Object not found.", file_name=None)
-        
-        file_name = file.filename
-        file_name = file_name.replace(" ", "_")
-        time_stamp = str(time.time())
-        file_name = time_stamp + "_" + file_name
-        file.save(os.path.join(picture_directory, file_name))
-
-        db_file = PictureModel(path = file_name, physicalobject = physical_object)
-
-        db.add(db_file)
-        db.commit()
-
-        return upload_picture(ok=True, info_text="Picture uploaded successfully.", file_name=file_name)
+            db.delete(file)
+            db.commit()
+            return delete_file(ok=True, info_text="File successfully removed.")
+        else:
+            return delete_file(ok=False, info_text="File not found.")
 
 ##################################
 # Mutations for orders           #
@@ -211,7 +253,7 @@ class create_order(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, from_date=None, till_date=None, users=None, physicalobjects=None):
+    def mutate(self, info, from_date=None, till_date=None, users=None, physicalobjects=None):
         try:
             order = OrderModel()
 
@@ -229,12 +271,12 @@ class create_order(graphene.Mutation):
 
             db.add(order)
 
+            db.commit()
+            return create_order(ok=True, info_text="Order erfolgreich erstellt.", order=order)
+
         except Exception as e:
             print(e)
             return create_order(ok=False, info_text="Order konnte nicht erstellt werden. " + str(e))
-
-        db.commit()
-        return create_order(ok=True, info_text="Order erfolgreich erstellt.")
 
 class update_order(graphene.Mutation):
     """
@@ -275,7 +317,7 @@ class update_order(graphene.Mutation):
                 order.users = db_users
 
             db.commit()
-            return update_order(ok=True, info_text="OrderStatus aktualisiert.")
+            return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
         
         except Exception as e:
             print(e)
@@ -311,7 +353,7 @@ class update_order_status(graphene.Mutation):
                     order.status = orderStatus[status]
 
             db.commit()
-            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.")
+            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", order=order)
         
         except Exception as e:
             print(e)
@@ -358,12 +400,12 @@ class create_tag(graphene.Mutation):
 
             db.add(tag)
 
+            db.commit()
+            return create_tag(ok=True, info_text="Tag erfolgreich erstellt.", tag=tag)
+
         except Exception as e:
             print(e)
             return create_tag(ok=False, info_text="Fehler beim Erstellen des Tags. " + str(e))
-
-        db.commit()
-        return create_tag(ok=True, info_text="Tag erfolgreich erstellt.")
 
 class update_tag(graphene.Mutation):
     class Arguments:
@@ -389,7 +431,7 @@ class update_tag(graphene.Mutation):
                 tag.name = name
 
             db.commit()
-            return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.")
+            return update_tag(ok=True, info_text="Tag erfolgreich aktualisiert.", tag=tag)
 
         except Exception as e:
             print(e)
@@ -427,8 +469,7 @@ class create_group(graphene.Mutation):
     @staticmethod
     def mutate(self, info, name, physicalobjects=None):
         try:
-            group = GroupModel(
-                name=name)
+            group = GroupModel(name=name)
 
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
@@ -436,12 +477,12 @@ class create_group(graphene.Mutation):
 
             db.add(group)
 
+            db.commit()
+            return create_group(ok=True, info_text="Gruppe erfolgreich erstellt.", group=group)
+
         except Exception as e:
             print(e)
             return create_group(ok=False, info_text="Fehler beim Erstellen der Gruppe. " + str(e))
-
-        db.commit()
-        return create_group(ok=True, info_text="Gruppe erfolgreich erstellt.")
 
 class update_group(graphene.Mutation):
     class Arguments:
@@ -467,7 +508,7 @@ class update_group(graphene.Mutation):
                 group.name = name
 
             db.commit()
-            return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.")
+            return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.", group=group)
 
         except Exception as e:
             print(e)
@@ -501,15 +542,14 @@ class create_organization(graphene.Mutation):
         users           = graphene.List(graphene.Int)
         physicalobjects = graphene.List(graphene.Int)
 
+    organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
     def mutate(self, info, name, location=None, users=None, physicalobjects=None):
         try:
-            organization = OrganizationModel(
-                name=name
-            )
+            organization = OrganizationModel(name=name)
 
             if location:
                 organization.location = location
@@ -522,12 +562,12 @@ class create_organization(graphene.Mutation):
 
             db.add(organization)
 
+            db.commit()
+            return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.", organizations=organization)
+
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
-
-        db.commit()
-        return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.")
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))     
 
 class update_organization(graphene.Mutation):
     class Arguments:
@@ -575,7 +615,7 @@ class delete_organization(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info, organization_id):
-        organization = OrganizationModel.query.filter(OrganizationModel.organization_id.order_id == organization_id)
+        organization = OrganizationModel.query.filter(OrganizationModel.organization_id.order_id == organization_id).first()
         if organization:
             db.delete(organization)
             db.commit()
@@ -680,11 +720,13 @@ class Mutations(graphene.ObjectType):
     update_physical_object = update_physical_object.Field()
     delete_physical_object = delete_physical_object.Field()
 
-    upload_picture = upload_picture.Field()
+    upload_file = upload_file.Field()
+    delete_file = delete_file.Field()
 
-    create_order = create_order.Field()
-    update_order = update_order.Field()
-    delete_order = delete_order.Field()
+    create_order        = create_order.Field()
+    update_order        = update_order.Field()
+    update_order_status = update_order_status.Field()
+    delete_order        = delete_order.Field()
 
     create_tag = create_tag.Field()
     update_tag = update_tag.Field()
