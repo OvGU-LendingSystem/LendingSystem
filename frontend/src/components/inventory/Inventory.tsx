@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
+import './Inventory.css';
+
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  imageUrl: string;
+  category: string;
+}
+
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
-
 
   const products: Product[] = [
     {
@@ -46,12 +56,11 @@ export function Inventory(): JSX.Element {
       description: 'Beschreibung für Objekt 5',
       price: 'Kaution: 50€',
       imageUrl: 'https://via.placeholder.com/300',
-      category: 'Electronik'
+      category: 'Elektronik'
     },
   ];
 
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -85,16 +94,6 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
-  const openDetails = (product: Product) => {
-    setSelectedProduct(product);
-    setShowDetails(true);
-  };
-
-  const closeDetails = () => {
-    setShowDetails(false);
-    setSelectedProduct(null);
-  };
-
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
       itemsInCartDispatcher({
@@ -118,31 +117,27 @@ export function Inventory(): JSX.Element {
     (selectedCategories.length === 0 || selectedCategories.includes(product.category || ''))
   );
 
-  const openMoreDetails = () => {
-
-  }
-
   return (
     <>
       <div style={{ padding: '20px' }}>
-        <div style={filterContainerStyle}>
+        <div className="filter-container">
           <input
             type="text"
             placeholder="Suchen"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={searchInputStyle}
+            className="search-input"
           />
           <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
             <button
-              style={dropdownButtonStyle}
+              className="dropdown-button"
               onClick={() => setDropdownVisible(!dropdownVisible)}
             >
               Filter
             </button>
             {dropdownVisible && (
-              <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
+              <div className="dropdown-content">
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={selectedCategories.includes('Elektronik')}
@@ -150,7 +145,7 @@ export function Inventory(): JSX.Element {
                   />
                   Elektronik
                 </label>
-                <label style={checkboxLabelStyle}>
+                <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={selectedCategories.includes('Office')}
@@ -164,17 +159,26 @@ export function Inventory(): JSX.Element {
         </div>
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
-            <div key={product.id} style={productCardStyle}>
-              <img src={product.imageUrl} alt={product.name} style={imageStyle} />
-              <div style={productInfoStyle}>
-                <h3>{product.name}</h3>
-                <div style={descriptionStyle}>
-                  <div style={descriptionContentStyle}>{product.description}</div>
-                  <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
+            <div key={product.id} className="product-card">
+              <img src={product.imageUrl} alt={product.name} className="product-image" />
+              <div className="product-info">
+                <h3 className="product-name">{product.name}</h3>
+                <div className="product-description">
+                  <div className="description-content">{product.description}</div>
+                  <div className="tooltip-container">
+                    <button
+                      className="description-button"
+                    >
+                      Mehr Informationen
+                    </button>
+                    <div className="tooltip-content">
+                      <p>Kaution: {product.price}</p>
+                      <p>Kategorie: {product.category}</p>
+                    </div>
+                  </div>
                 </div>
-                <div style={priceStyle}>{product.price}</div>
-
-                <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                <div className="product-price">{product.price}</div>
+                <button className="add-to-cart-button" onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
                 </button>
               </div>
@@ -197,12 +201,11 @@ export function Inventory(): JSX.Element {
       </div>
 
       {showModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
+        <div className="modal-overlay">
+          <div className="modal-content">
             <h2>Objekt hinzufügen</h2>
-            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
-            />
-            <div style={inputContainerStyle}>
+            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+            <div className="input-container">
               <label>Menge:</label>
               <input
                 type="number"
@@ -212,26 +215,9 @@ export function Inventory(): JSX.Element {
                 style={{ marginLeft: '10px' }}
               />
             </div>
-            <div style={buttonContainerStyle}>
+            <div className="button-container">
               <button onClick={addToCart}>Add</button>
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {showDetails && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <h2>{selectedProduct?.name}</h2>
-            <div style={inputContainerStyle}>
-              <div>{selectedProduct?.description}</div>
-            </div>
-            <div style={buttonContainerStyle}>
-              <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
                 Cancel
               </button>
             </div>
@@ -241,119 +227,3 @@ export function Inventory(): JSX.Element {
     </>
   );
 }
-
-const filterContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  marginBottom: '20px',
-};
-
-const searchInputStyle: React.CSSProperties = {
-  padding: '10px',
-  width: '200px',
-  marginRight: '10px',
-};
-
-const dropdownButtonStyle: React.CSSProperties = {
-  padding: '10px 20px',
-  backgroundColor: '#007bff',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-};
-
-const dropdownContentStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'absolute',
-  backgroundColor: '#f1f1f1',
-  minWidth: '160px',
-  boxShadow: '0px 8px 16px 0px rgba(0,0,0,0.2)',
-  padding: '12px 16px',
-  zIndex: 1,
-};
-
-const checkboxLabelStyle: React.CSSProperties = {
-  display: 'block',
-  marginBottom: '10px',
-};
-
-const productCardStyle: React.CSSProperties = {
-  marginBottom: '20px',
-  border: '1px solid #ccc',
-  padding: '10px',
-  display: 'flex',
-  alignItems: 'center',
-};
-
-const imageStyle: React.CSSProperties = {
-  width: '250px',
-  height: '150px',
-  marginRight: '20px',
-};
-
-const productInfoStyle: React.CSSProperties = {
-  flex: '1',
-};
-
-const addToCartButtonStyle: React.CSSProperties = {
-  backgroundColor: '#007bff',
-  color: '#ffffff',
-  border: 'none',
-  padding: '10px 20px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  marginRight: '10px',
-  marginTop: '10px',
-};
-
-const descriptionStyle: React.CSSProperties = {
-  marginBottom: '10px',
-};
-
-const descriptionButtonStyle: React.CSSProperties = {
-  backgroundColor: '#fff',
-  color: '#191970',
-  border: 'none',
-  padding: '2px 4px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  marginRight: '10px',
-  textDecoration: 'underline',
-};
-
-
-const descriptionContentStyle: React.CSSProperties = {
-  //display: 'none',
-};
-
-const priceStyle: React.CSSProperties = {
-  fontWeight: 'bold',
-};
-
-const modalOverlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  top: '0',
-  left: '0',
-  right: '0',
-  bottom: '0',
-  backgroundColor: 'rgba(0,0,0,0.7)',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-};
-
-const modalContentStyle: React.CSSProperties = {
-  backgroundColor: '#fff',
-  padding: '20px',
-  borderRadius: '5px',
-};
-
-const inputContainerStyle: React.CSSProperties = {
-  marginBottom: '20px',
-};
-
-const buttonContainerStyle: React.CSSProperties = {
-  textAlign: 'right',
-};
