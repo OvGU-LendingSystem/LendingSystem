@@ -1,9 +1,15 @@
 .input--wrapper {
     display: flex;
+    border: 2px solid black;
+    width: 200px;
+    height: 25px;
+}
+
+.input--wrapper.touched {
     border: 2px solid green;
 }
 
-.input--wrapper:has(> input:invalid) {
+.input--wrapper.touched:has(> input:invalid) {
     border-color: red;
 }
 
@@ -11,4 +17,15 @@
     outline: none;
     border: none;
     appearance: textfield;
+    width: 100%;
+}
+
+.custom-select--wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-select--wrapper select {
+    width: 100%;
 }
