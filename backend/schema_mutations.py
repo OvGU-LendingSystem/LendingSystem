@@ -1,3 +1,4 @@
+import enum
 import os
 import time
 
@@ -7,7 +8,7 @@ from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
 
-from models import User as UserModel, orderStatus
+from models import User as UserModel, orderStatus, userRights
 from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
@@ -26,10 +27,10 @@ class create_physical_object(graphene.Mutation):
         description         = graphene.String()
 
         pictures            = graphene.String()
-        tags                = graphene.List(graphene.ObjectType)
-        orders              = graphene.List(graphene.ObjectType)
-        groups              = graphene.List(graphene.ObjectType)
-        organizations       = graphene.List(graphene.ObjectType)
+        tags                = graphene.List(graphene.String)
+        orders              = graphene.List(graphene.String)
+        groups              = graphene.List(graphene.String)
+        organizations       = graphene.List(graphene.String)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
@@ -86,10 +87,10 @@ class update_physical_object(graphene.Mutation):
         description         = graphene.String()
 
         pictures            = graphene.String()
-        tags                = graphene.List(graphene.ObjectType)
-        orders              = graphene.List(graphene.ObjectType)
-        groups              = graphene.List(graphene.ObjectType)
-        organizations       = graphene.List(graphene.ObjectType)
+        tags                = graphene.List(graphene.String)
+        orders              = graphene.List(graphene.String)
+        groups              = graphene.List(graphene.String)
+        organizations       = graphene.List(graphene.String)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
@@ -245,8 +246,8 @@ class create_order(graphene.Mutation):
     class Arguments:
         from_date       = graphene.Date()
         till_date       = graphene.Date()
-        physicalobjects = graphene.List(graphene.ObjectType)
-        users           = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
+        users           = graphene.List(graphene.String)
 
     order = graphene.Field(lambda: Order)
     ok = graphene.Boolean()
@@ -287,8 +288,8 @@ class update_order(graphene.Mutation):
         from_date   = graphene.Date()
         till_date   = graphene.Date()
 
-        physicalobjects = graphene.List(graphene.ObjectType)
-        users = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
+        users = graphene.List(graphene.String)
 
     order = graphene.Field(lambda: Order)
     ok = graphene.Boolean()
@@ -329,7 +330,7 @@ class update_order_status(graphene.Mutation):
     """
     class Arguments:
         order_id        = graphene.String(required=True)
-        physicalObjects = graphene.List(graphene.ObjectType, required=True)
+        physicalObjects = graphene.List(graphene.String, required=True)
 
         return_date     = graphene.Date()
         status          = graphene.String()
@@ -382,7 +383,7 @@ class delete_order(graphene.Mutation):
 class create_tag(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
-        physicalobjects = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
@@ -411,7 +412,7 @@ class update_tag(graphene.Mutation):
     class Arguments:
         tag_id = graphene.Int(required=True)
         name = graphene.String()
-        physicalobjects = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
@@ -460,7 +461,7 @@ class delete_tag(graphene.Mutation):
 class create_group(graphene.Mutation):
     class Arguments:
         name            = graphene.String(required=True)
-        physicalobjects = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
@@ -488,7 +489,7 @@ class update_group(graphene.Mutation):
     class Arguments:
         group_id = graphene.Int(required=True)
         name = graphene.String()
-        physicalobjects = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.String)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
@@ -539,8 +540,8 @@ class create_organization(graphene.Mutation):
         name            = graphene.String(required=True)
         location        = graphene.String()
 
-        users           = graphene.List(graphene.ObjectType)
-        physicalobjects = graphene.List(graphene.ObjectType)
+        users           = graphene.List(graphene.String)
+        physicalobjects = graphene.List(graphene.String)
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
@@ -575,8 +576,8 @@ class update_organization(graphene.Mutation):
         name                = graphene.String()
         location            = graphene.String()
 
-        users               = graphene.List(graphene.ObjectType)
-        physicalobjects     = graphene.List(graphene.ObjectType)
+        users               = graphene.List(graphene.String)
+        physicalobjects     = graphene.List(graphene.String)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -656,7 +657,8 @@ class add_user_to_organization(graphene.Mutation):
 class update_user_rights(graphene.Mutation):
     class Arguments:
         user_id         = graphene.String(required=True)
-        new_rights      = graphene.Enum(required=True)
+        # TODO graphene.Enum
+        new_rights = graphene.Int(required=True) or graphene.String(required=True)
         organization_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
