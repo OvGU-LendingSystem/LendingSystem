@@ -26,17 +26,17 @@ class create_physical_object(graphene.Mutation):
         description         = graphene.String()
 
         pictures            = graphene.String()
-        tags                = graphene.List(graphene.Int)
-        orders              = graphene.List(graphene.Int)
-        groups              = graphene.List(graphene.Int)
-        organizations       = graphene.List(graphene.Int)
+        tags                = graphene.List(graphene.ObjectType)
+        orders              = graphene.List(graphene.ObjectType)
+        groups              = graphene.List(graphene.ObjectType)
+        organizations       = graphene.List(graphene.ObjectType)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, inv_num_internal, inv_num_external, storage_location, name, 
+    def mutate(self, info, inv_num_internal, inv_num_external, storage_location, name,
                tags, pictures=None, orders=None, groups=None, organizations=None, faults=None, description=None, deposit=None):
         try:
             db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
@@ -72,7 +72,7 @@ class create_physical_object(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))        
+            return create_physical_object(ok=False, info_text="Fehler beim Erstellen des Objekts. " + str(e))
 
 class update_physical_object(graphene.Mutation):
     class Arguments:
@@ -86,10 +86,10 @@ class update_physical_object(graphene.Mutation):
         description         = graphene.String()
 
         pictures            = graphene.String()
-        tags                = graphene.List(graphene.Int)
-        orders              = graphene.List(graphene.Int)
-        groups              = graphene.List(graphene.Int)
-        organizations       = graphene.List(graphene.Int)
+        tags                = graphene.List(graphene.ObjectType)
+        orders              = graphene.List(graphene.ObjectType)
+        groups              = graphene.List(graphene.ObjectType)
+        organizations       = graphene.List(graphene.ObjectType)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
     ok = graphene.Boolean()
@@ -105,7 +105,7 @@ class update_physical_object(graphene.Mutation):
             # Abort if object does not exist
             if not physical_object:
                 return update_physical_object(ok=False, info_text="Objekt nicht gefunden.")
-            
+
             if inv_num_internal:
                 physical_object.inv_num_internal = inv_num_internal
             if inv_num_external:
@@ -146,7 +146,7 @@ class update_physical_object(graphene.Mutation):
 
 class delete_physical_object(graphene.Mutation):
     class Arguments:
-        phys_id = graphene.Int(required=True)
+        phys_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -166,9 +166,9 @@ class delete_physical_object(graphene.Mutation):
 ##################################
 class upload_file(graphene.Mutation):
     class Arguments:
-        phys_id         = graphene.Int()
-        organization_id = graphene.Int()
-        group_id        = graphene.Int()
+        phys_id         = graphene.String()
+        organization_id = graphene.String()
+        group_id        = graphene.String()
         file            = Upload(required=True)
 
     file = graphene.Field(lambda: File)
@@ -184,7 +184,7 @@ class upload_file(graphene.Mutation):
             physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
             organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
             group           = GroupModel.query.filter(GroupModel.group_id == group_id).first()
-            
+
             type = None
             pictureFileExtensions   = ['jpg', 'jpeg', 'png', 'svg']
             pdfFileExtensions       = ['pdf']
@@ -221,7 +221,7 @@ class upload_file(graphene.Mutation):
 
 class delete_file(graphene.Mutation):
     class Arguments:
-        file_id = graphene.Int(required=True)
+        file_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -245,8 +245,8 @@ class create_order(graphene.Mutation):
     class Arguments:
         from_date       = graphene.Date()
         till_date       = graphene.Date()
-        physicalobjects = graphene.List(graphene.Int)
-        users           = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
+        users           = graphene.List(graphene.ObjectType)
 
     order = graphene.Field(lambda: Order)
     ok = graphene.Boolean()
@@ -261,7 +261,7 @@ class create_order(graphene.Mutation):
                 order.from_date = from_date
             if till_date:
                 order.till_date = till_date
-            
+
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
@@ -287,8 +287,8 @@ class update_order(graphene.Mutation):
         from_date   = graphene.Date()
         till_date   = graphene.Date()
 
-        physicalobjects = graphene.List(graphene.Int)
-        users = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
+        users = graphene.List(graphene.ObjectType)
 
     order = graphene.Field(lambda: Order)
     ok = graphene.Boolean()
@@ -301,7 +301,7 @@ class update_order(graphene.Mutation):
             # Abort if object does not exist
             if not order:
                 return update_order(ok=False, info_text="Order nicht gefunden.")
-            
+
             if from_date:
                 order.from_date = from_date
             if till_date:
@@ -318,18 +318,18 @@ class update_order(graphene.Mutation):
 
             db.commit()
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
-        
+
         except Exception as e:
             print(e)
             return update_order(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
-        
+
 class update_order_status(graphene.Mutation):
     """
     Updates the status for the given physical objects in the order.
     """
     class Arguments:
-        order_id        = graphene.Int(required=True)
-        physicalObjects = graphene.List(graphene.Int, required=True)
+        order_id        = graphene.String(required=True)
+        physicalObjects = graphene.List(graphene.ObjectType, required=True)
 
         return_date     = graphene.Date()
         status          = graphene.String()
@@ -345,7 +345,7 @@ class update_order_status(graphene.Mutation):
             # Abort if object does not exist
             if len(phys_order) == 0:
                 return update_order_status(ok=False, info_text="Order nicht gefunden.")
-            
+
             for order in phys_order:
                 if return_date:
                     order.return_date = return_date
@@ -354,14 +354,14 @@ class update_order_status(graphene.Mutation):
 
             db.commit()
             return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", order=order)
-        
+
         except Exception as e:
             print(e)
             return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
 
 class delete_order(graphene.Mutation):
     class Arguments:
-        order_id = graphene.Int(required=True)
+        order_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -382,7 +382,7 @@ class delete_order(graphene.Mutation):
 class create_tag(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
-        physicalobjects = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
@@ -411,7 +411,7 @@ class update_tag(graphene.Mutation):
     class Arguments:
         tag_id = graphene.Int(required=True)
         name = graphene.String()
-        physicalobjects = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
@@ -439,7 +439,7 @@ class update_tag(graphene.Mutation):
 
 class delete_tag(graphene.Mutation):
     class Arguments:
-        tag_id = graphene.Int(required=True)
+        tag_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -460,7 +460,7 @@ class delete_tag(graphene.Mutation):
 class create_group(graphene.Mutation):
     class Arguments:
         name            = graphene.String(required=True)
-        physicalobjects = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
@@ -488,7 +488,7 @@ class update_group(graphene.Mutation):
     class Arguments:
         group_id = graphene.Int(required=True)
         name = graphene.String()
-        physicalobjects = graphene.List(graphene.Int)
+        physicalobjects = graphene.List(graphene.ObjectType)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
@@ -516,7 +516,7 @@ class update_group(graphene.Mutation):
 
 class delete_group(graphene.Mutation):
     class Arguments:
-        group_id = graphene.Int(required=True)
+        group_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -539,8 +539,8 @@ class create_organization(graphene.Mutation):
         name            = graphene.String(required=True)
         location        = graphene.String()
 
-        users           = graphene.List(graphene.Int)
-        physicalobjects = graphene.List(graphene.Int)
+        users           = graphene.List(graphene.ObjectType)
+        physicalobjects = graphene.List(graphene.ObjectType)
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
@@ -567,7 +567,7 @@ class create_organization(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))     
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
 
 class update_organization(graphene.Mutation):
     class Arguments:
@@ -575,8 +575,8 @@ class update_organization(graphene.Mutation):
         name                = graphene.String()
         location            = graphene.String()
 
-        users               = graphene.List(graphene.Int)
-        physicalobjects     = graphene.List(graphene.Int)
+        users               = graphene.List(graphene.ObjectType)
+        physicalobjects     = graphene.List(graphene.ObjectType)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -608,7 +608,7 @@ class update_organization(graphene.Mutation):
 
 class delete_organization(graphene.Mutation):
     class Arguments:
-        organization_id = graphene.Int(required=True)
+        organization_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
@@ -622,6 +622,67 @@ class delete_organization(graphene.Mutation):
             return delete_tag(ok=True, info_text="Organisation erfolgreich entfernt.")
         else:
             return delete_tag(ok=False, info_text="Organisation konnte nicht entfernt werden.")
+
+
+class add_user_to_organization(graphene.Mutation):
+    class Arguments:
+        user_id         = graphene.String(required=True)
+        organization_id = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, organization_id):
+        try:
+            executive_user = info.context.user
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+
+            if not user or not organization:
+                return add_user_to_organization(ok=False, info_text="User oder Organisation existieren nicht.")
+
+            # wenn executive_User OrgaAdmin dieser Organisation ist und user nicht bereits Member ist
+            # darf er den User zur Organisation hinzufügen
+            if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
+                user.organizations.append(organization)
+                db.commit()
+                return add_user_to_organization(ok=True, info_text="User erfolgreich zur Organisation hinzugefügt.")
+        except Exception as e:
+            print(e)
+            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert.")
+
+
+class update_user_rights(graphene.Mutation):
+    class Arguments:
+        user_id         = graphene.String(required=True)
+        new_rights      = graphene.Enum(required=True)
+        organization_id = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, organization_id, new_rights):
+        try:
+            executive_user = info.context.user
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+
+            if not user or not organization:
+                return update_user_rights(ok=False, info_text="User oder Organisation existieren nicht.")
+
+            # executive User muss mehr Rechte als User haben
+            # die neuen Rechte dürfen nur mindestens genauso gut sein wie die des executive User
+            if new_rights >= executive_user.organizations[organization_id].rights < user.organizations[organization_id].rights:
+
+                user.organizations[organization_id].rights = new_rights
+
+                db.commit()
+                return update_user_rights(ok=True, info_text="Benutzerrechte erfolgreich angepasst.")
+        except Exception as e:
+            print(e)
+            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen.")
 
 ##################################
 # Mutations for Users login      #
@@ -708,8 +769,6 @@ class logout(graphene.Mutation):
         info_text = "Logout erfolgreich!"
         return logout(ok=ok, info_text=info_text)
 
-        
-
 class Mutations(graphene.ObjectType):
     signup          = sign_up.Field()
     login           = login.Field()
@@ -736,6 +795,8 @@ class Mutations(graphene.ObjectType):
     update_group = update_group.Field()
     delete_group = delete_group.Field()
 
-    create_organization = create_organization.Field()
-    update_organization = update_organization.Field()
-    delete_organization = delete_organization.Field()
+    create_organization         = create_organization.Field()
+    update_organization         = update_organization.Field()
+    delete_organization         = delete_organization.Field()
+    add_user_to_organization    = add_user_to_organization.Field()
+    update_user_rights          = update_user_rights.Field()
