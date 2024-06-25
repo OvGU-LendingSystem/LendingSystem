@@ -352,7 +352,7 @@ class update_order_status(graphene.Mutation):
                 if return_date:
                     order.return_date = return_date
                 if status:
-                    order.order_status = status
+                    order.order_status = orderStatus[status]
 
             db.commit()
             return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", phys_order=phys_order)
@@ -666,6 +666,66 @@ class delete_organization(graphene.Mutation):
             return delete_tag(ok=True, info_text="Organisation erfolgreich entfernt.")
         else:
             return delete_tag(ok=False, info_text="Organisation konnte nicht entfernt werden.")
+
+class add_user_to_organization(graphene.Mutation):
+    class Arguments:
+        user_id         = graphene.String(required=True)
+        organization_id = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, organization_id):
+        try:
+            executive_user = info.context.user
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+
+            if not user or not organization:
+                return add_user_to_organization(ok=False, info_text="User oder Organisation existieren nicht.")
+
+            # wenn executive_User OrgaAdmin dieser Organisation ist und user nicht bereits Member ist
+            # darf er den User zur Organisation hinzufügen
+            if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
+                user.organizations.append(organization)
+                db.commit()
+                return add_user_to_organization(ok=True, info_text="User erfolgreich zur Organisation hinzugefügt.")
+        except Exception as e:
+            print(e)
+            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert.")
+
+class update_user_rights(graphene.Mutation):
+    class Arguments:
+        user_id         = graphene.String(required=True)
+        # TODO graphene.Enum
+        new_rights = graphene.Int(required=True) or graphene.String(required=True)
+        organization_id = graphene.String(required=True)
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, organization_id, new_rights):
+        try:
+            executive_user = info.context.user
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+
+            if not user or not organization:
+                return update_user_rights(ok=False, info_text="User oder Organisation existieren nicht.")
+
+            # executive User muss mehr Rechte als User haben
+            # die neuen Rechte dürfen nur mindestens genauso gut sein wie die des executive User
+            if new_rights >= executive_user.organizations[organization_id].rights < user.organizations[organization_id].rights:
+
+                user.organizations[organization_id].rights = new_rights
+
+                db.commit()
+                return update_user_rights(ok=True, info_text="Benutzerrechte erfolgreich angepasst.")
+        except Exception as e:
+            print(e)
+            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen.")
+
 
 ##################################
 # Mutations for Users            #
