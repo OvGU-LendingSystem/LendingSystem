@@ -77,7 +77,7 @@ class create_physical_object(graphene.Mutation):
 
 class update_physical_object(graphene.Mutation):
     class Arguments:
-        phys_id             = graphene.Int(required=True)
+        phys_id             = graphene.String(required=True)
         inv_num_internal    = graphene.Int()
         inv_num_external    = graphene.Int()
         deposit             = graphene.Int()
@@ -284,7 +284,7 @@ class update_order(graphene.Mutation):
     Updates content of the order with the given order_id.
     """
     class Arguments:
-        order_id    = graphene.Int(required=True)
+        order_id    = graphene.String(required=True)
         from_date   = graphene.Date()
         till_date   = graphene.Date()
 
@@ -410,7 +410,7 @@ class create_tag(graphene.Mutation):
 
 class update_tag(graphene.Mutation):
     class Arguments:
-        tag_id = graphene.Int(required=True)
+        tag_id = graphene.String(required=True)
         name = graphene.String()
         physicalobjects = graphene.List(graphene.String)
 
@@ -487,7 +487,7 @@ class create_group(graphene.Mutation):
 
 class update_group(graphene.Mutation):
     class Arguments:
-        group_id = graphene.Int(required=True)
+        group_id = graphene.String(required=True)
         name = graphene.String()
         physicalobjects = graphene.List(graphene.String)
 
@@ -572,7 +572,7 @@ class create_organization(graphene.Mutation):
 
 class update_organization(graphene.Mutation):
     class Arguments:
-        organization_id     = graphene.Int()
+        organization_id     = graphene.String()
         name                = graphene.String()
         location            = graphene.String()
 
@@ -660,7 +660,6 @@ class update_user_rights(graphene.Mutation):
         # TODO graphene.Enum
         new_rights = graphene.Int(required=True) or graphene.String(required=True)
         organization_id = graphene.String(required=True)
-
     ok = graphene.Boolean()
     info_text = graphene.String()
 
