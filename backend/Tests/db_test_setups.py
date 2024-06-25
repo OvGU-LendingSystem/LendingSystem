@@ -134,6 +134,8 @@ def testDB_base(db):
     uno_order = Order(order_id = "00000000-0000-0000-0000-000000000022", from_date = datetime.strptime("2019-01-01 10:00:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-01-02 12:00:00", "%Y-%m-%d %H:%M:%S"))
     uno_order.users.append(person1)
     uno_order.addPhysicalObject(uno1)
+    for connection in uno_order.physicalobjects:
+        connection.return_date = datetime.strptime("2019-01-02 12:00:00", "%Y-%m-%d %H:%M:%S")
 
     music_order = Order(order_id = "00000000-0000-0000-0000-000000000023", from_date = datetime.strptime("2019-05-01 10:20:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2019-09-02 12:30:00", "%Y-%m-%d %H:%M:%S"))
     music_order.users.append(person1)
