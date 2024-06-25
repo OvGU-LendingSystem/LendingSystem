@@ -33,12 +33,17 @@ else:
     db_user     = config.get('DB', 'db_LendingSystem_User')
     db_pw       = config.get('DB', 'db_LendingSystem_Password')
 
-    # Connect to database
-    engine = create_engine('mysql+pymysql://' + db_user + ':' + db_pw + '@hades.fritz.box:3306/' + db_database, convert_unicode=True)
-    db = scoped_session(sessionmaker(   autocommit=False,
-                                        autoflush=False,
-                                        bind=engine))
-
+    if ((int)(config.get('TESTING', 'testing'))):
+        engine = create_engine('sqlite:///:memory:')
+        db = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+        print("Using Database for Testing") #TODO REMOVE
+    else:
+        # Connect to database
+        engine = create_engine('mysql+pymysql://' + db_user + ':' + db_pw + '@hades.fritz.box:3306/' + db_database, convert_unicode=True)
+        db = scoped_session(sessionmaker(   autocommit=False,
+                                            autoflush=False,
+                                            bind=engine))
+        print("Using Production Database")  #TODO REMOVE
     
 
 root_directory          = config.get('PATHS', 'root_directory')

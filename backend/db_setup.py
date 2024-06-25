@@ -2,6 +2,48 @@ from datetime import datetime
 from config import engine, db
 from models import *
 
+
+# hamster = PhysicalObject(   inv_num_internal = 42,
+#                             inv_num_external = 13,
+#                             deposit = 15,
+#                             storage_location = "Regal 1, Käfig 3",
+#                             faults = "depressiv",
+#                             name = "Hamster",
+#                             description = "Eintöniges Leben in einem Käfig",
+#                             )
+# db.add(hamster)
+
+# schaukel = PhysicalObject(  inv_num_internal = 43,
+#                             inv_num_external = 9,
+#                             deposit = 100,
+#                             storage_location = "Keller 41",
+#                             faults = "keine",
+#                             name = "Schaukel",
+#                             description = "Ein Spielgerät für Kinder. Sehr guter Zeitvertreib wenn man auf das Frontend wartet. Mann nicht mit inbegriffen.",
+#                             )
+# db.add(schaukel)
+
+# schminke = PhysicalObject(  inv_num_internal = 71,
+#                             inv_num_external = 7,
+#                             deposit = 5,
+#                             storage_location = "Regal 1, Fach 4",
+#                             faults = "keine",
+#                             name = "Schminke",
+#                             description = "Blaue Schminke für Fasching. Sehr gut flächendeckend, eignet sich perfekt für eine große Stirn. 10/10",
+#                             )
+# db.add(schminke)
+
+# smoking = PhysicalObject(  inv_num_internal = 72,
+#                             inv_num_external = 8,
+#                             deposit = 50,
+#                             storage_location = "Schrank 1",
+#                             faults = "keine",
+#                             name = "Smoking",
+#                             description = "Ein Smoking für den besonderen Anlass. Sehr elegant, aber auch sehr teuer. Nur für echte Bären.",
+#                             )
+# db.add(smoking)
+# db.commit()
+
 # Base.metadata.create_all(bind = engine)
 
 # game_tag        = Tag(name = "Game")
@@ -129,42 +171,42 @@ from models import *
 # db.add(music_order)
 
 # db.commit()
-wasserkocherpic1 = Picture(path = "Wasserkocher.jpg")
-wasserkocherpic2 = Picture(path = "Wasserkocher2.jpg")
-Wasserkocher = PhysicalObject(  inv_num_internal = 1,
-                                inv_num_external = 1,
-                                deposit = 7,
-                                # pictures = [wasserkocherpic1, wasserkocherpic2],
-                                storage_location = "Regal 1",
-                                faults = "Vielleicht",
-                                name = "Wasserkocher",
-                                description = "Ein Wasserkocher")
-Wasserkocher.pictures.append(wasserkocherpic1)
-Wasserkocher.pictures.append(wasserkocherpic2)
+# wasserkocherpic1 = Picture(path = "Wasserkocher.jpg")
+# wasserkocherpic2 = Picture(path = "Wasserkocher2.jpg")
+# Wasserkocher = PhysicalObject(  inv_num_internal = 1,
+#                                 inv_num_external = 1,
+#                                 deposit = 7,
+#                                 # pictures = [wasserkocherpic1, wasserkocherpic2],
+#                                 storage_location = "Regal 1",
+#                                 faults = "Vielleicht",
+#                                 name = "Wasserkocher",
+#                                 description = "Ein Wasserkocher")
+# Wasserkocher.pictures.append(wasserkocherpic1)
+# Wasserkocher.pictures.append(wasserkocherpic2)
 
-kaffeemaschinepic1 = Picture(path = "Kaffeemaschine.jpg")
-kaffeemaschinepic2 = Picture(path = "Kaffeemaschine2.jpg")
-Kaffeemaschine = PhysicalObject( inv_num_internal = 2,
-                                inv_num_external = 2,
-                                # pictures = [kaffeemaschinepic1, kaffeemaschinepic2],
-                                deposit = 10,
-                                storage_location = "Regal 2",
-                                faults = "Nein",
-                                name = "Kaffeemaschine",
-                                description = "Eine Kaffeemaschine")
-Kaffeemaschine.pictures.append(kaffeemaschinepic1)
-Kaffeemaschine.pictures.append(kaffeemaschinepic2)
+# kaffeemaschinepic1 = Picture(path = "Kaffeemaschine.jpg")
+# kaffeemaschinepic2 = Picture(path = "Kaffeemaschine2.jpg")
+# Kaffeemaschine = PhysicalObject( inv_num_internal = 2,
+#                                 inv_num_external = 2,
+#                                 # pictures = [kaffeemaschinepic1, kaffeemaschinepic2],
+#                                 deposit = 10,
+#                                 storage_location = "Regal 2",
+#                                 faults = "Nein",
+#                                 name = "Kaffeemaschine",
+#                                 description = "Eine Kaffeemaschine")
+# Kaffeemaschine.pictures.append(kaffeemaschinepic1)
+# Kaffeemaschine.pictures.append(kaffeemaschinepic2)
 
-db.add(Wasserkocher)
-db.add(Kaffeemaschine)
+# db.add(Wasserkocher)
+# db.add(Kaffeemaschine)
 
-order1 = Order(from_date = datetime.strptime("2024-05-20 11:00:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2024-05-22 12:00:00", "%Y-%m-%d %H:%M:%S"))
-order1.physicalobjects.append(Wasserkocher)
-order1.physicalobjects.append(Kaffeemaschine)
+# order1 = Order(from_date = datetime.strptime("2024-05-20 11:00:00", "%Y-%m-%d %H:%M:%S"), till_date = datetime.strptime("2024-05-22 12:00:00", "%Y-%m-%d %H:%M:%S"))
+# order1.physicalobjects.append(Wasserkocher)
+# order1.physicalobjects.append(Kaffeemaschine)
 
-db.add(order1)
+# db.add(order1)
 
-db.commit()
+# db.commit()
 
 # der_austronaut = Book(title = "Der Astronaut")
 # der_marsianer = Book(title = "Der Marsianer")
