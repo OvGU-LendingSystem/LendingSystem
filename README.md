@@ -24,6 +24,7 @@
 ```shell
 pip install SQLAlchemy
 pip install graphene_sqlalchemy
+pip install graphene_file_upload
 ```
 ### Install Flask and GraphQL Flask
 ```shell
