@@ -80,6 +80,9 @@ class Organization_User(Base):
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
 
+    def __repr__(self):
+        return "Organization ID: " + str(self.organization_id) + "; User ID: " + str(self.user_id) + "; Rights: " + str(self.rights)
+
 class PhysicalObject_Order(Base):
     """
     m:n relation between physicalObject and order
@@ -216,6 +219,9 @@ class User(Base):
     organizations       = relationship("Organization_User",                                back_populates = "user")
     orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
 
+    def __repr__(self):
+        return "User ID: " + str(self.user_id) + "; Name: " + self.first_name + " " + self.last_name
+
 class Group(Base):
     """
     Group contains physical objects or groups
@@ -264,3 +270,6 @@ class Organization(Base):
         """
         for user in self.users:
             user.agb_dont_show = False
+
+    def __repr__(self):
+        return "Organization ID: " + str(self.organization_id) + "; Name: " + self.name
