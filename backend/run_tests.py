@@ -7,6 +7,8 @@ from schema_queries import Query
 from schema_mutations import Mutations
 import Tests.filter_tests as filter
 
+from Tests.db_test_setups import testDB_base
+
 from config import engine as test_engine, db as test_db
 
 class Test(unittest.TestCase):
@@ -16,6 +18,8 @@ class Test(unittest.TestCase):
         Base.metadata.create_all(bind = test_engine)
 
         self.client = Client(schema)
+        
+        testDB_base(test_db)
 
     def test_tag_filter(self):
         filter.test_tag_filter(self.client, test_db)

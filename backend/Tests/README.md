@@ -5,8 +5,7 @@ def test_name(self):
     <file_in_testfolder>.<test_name>(self.client, test_db)
 ```
 - Define the test in a file in the testfolder
-  - for this first setup the data in the database inside the db_test_setups
-    - you can reuse already existing ones or define new ones but dont change existing ones
+  - if you need more testcases than already defined in the testDB_base then add things to this
   - now define a query (you can also use fragments here --> fragments.py)
     ```python
     executed = client.execute('''
