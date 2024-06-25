@@ -74,8 +74,8 @@ class Organization_User(Base):
     additionally holds the rights a user has in an organization
     """
     __tablename__       = "organization_user"
-    organization_id     = Column(String,            ForeignKey('organization.organization_id'), primary_key=True)
-    user_id             = Column(String,            ForeignKey('user.user_id'),                 primary_key=True)
+    organization_id     = Column(String(36),        ForeignKey('organization.organization_id'), primary_key=True)
+    user_id             = Column(String(36),        ForeignKey('user.user_id'),                 primary_key=True)
     rights              = Column(Enum(userRights),  nullable = False, default = userRights.member)
     # User want to see agb only after a change
     # Should be automatically false if agb changes (irgendwo in Mutations)
@@ -93,8 +93,8 @@ class PhysicalObject_Order(Base):
     additionally holds the orderStatus a physicalobject has in an order
     """
     __tablename__       = "physicalobject_order"
-    phys_id             = Column(String,                ForeignKey('physicalobject.phys_id'),   primary_key=True)
-    order_id            = Column(String,                ForeignKey('order.order_id'),           primary_key=True)
+    phys_id             = Column(String(36),            ForeignKey('physicalobject.phys_id'),   primary_key=True)
+    order_id            = Column(String(36),            ForeignKey('order.order_id'),           primary_key=True)
     order_status        = Column(Enum(orderStatus),     nullable = False, default = 'pending')
     return_date         = Column(DateTime,              nullable = True)
 
@@ -126,7 +126,7 @@ class PhysicalObject(Base):
     Physical Objects are the real objects which get grouped later on for borrowing
     """
     __tablename__       = "physicalobject"
-    phys_id             = Column(String,                unique = True,  primary_key = True, default=lambda: uuid.uuid4())
+    phys_id             = Column(String(36),            unique = True,  primary_key = True, default=lambda: str(uuid.uuid4()))
     inv_num_internal    = Column(Integer,               unique = False, nullable = False) # unique?
     inv_num_external    = Column(Integer,               unique = False, nullable = False)
     deposit             = Column(Integer,               unique = False, nullable = False)
@@ -157,10 +157,10 @@ class File(Base):
         other   = 2
 
     __tablename__       = "file"
-    file_id             = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
-    physicalobject_id   = Column(Integer,       ForeignKey('physicalobject.phys_id'),        nullable = True)
-    organization_id     = Column(Integer,       ForeignKey('organization.organization_id'),  nullable = True)
-    group_id            = Column(Integer,       ForeignKey('group.group_id'),                nullable = True)
+    file_id             = Column(String(36), primary_key = True, default=lambda: str(uuid.uuid4()))
+    physicalobject_id   = Column(String(36), ForeignKey('physicalobject.phys_id'),        nullable = True)
+    organization_id     = Column(String(36), ForeignKey('organization.organization_id'),  nullable = True)
+    group_id            = Column(String(36), ForeignKey('group.group_id'),                nullable = True)
     # String name for the file location
     path                = Column(String(600),       unique = True, nullable = False)
     file_type           = Column(Enum(FileType),    nullable = False, default = 'other')
@@ -174,7 +174,7 @@ class Order(Base):
     Orders are the actual borrowings of physical objects for a specific time
     """
     __tablename__       = "order"
-    order_id            = Column(String,            primary_key = True, default=lambda: uuid.uuid4())
+    order_id            = Column(String(36),        primary_key = True, default=lambda: str(uuid.uuid4()))
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
 
@@ -213,7 +213,7 @@ class User(Base):
     """
     __tablename__       = "user"
 
-    user_id             = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    user_id             = Column(String(36),    primary_key = True, default=lambda: str(uuid.uuid4()))
     first_name          = Column(String(30),    unique = False, nullable = False)
     last_name           = Column(String(30),    unique = False, nullable = False)
 
@@ -232,7 +232,7 @@ class Group(Base):
     Groups have to be borrowed as a whole
     """
     __tablename__       = "group"
-    group_id            = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    group_id            = Column(String(36),    primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = group_physicalobject, back_populates = "groups")
@@ -244,7 +244,7 @@ class Organization(Base):
     equivalent to FARAS
     """
     __tablename__       = "organization"
-    organization_id     = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    organization_id     = Column(String(36),    primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
     # String name for the agb file location
