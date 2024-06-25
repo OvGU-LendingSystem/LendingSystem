@@ -1,6 +1,7 @@
 from flask import Flask
 from sqlalchemy import *
 from flask_cors import CORS
+from flask_session import Session
 from sqlalchemy.orm import (scoped_session, sessionmaker)
 
 import configparser
@@ -39,7 +40,7 @@ else:
         print("Using Database for Testing") #TODO REMOVE
     else:
         # Connect to database
-        engine = create_engine('mysql+pymysql://' + db_user + ':' + db_pw + '@hades.fritz.box:3306/' + db_database, convert_unicode=True)
+        engine = create_engine('mysql+pymysql://' + db_user + ':' + db_pw + '@hades.fritz.box:3306/' + db_database)
         db = scoped_session(sessionmaker(   autocommit=False,
                                             autoflush=False,
                                             bind=engine))
@@ -56,4 +57,8 @@ pdf_directory           = os.path.join(root_directory, tmp_pdf_directory)
 app = Flask(__name__)
 app.debug = True
 app.secret_key = config.get('SECRET_KEY', 'secret_key')
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@hades.fritz.box:3306/' + db_database
 CORS(app, resources={r"/*": {"origins": "*"}})
+server_session = Session(app)

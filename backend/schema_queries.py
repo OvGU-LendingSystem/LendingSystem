@@ -9,20 +9,20 @@ class Query(graphene.ObjectType):
     filter_tags = graphene.List(
         #return type
         Tag,
-        #int params
-        tag_id              = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        tag_id              = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all tags with the given parameters, List arguments get OR-ed together",
     )
 
     filter_physical_objects = graphene.List(
         #return type
         PhysicalObject,
-        #int params
-        phys_id             = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        phys_id             = graphene.Argument(type=graphene.String, required=False),
         inv_num_internal    = graphene.Argument(type=graphene.Int, required=False),
         inv_num_external    = graphene.Argument(type=graphene.Int, required=False),
         deposit             = graphene.Argument(type=graphene.Int, required=False, description="Deposit has to be == to this value"),
@@ -33,66 +33,66 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         obj_description     = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        pictures            = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        tags                = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        groups              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        tags                = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        groups              = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all physical objects with the given parameters, List arguments get OR-ed together",
     )
 
     filter_orders = graphene.List(
         #return type
         Order,
-        #int params
-        order_id            = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        order_id            = graphene.Argument(type=graphene.String, required=False),
         #date params
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
     )
 
     filter_users = graphene.List(
         #return type
         User,
-        #int params
-        user_id             = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        user_id             = graphene.Argument(type=graphene.String, required=False),
         #string params
         first_name          = graphene.Argument(type=graphene.String, required=False),
         last_name           = graphene.Argument(type=graphene.String, required=False),
         email               = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        orders              = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        organizations       = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all users with the given parameters, List arguments get OR-ed together",
     )
 
     filter_groups = graphene.List(
         #return type
         Group,
-        #int params
-        group_id            = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        group_id            = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all groups with the given parameters, List arguments get OR-ed together",
     )  
 
     filter_organizations = graphene.List(
         #return type
         Organization,
-        #int params
-        organization_id     = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        organization_id     = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
-        users               = graphene.Argument(type=graphene.List(graphene.Int), required=False),
-        physicalobjects     = graphene.Argument(type=graphene.List(graphene.Int), required=False),
+        users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
     )
 
@@ -100,12 +100,12 @@ class Query(graphene.ObjectType):
     def resolve_filter_tags(
         args,
         info,
-        # int params
-        tag_id: Union[int, None] = None,
+        # uuid params
+        tag_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[int], None] = None,
+        physicalobjects: Union[List[str], None] = None,
     ):
         query = Tag.get_query(info=info)
 
@@ -124,8 +124,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_physical_objects(
         args,
         info,
-        # int params
-        phys_id: Union[int, None] = None,
+        # uuid params
+        phys_id: Union[str, None] = None,
         inv_num_internal: Union[int, None] = None,
         inv_num_external: Union[int, None] = None,
         deposit: Union[int, None] = None,
@@ -136,11 +136,11 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         obj_description: Union[str, None] = None,
         # list params for the relationships
-        pictures: Union[List[int], None] = None,
-        tags: Union[List[int], None] = None,
-        orders: Union[List[int], None] = None,
-        groups: Union[List[int], None] = None,
-        organizations: Union[List[int], None] = None,
+        pictures: Union[List[str], None] = None,
+        tags: Union[List[str], None] = None,
+        orders: Union[List[str], None] = None,
+        groups: Union[List[str], None] = None,
+        organizations: Union[List[str], None] = None,
     ):
         query = PhysicalObject.get_query(info=info)
 
@@ -181,14 +181,14 @@ class Query(graphene.ObjectType):
     def resolve_filter_orders(
         args,
         info,
-        # int params
-        order_id: Union[int, None] = None,
+        # uuid params
+        order_id: Union[str, None] = None,
         # date params
         from_date: Union[str, None] = None,
         till_date: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[int], None] = None,
-        users: Union[List[int], None] = None,
+        physicalobjects: Union[List[str], None] = None,
+        users: Union[List[str], None] = None,
     ):
         query = Order.get_query(info=info)
 
@@ -211,15 +211,15 @@ class Query(graphene.ObjectType):
     def resolve_filter_users(
         args,
         info,
-        # int params
-        user_id: Union[int, None] = None,
+        # uuid params
+        user_id: Union[str, None] = None,
         # string params
         first_name: Union[str, None] = None,
         last_name: Union[str, None] = None,
         email: Union[str, None] = None,
         # list params for the relationships
-        orders: Union[List[int], None] = None,
-        organizations: Union[List[int], None] = None,
+        orders: Union[List[str], None] = None,
+        organizations: Union[List[str], None] = None,
     ):
         query = User.get_query(info=info)
 
@@ -244,12 +244,12 @@ class Query(graphene.ObjectType):
     def resolve_filter_groups(
         args,
         info,
-        # int params
-        group_id: Union[int, None] = None,
+        # uuid params
+        group_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
-        physicalobjects: Union[List[int], None] = None,
+        physicalobjects: Union[List[str], None] = None,
     ):
         query = Group.get_query(info=info)
 
@@ -268,14 +268,14 @@ class Query(graphene.ObjectType):
     def resolve_filter_organizations(
         args,
         info,
-        # int params
-        organization_id: Union[int, None] = None,
+        # uuid params
+        organization_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         location: Union[str, None] = None,
         # list params for the relationships
-        users: Union[List[int], None] = None,
-        physicalobjects: Union[List[int], None] = None,
+        users: Union[List[str], None] = None,
+        physicalobjects: Union[List[str], None] = None,
     ):
         query = Organization.get_query(info=info)
 

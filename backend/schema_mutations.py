@@ -3,15 +3,16 @@ import os
 import time
 
 import graphene
-from flask import session
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
+from flask import session
 
 from models import User as UserModel, orderStatus, userRights
 from schema import *
 from argon2 import PasswordHasher
-from argon2.exceptions import VerificationError
+from argon2.exceptions import VerificationError, InvalidHashError
+
 
 ##################################
 # Mutations for Physical Objects #
@@ -858,12 +859,15 @@ class login(graphene.Mutation):
                 ph.verify(user.password_hash, password)
             except VerificationError:
                 return login(ok=False, info_text="Die Anmeldung ist fehlgeschlagen!")
+            except InvalidHashError:
+                return login(ok=False, info_text="Die Anmeldung ist fehlgeschlagen!")
 
             if ph.check_needs_rehash(user.password_hash):
                 user.password_hash = ph.hash(password)
                 db.add(user)
                 db.commit()
 
+            session['user_id'] = user.user_id
             return login(ok=True, info_text="Die Anmeldung war erfolgreich!")
 
 
@@ -873,17 +877,11 @@ class check_session(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info):
-        if not session.get('user_id'):
-            return check_session(ok=False, info_text="Es liegt keine Session vor.")
+        user_id = session.get('user_id')
+        if user_id:
+            return check_session(ok=True, info_text='Es liegt eine gültige Session vor.')
         else:
-            user = UserModel.query.filter(UserModel.user_id == session['user_id']).first()
-            if not user:
-                ok = False
-                info_text = "Nutzer hat keine aktuelle Session."
-            else:
-                ok = True
-                info_text = "Nutzer hat eine aktuelle Session."
-            return check_session(ok=ok, info_text=info_text)
+            return check_session(ok=False, info_text='Unautorisierter Zugriff.')
 
 class logout(graphene.Mutation):
     ok = graphene.Boolean()
@@ -891,10 +889,11 @@ class logout(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info):
-        session['user_id'] = None
-        ok = True
-        info_text = "Logout erfolgreich!"
-        return logout(ok=ok, info_text=info_text)
+        if session.get('user_id'):
+            session.pop("user_id")
+            return logout(ok=True, info_text='Logout erfolgreich!')
+        else:
+            return logout(ok=False, info_text='User nicht angemeldet.')
 
 class Mutations(graphene.ObjectType):
     signup          = sign_up.Field()
