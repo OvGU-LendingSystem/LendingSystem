@@ -113,7 +113,7 @@ class Tag(Base):
     physical objects get tags attached to them for better filtering options
     """
     __tablename__       = "tag"
-    tag_id              = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    tag_id              = Column(String(36),        primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
