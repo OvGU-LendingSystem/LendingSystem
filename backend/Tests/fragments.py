@@ -1,5 +1,5 @@
-fragment_phyobj = '''
-    fragment phyobj on PhysicalObject{
+fragment_physicalobject = '''
+    fragment physicalobject on PhysicalObject{
         physId
         invNumInternal
         invNumExternal
