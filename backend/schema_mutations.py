@@ -3,15 +3,16 @@ import os
 import time
 
 import graphene
-from flask import session
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
+from flask import session
 
 from models import User as UserModel, orderStatus, userRights
 from schema import *
 from argon2 import PasswordHasher
-from argon2.exceptions import VerificationError
+from argon2.exceptions import VerificationError, InvalidHashError
+
 
 ##################################
 # Mutations for Physical Objects #
@@ -335,9 +336,9 @@ class update_order_status(graphene.Mutation):
         return_date     = graphene.Date()
         status          = graphene.String()
 
-    order = graphene.Field(lambda: Order)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    phys_order  = graphene.List(lambda: PhysicalObject_Order)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
 
     @staticmethod
     def mutate(self, info, order_id, physicalObjects, return_date=None, status=None):
@@ -348,17 +349,18 @@ class update_order_status(graphene.Mutation):
                 return update_order_status(ok=False, info_text="Order nicht gefunden.")
 
             for order in phys_order:
+                print(order)
                 if return_date:
                     order.return_date = return_date
                 if status:
-                    order.status = orderStatus[status]
+                    order.order_status = orderStatus[status]
 
             db.commit()
-            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", order=order)
-
+            return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", phys_order=phys_order)
+        
         except Exception as e:
             print(e)
-            return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
+            return update_order_status(ok=False, info_text="Fehler beim Aktualisieren der Order. " + str(e))
 
 class delete_order(graphene.Mutation):
     class Arguments:
@@ -542,15 +544,18 @@ class create_organization(graphene.Mutation):
 
         users           = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
+        agb             = graphene.Int()
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, name, location=None, users=None, physicalobjects=None):
+    def mutate(self, info, name, location=None, users=None, physicalobjects=None, agb=None):
         try:
             organization = OrganizationModel(name=name)
+            if agb:
+                agb = FileModel.query.filter(FileModel.file_id == agb).first()
 
             if location:
                 organization.location = location
@@ -560,6 +565,8 @@ class create_organization(graphene.Mutation):
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
+            if agb:
+                organization.agb = agb
 
             db.add(organization)
 
@@ -578,14 +585,17 @@ class update_organization(graphene.Mutation):
 
         users               = graphene.List(graphene.String)
         physicalobjects     = graphene.List(graphene.String)
+        agb                 = graphene.Int()
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, organization_id, name=None, location=None, users=None, physicalobjects=None):
+    def mutate(self, info, organization_id, name=None, location=None, users=None, physicalobjects=None, agb=None):
         try:
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            if agb:
+                agb = FileModel.query.filter(FileModel.file_id == agb).first()
 
             if not organization:
                 return update_organization(ok=False, info_text="Organisation nicht gefunden.")
@@ -599,6 +609,9 @@ class update_organization(graphene.Mutation):
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
+            if agb:
+                organization.resetUserAgreement()
+                organization.agb = agb
 
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.")
@@ -607,6 +620,37 @@ class update_organization(graphene.Mutation):
             print(e)
             return create_organization(ok=False, info_text="Fehler beim Aktualisieren der Organisation. " + str(e))
 
+class update_organization_user(graphene.Mutation):
+    class Arguments:
+        organization_id     = graphene.Int()
+        user_id             = graphene.List(graphene.Int)
+        user_agreement      = graphene.Boolean()
+        user_rights         = graphene.String()
+
+    organization_user   = graphene.List(lambda: Organization_User)
+    ok                  = graphene.Boolean()
+    info_text           = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, organization_id, user_id, user_agreement=None, user_rights=None):
+        try:
+            organization_user = Organization_UserModel.query.filter(Organization_UserModel.organization_id == organization_id, Organization_UserModel.user_id == user_id).all()
+            if len(organization_user) == 0:
+                return update_organization_user(ok=False, info_text="No corresponding User found in Organization.")
+            
+            for org_user in organization_user:
+                if user_agreement:
+                    org_user.user_agreement = user_agreement
+                if user_rights:
+                    org_user.user_rights = user_rights
+            
+            db.commit()
+            return update_organization_user(ok=True, info_text="User updated.", organization_user=organization_user)
+        
+        except Exception as e:
+            print(e)
+            return update_organization_user(ok=False, info_text="Error updating user. " + str(e))
+ 
 class delete_organization(graphene.Mutation):
     class Arguments:
         organization_id = graphene.String(required=True)
@@ -623,7 +667,6 @@ class delete_organization(graphene.Mutation):
             return delete_tag(ok=True, info_text="Organisation erfolgreich entfernt.")
         else:
             return delete_tag(ok=False, info_text="Organisation konnte nicht entfernt werden.")
-
 
 class add_user_to_organization(graphene.Mutation):
     class Arguments:
@@ -652,7 +695,6 @@ class add_user_to_organization(graphene.Mutation):
         except Exception as e:
             print(e)
             return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert.")
-
 
 class update_user_rights(graphene.Mutation):
     class Arguments:
@@ -685,6 +727,91 @@ class update_user_rights(graphene.Mutation):
             print(e)
             return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen.")
 
+
+##################################
+# Mutations for Users            #
+##################################
+class create_user(graphene.Mutation):
+    class Arguments:
+        email       = graphene.String(required=True)
+        last_name   = graphene.String(required=True)
+        first_name  = graphene.String(required=True)
+        password    = graphene.String(required=True)
+
+    user        = graphene.Field(lambda: User)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, email, last_name, first_name, password):
+        try:
+            user_exists = UserModel.query.filter_by(email=email).first()
+            if user_exists:
+                return create_user(ok=False, info_text="Die angegebene E-Mail wird bereits verwendet.")
+            else:
+                ph = PasswordHasher()
+                password_hashed = ph.hash(password)
+                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
+                db.add(user)
+                db.commit()
+                return create_user(ok=True, info_text="Der Nutzer wurde erfolgreich angelegt.", user=user)
+        except Exception as e:
+            print(e)
+            return create_user(ok=False, info_text="Fehler beim Erstellen des Nutzers. " + str(e))
+        
+class update_user(graphene.Mutation):
+    class Arguments:
+        user_id     = graphene.Int(required=True)
+        email       = graphene.String()
+        last_name   = graphene.String()
+        first_name  = graphene.String()
+        password    = graphene.String()
+
+    user        = graphene.Field(lambda: User)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None):
+        try:
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+
+            if not user:
+                return update_user(ok=False, info_text="Nutzer nicht gefunden.")
+            if email:
+                user.email = email
+            if last_name:
+                user.last_name = last_name
+            if first_name:
+                user.first_name = first_name
+            if password:
+                ph = PasswordHasher()
+                user.password_hash = ph.hash(password)
+
+            db.commit()
+            return update_user(ok=True, info_text="Nutzer erfolgreich aktualisiert.", user=user)
+
+        except Exception as e:
+            print(e)
+            return update_user(ok=False, info_text="Fehler beim Aktualisieren des Nutzers. " + str(e))
+        
+class delete_user(graphene.Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    info_text = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, user_id):
+        user = UserModel.query.filter(UserModel.user_id == user_id).first()
+        if user:
+            db.delete(user)
+            db.commit()
+            return delete_user(ok=True, info_text="Nutzer erfolgreich entfernt.")
+        else:
+            return delete_user(ok=False, info_text="Nutzer konnte nicht entfernt werden.")
+        
 ##################################
 # Mutations for Users login      #
 ##################################
@@ -732,12 +859,15 @@ class login(graphene.Mutation):
                 ph.verify(user.password_hash, password)
             except VerificationError:
                 return login(ok=False, info_text="Die Anmeldung ist fehlgeschlagen!")
+            except InvalidHashError:
+                return login(ok=False, info_text="Die Anmeldung ist fehlgeschlagen!")
 
             if ph.check_needs_rehash(user.password_hash):
                 user.password_hash = ph.hash(password)
                 db.add(user)
                 db.commit()
 
+            session['user_id'] = user.user_id
             return login(ok=True, info_text="Die Anmeldung war erfolgreich!")
 
 
@@ -747,17 +877,11 @@ class check_session(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info):
-        if not session.get('user_id'):
-            return check_session(ok=False, info_text="Es liegt keine Session vor.")
+        user_id = session.get('user_id')
+        if user_id:
+            return check_session(ok=True, info_text='Es liegt eine gültige Session vor.')
         else:
-            user = UserModel.query.filter(UserModel.user_id == session['user_id']).first()
-            if not user:
-                ok = False
-                info_text = "Nutzer hat keine aktuelle Session."
-            else:
-                ok = True
-                info_text = "Nutzer hat eine aktuelle Session."
-            return check_session(ok=ok, info_text=info_text)
+            return check_session(ok=False, info_text='Unautorisierter Zugriff.')
 
 class logout(graphene.Mutation):
     ok = graphene.Boolean()
@@ -765,10 +889,11 @@ class logout(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info):
-        session['user_id'] = None
-        ok = True
-        info_text = "Logout erfolgreich!"
-        return logout(ok=ok, info_text=info_text)
+        if session.get('user_id'):
+            session.pop("user_id")
+            return logout(ok=True, info_text='Logout erfolgreich!')
+        else:
+            return logout(ok=False, info_text='User nicht angemeldet.')
 
 class Mutations(graphene.ObjectType):
     signup          = sign_up.Field()
@@ -799,5 +924,10 @@ class Mutations(graphene.ObjectType):
     create_organization         = create_organization.Field()
     update_organization         = update_organization.Field()
     delete_organization         = delete_organization.Field()
+
+    create_user = create_user.Field()
+    update_user = update_user.Field()
+    delete_user = delete_user.Field()
+
     add_user_to_organization    = add_user_to_organization.Field()
     update_user_rights          = update_user_rights.Field()

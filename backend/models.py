@@ -84,6 +84,9 @@ class Organization_User(Base):
     organization        = relationship("Organization", back_populates = "users")
     user                = relationship("User", back_populates = "organizations")
 
+    def __repr__(self):
+        return "Organization ID: " + str(self.organization_id) + "; User ID: " + str(self.user_id) + "; Rights: " + str(self.rights)
+
 class PhysicalObject_Order(Base):
     """
     m:n relation between physicalObject and order
@@ -110,7 +113,7 @@ class Tag(Base):
     physical objects get tags attached to them for better filtering options
     """
     __tablename__       = "tag"
-    tag_id              = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    tag_id              = Column(String(36),        primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
@@ -220,6 +223,9 @@ class User(Base):
     organizations       = relationship("Organization_User",                                back_populates = "user")
     orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
 
+    def __repr__(self):
+        return "User ID: " + str(self.user_id) + "; Name: " + self.first_name + " " + self.last_name
+
 class Group(Base):
     """
     Group contains physical objects or groups
@@ -254,3 +260,20 @@ class Organization(Base):
         tmp = Organization_User(organization = self, user = user, rights = rights)
         self.users.append(tmp)
         user.organizations.append(tmp)
+
+    def removeUser(self, user):
+        """
+        removes a user from the organization
+        """
+        self.users.remove(user)
+        user.organizations.remove(user)
+
+    def resetUserAgreement(self):
+        """
+        resets the agb agreement for all users in the organization
+        """
+        for user in self.users:
+            user.agb_dont_show = False
+
+    def __repr__(self):
+        return "Organization ID: " + str(self.organization_id) + "; Name: " + self.name
