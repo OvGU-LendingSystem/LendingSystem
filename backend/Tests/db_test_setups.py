@@ -13,8 +13,8 @@ def testDB_base(db):
     agb1 = File(file_id = "00000000-0000-0000-0000-000000000031", path = "AGB.pdf", file_type = "pdf")
     Organization1 = Organization(   organization_id = "00000000-0000-0000-0000-000000000003",
                                     name = "Stark Industries", 
-                                    location = "New York",
-                                    agb = agb1)
+                                    location = "New York")
+    Organization1.agb.append(agb1)
 
     db.add(Organization1)
 

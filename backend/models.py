@@ -157,7 +157,10 @@ class File(Base):
         other   = 2
 
     __tablename__       = "file"
-    file_id             = Column(String,        primary_key = True, default=lambda: uuid.uuid4())
+    file_id             = Column(String(36),        primary_key = True, default=lambda: uuid.uuid4())
+    physicalobject_id   = Column(String(36),       ForeignKey('physicalobject.phys_id'),        nullable = True)
+    organization_id     = Column(String(36),       ForeignKey('organization.organization_id'),  nullable = True)
+    group_id            = Column(String(36),       ForeignKey('group.group_id'),                nullable = True)
     # String name for the file location
     path                = Column(String(600),       unique = True, nullable = False)
     file_type           = Column(Enum(FileType),    nullable = False, default = 'other')
