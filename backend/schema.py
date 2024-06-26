@@ -14,7 +14,7 @@ from models import (PhysicalObject as PhysicalObjectModel,
                     Group as GroupModel,
                     User as UserModel,
                     Organization_User as Organization_UserModel,
-                    Picture as PictureModel,
+                    File as FileModel,
                     PhysicalObject_Order as PhysicalObject_OrderModel,
                     )
 
@@ -66,11 +66,11 @@ class Organization_User(SQLAlchemyObjectType):
         interfaces = (relay.Node,)
         description = Organization_UserModel.__doc__
 
-class Picture(SQLAlchemyObjectType):
+class File(SQLAlchemyObjectType):
     class Meta:
-        model = PictureModel
+        model = FileModel
         interfaces = (relay.Node,)
-        description = PictureModel.__doc__
+        description = FileModel.__doc__
 
 class PhysicalObject_Order(SQLAlchemyObjectType):
     class Meta:

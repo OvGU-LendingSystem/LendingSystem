@@ -1,5 +1,6 @@
 import graphene
 from schema import *
+from models import orderStatus
 from typing import Union, List, Dict
 
 # Api Queries go here
@@ -9,8 +10,8 @@ class Query(graphene.ObjectType):
     filter_tags = graphene.List(
         #return type
         Tag,
-        #int params
-        tag_id              = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        tag_id              = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
@@ -21,8 +22,8 @@ class Query(graphene.ObjectType):
     filter_physical_objects = graphene.List(
         #return type
         PhysicalObject,
-        #int params
-        phys_id             = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        phys_id             = graphene.Argument(type=graphene.String, required=False),
         inv_num_internal    = graphene.Argument(type=graphene.Int, required=False),
         inv_num_external    = graphene.Argument(type=graphene.Int, required=False),
         deposit             = graphene.Argument(type=graphene.Int, required=False, description="Deposit has to be == to this value"),
@@ -44,12 +45,14 @@ class Query(graphene.ObjectType):
     filter_orders = graphene.List(
         #return type
         Order,
-        #int params
-        order_id            = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        order_id            = graphene.Argument(type=graphene.String, required=False),
         #date params
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
         #list params for the relationships
+        order_status        = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
@@ -58,8 +61,8 @@ class Query(graphene.ObjectType):
     filter_users = graphene.List(
         #return type
         User,
-        #int params
-        user_id             = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        user_id             = graphene.Argument(type=graphene.String, required=False),
         #string params
         first_name          = graphene.Argument(type=graphene.String, required=False),
         last_name           = graphene.Argument(type=graphene.String, required=False),
@@ -73,8 +76,8 @@ class Query(graphene.ObjectType):
     filter_groups = graphene.List(
         #return type
         Group,
-        #int params
-        group_id            = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        group_id            = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
@@ -85,8 +88,8 @@ class Query(graphene.ObjectType):
     filter_organizations = graphene.List(
         #return type
         Organization,
-        #int params
-        organization_id     = graphene.Argument(type=graphene.Int, required=False),
+        #uuid params
+        organization_id     = graphene.Argument(type=graphene.String, required=False),
         #string params
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
@@ -100,8 +103,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_tags(
         args,
         info,
-        # int params
-        tag_id: Union[int, None] = None,
+        # uuid params
+        tag_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
@@ -115,7 +118,7 @@ class Query(graphene.ObjectType):
             query = query.filter(TagModel.name == name)
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
-            query = query.filter(TagModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(TagModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         tags = query.all()
         return tags
@@ -124,8 +127,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_physical_objects(
         args,
         info,
-        # int params
-        phys_id: Union[int, None] = None,
+        # uuid params
+        phys_id: Union[str, None] = None,
         inv_num_internal: Union[int, None] = None,
         inv_num_external: Union[int, None] = None,
         deposit: Union[int, None] = None,
@@ -164,15 +167,15 @@ class Query(graphene.ObjectType):
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
         if pictures:
-            query = query.filter(PhysicalObjectModel.pictures.any(PictureModel.name.in_(pictures)))
+            query = query.filter(PhysicalObjectModel.pictures.any(FileModel.file_id.in_(pictures)))
         if tags:
-            query = query.filter(PhysicalObjectModel.tags.any(TagModel.name.in_(tags)))
+            query = query.filter(PhysicalObjectModel.tags.any(TagModel.tag_id.in_(tags)))
         if orders:
-            query = query.filter(PhysicalObjectModel.orders.any(OrderModel.name.in_(orders)))
+            query = query.filter(PhysicalObjectModel.orders.any(PhysicalObject_OrderModel.order_id.in_(orders)))
         if groups:
-            query = query.filter(PhysicalObjectModel.groups.any(GroupModel.name.in_(groups)))
+            query = query.filter(PhysicalObjectModel.groups.any(GroupModel.group_id.in_(groups)))
         if organizations:
-            query = query.filter(PhysicalObjectModel.organizations.any(OrganizationModel.name.in_(organizations)))
+            query = query.filter(PhysicalObjectModel.organizations.any(OrganizationModel.organization_id.in_(organizations)))
         
         physical_objects = query.all()
         return physical_objects
@@ -181,12 +184,14 @@ class Query(graphene.ObjectType):
     def resolve_filter_orders(
         args,
         info,
-        # int params
-        order_id: Union[int, None] = None,
+        # uuid params
+        order_id: Union[str, None] = None,
         # date params
         from_date: Union[str, None] = None,
         till_date: Union[str, None] = None,
+        return_date: Union[str, None] = None,
         # list params for the relationships
+        order_status: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
         users: Union[List[str], None] = None,
     ):
@@ -198,11 +203,18 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.from_date == from_date)
         if till_date:
             query = query.filter(OrderModel.till_date == till_date)
+        if return_date:
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
         # list params for the relationships .any() returns union (OR Statement)
+        if order_status:
+            orderStatus_ = []
+            for os in order_status:
+                orderStatus_.append(orderStatus[os.lower()])
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.order_status.in_(orderStatus_)))
         if physicalobjects:
-            query = query.filter(OrderModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.phys_id.in_(physicalobjects)))
         if users:
-            query = query.filter(OrderModel.users.any(UserModel.name.in_(users)))
+            query = query.filter(OrderModel.users.any(UserModel.user_id.in_(users)))
         
         orders = query.all()
         return orders
@@ -211,8 +223,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_users(
         args,
         info,
-        # int params
-        user_id: Union[int, None] = None,
+        # uuid params
+        user_id: Union[str, None] = None,
         # string params
         first_name: Union[str, None] = None,
         last_name: Union[str, None] = None,
@@ -233,9 +245,9 @@ class Query(graphene.ObjectType):
             query = query.filter(UserModel.email == email)
         # list params for the relationships .any() returns union (OR Statement)
         if orders:
-            query = query.filter(UserModel.orders.any(OrderModel.name.in_(orders)))
+            query = query.filter(UserModel.orders.any(OrderModel.order_id.in_(orders)))
         if organizations:
-            query = query.filter(UserModel.organizations.any(OrganizationModel.name.in_(organizations)))
+            query = query.filter(UserModel.organizations.any(Organization_UserModel.organization_id.in_(organizations)))
         
         users = query.all()
         return users
@@ -244,8 +256,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_groups(
         args,
         info,
-        # int params
-        group_id: Union[int, None] = None,
+        # uuid params
+        group_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         # list params for the relationships
@@ -259,7 +271,7 @@ class Query(graphene.ObjectType):
             query = query.filter(GroupModel.name == name)
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
-            query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         groups = query.all()
         return groups
@@ -268,8 +280,8 @@ class Query(graphene.ObjectType):
     def resolve_filter_organizations(
         args,
         info,
-        # int params
-        organization_id: Union[int, None] = None,
+        # uuid params
+        organization_id: Union[str, None] = None,
         # string params
         name: Union[str, None] = None,
         location: Union[str, None] = None,
@@ -287,9 +299,9 @@ class Query(graphene.ObjectType):
             query = query.filter(OrganizationModel.location == location)
         # list params for the relationships .any() returns union (OR Statement)
         if users:
-            query = query.filter(OrganizationModel.users.any(UserModel.name.in_(users)))
+            query = query.filter(OrganizationModel.users.any(Organization_UserModel.user_id.in_(users)))
         if physicalobjects:
-            query = query.filter(OrganizationModel.physicalobjects.any(PhysicalObjectModel.name.in_(physicalobjects)))
+            query = query.filter(OrganizationModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         
         organizations = query.all()
         return organizations
