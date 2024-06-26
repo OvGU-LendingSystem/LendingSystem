@@ -10,9 +10,11 @@ def testDB_base(db):
     db.add(cooking_tag)
     db.add(hardware_tag)
 
+    agb1 = File(file_id = "00000000-0000-0000-0000-000000000031", path = "AGB.pdf", file_type = "pdf")
     Organization1 = Organization(   organization_id = "00000000-0000-0000-0000-000000000003",
                                     name = "Stark Industries", 
-                                    location = "New York")
+                                    location = "New York",
+                                    agb = agb1)
 
     db.add(Organization1)
 
@@ -122,6 +124,7 @@ def testDB_base(db):
     uno1_group = Group(     group_id = "00000000-0000-0000-0000-000000000020",
                             name = "Uno1")
     uno1_group.physicalobjects.append(uno1)
+    uno1_group.pictures.append(unopic1)
 
     uno2_group = Group(     group_id = "00000000-0000-0000-0000-000000000021",
                             name = "Uno2")
