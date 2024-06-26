@@ -1,5 +1,6 @@
 import graphene
 from schema import *
+from models import orderStatus
 from typing import Union, List, Dict
 
 # Api Queries go here
@@ -49,7 +50,9 @@ class Query(graphene.ObjectType):
         #date params
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
+        return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
         #list params for the relationships
+        order_status        = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
@@ -186,7 +189,9 @@ class Query(graphene.ObjectType):
         # date params
         from_date: Union[str, None] = None,
         till_date: Union[str, None] = None,
+        return_date: Union[str, None] = None,
         # list params for the relationships
+        order_status: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
         users: Union[List[str], None] = None,
     ):
@@ -198,7 +203,14 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.from_date == from_date)
         if till_date:
             query = query.filter(OrderModel.till_date == till_date)
+        if return_date:
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
         # list params for the relationships .any() returns union (OR Statement)
+        if order_status:
+            orderStatus_ = []
+            for os in order_status:
+                orderStatus_.append(orderStatus[os.lower()])
+            query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.order_status.in_(orderStatus_)))
         if physicalobjects:
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.phys_id.in_(physicalobjects)))
         if users:

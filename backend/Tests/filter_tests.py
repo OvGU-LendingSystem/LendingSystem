@@ -1078,3 +1078,490 @@ def test_physicalobject_filter(client, test_db):
     }
     msg = "PhysicalObject Filter with multiple Input params failed"
     assert(result == expected), msg
+
+def test_order_filter(client, test_db):
+
+    # Test Order Filter with NO Input params
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders{
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-01-01T10:00:00',
+                    'tillDate': '2019-01-02T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': '2019-01-02T12:00:00',
+                                    'physicalobject': {'name': 'Uno'}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    'fromDate': '2024-05-20T11:00:00',
+                    'tillDate': '2024-05-22T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Wasserkocher'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Kaffeemaschine'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Order Filter with no Input params failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with ORDER_ID Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(orderId: "00000000-0000-0000-0000-000000000022"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-01-01T10:00:00',
+                    'tillDate': '2019-01-02T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': '2019-01-02T12:00:00',
+                                    'physicalobject': {'name': 'Uno'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only ORDER_ID Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with FROM_DATE Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(fromDate: "2019-05-01T10:20:00"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only FROM_DATE Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with TILL_DATE Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(tillDate: "2019-09-02T12:30:00"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only TILL_DATE Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with RETURN_DATE Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(returnDate: "2020-01-02T12:00:00"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-01-01T10:00:00',
+                    'tillDate': '2019-01-02T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': '2019-01-02T12:00:00',
+                                    'physicalobject': {'name': 'Uno'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only RETURN_DATE Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with ORDER_STATUS Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(orderStatus: "PENDING"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-01-01T10:00:00',
+                    'tillDate': '2019-01-02T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': '2019-01-02T12:00:00',
+                                    'physicalobject': {'name': 'Uno'}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    'fromDate': '2024-05-20T11:00:00',
+                    'tillDate': '2024-05-22T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Wasserkocher'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Kaffeemaschine'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only ORDER_STATUS Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with PHYSICALOBJECTS Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(physicalobjects: "00000000-0000-0000-0000-000000000009"){
+            ...order
+        }
+    }''' + fragment_order)
+    
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only PHYSICALOBJECTS Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with USERS Input param
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(users: "00000000-0000-0000-0000-000000000016"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-01-01T10:00:00',
+                    'tillDate': '2019-01-02T12:00:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': '2019-01-02T12:00:00',
+                                    'physicalobject': {'name': 'Uno'}
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with only USERS Input param failed"
+    assert(result == expected), msg
+
+    # Test Order Filter with multiple Input params
+    executed = client.execute('''
+    query	filterOrder{
+        filterOrders(fromDate: "2019-05-01T10:20:00", tillDate: "2019-09-02T12:30:00", orderStatus: "PENDING"){
+            ...order
+        }
+    }''' + fragment_order)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrders': [
+                {
+                    'fromDate': '2019-05-01T10:20:00',
+                    'tillDate': '2019-09-02T12:30:00',
+                    'physicalobjects': {
+                        'edges': [
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Amplifier'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Boxes'}
+                                }
+                            },
+                            {
+                                'node': {
+                                    'orderStatus': 'PENDING',
+                                    'returnDate': None,
+                                    'physicalobject': {'name': 'Cables'}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    msg = "Order Filter with multiple Input params failed"
+    assert(result == expected), msg

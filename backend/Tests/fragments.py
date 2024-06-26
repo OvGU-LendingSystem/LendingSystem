@@ -56,3 +56,20 @@ fragment_tag = '''
             }
         }
     }'''
+
+fragment_order = '''
+    fragment order on Order{
+        fromDate
+        tillDate
+        physicalobjects{
+            edges{
+                node{
+                    orderStatus
+                    returnDate
+                    physicalobject{
+                        name
+                    }
+                }
+            }
+        }
+    }'''
