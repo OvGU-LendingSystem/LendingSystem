@@ -3,142 +3,282 @@ import { MdKeyboardArrowDown } from "react-icons/md";
 import { useState } from "react";
 
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
-
-
+/*
+var requests: Quest[]= [
+  {
+    id: 1,
+    name: 'Hello Test',
+    email: 'hello@test.de',
+    products: [
+      {
+          id: 1,
+          name: 'Maus',
+          description: 'Beschreibung für Objekt 1',
+          price: 10,
+          imageUrl: 'https://via.placeholder.com/300',
+          category: 'Elektronik',
+          amount: 1,
+          startDate: new Date(),
+          endDate: new Date(),
+      },
+      {
+          id: 2,
+          name: 'Maus2',
+          description: 'Beschreibung für Objekt 2',
+          price: 20,
+          imageUrl: 'https://via.placeholder.com/300',
+          category: 'Elektronik',
+          amount: 1,
+          startDate: new Date(),
+          endDate: new Date(),
+      },
+    ],
+    status: "requested",
+  },
+  {
+      id: 2,
+      name: 'Testi Test',
+      email: 'Testi@test.de',
+      products: [
+        {
+            id: 1,
+            name: 'Maus',
+            description: 'Beschreibung für Objekt 1',
+            price: 10,
+            imageUrl: 'https://via.placeholder.com/300',
+            category: 'Elektronik',
+            amount: 2,
+            startDate: new Date(),
+            endDate: new Date(),
+        },
+        {
+          id: 3,
+          name: 'Tastatur',
+          description: 'Beschreibung für Objekt 3',
+          price: 30,
+          imageUrl: 'https://via.placeholder.com/300',
+          category: 'Office',
+          amount: 3,
+          startDate: new Date(),
+          endDate: new Date(),
+        },
+      ],
+      status: "confirmed",
+  },
+  {
+      id: 3,
+      name: 'Testi Test',
+      email: 'Testi@test.de',
+      products: [
+        {
+            id: 1,
+            name: 'Maus',
+            description: 'Beschreibung für Objekt 1',
+            price: 10,
+            imageUrl: 'https://via.placeholder.com/300',
+            category: 'Elektronik',
+            amount: 2,
+            startDate: new Date(),
+            endDate: new Date(),
+        },
+        {
+          id: 3,
+          name: 'Tastatur',
+          description: 'Beschreibung für Objekt 3',
+          price: 30,
+          imageUrl: 'https://via.placeholder.com/300',
+          category: 'Office',
+          amount: 3,
+          startDate: new Date(),
+          endDate: new Date(),
+        },
+      ],
+      status: "lended",
+  },
+];*/
+var requests: Quest[] = [];
 
 const GET_ORDERS = gql`
-  query {
-    filterOrders {
-      orderId
-      fromDate
-      tillDate
-      physicalobjects {
-        edges {
-          node {
-            id
+  query{
+  filterOrders{
+    orderId
+    fromDate
+    tillDate
+    physicalobjects{
+      edges{
+        node{
+          orderStatus
+          returnDate
+          physicalobject{
+            physId
+            invNumInternal
+            invNumExternal
+            deposit
+            storageLocation
+            faults
+            name
+            description
           }
         }
       }
-      users {
-        edges {
-          node {
-            id
+    }
+    users{
+      edges{
+        node{
+          userId
+          firstName
+          lastName
+          email
+          organizations{
+            edges{
+              node{
+                organization{
+                  name
+                }
+              }
+            }
           }
         }
       }
     }
   }
+}
 `;
 
-function DisplayLocations() {
+function DisplayRequests() {
   const { loading, error, data } = useQuery(GET_ORDERS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  return data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
-    <div key={orderId}>
-      <p>
-        {orderId}: {new Date(fromDate)?.toLocaleDateString() ?? 'N/A'} - {new Date(tillDate)?.toLocaleDateString() ?? 'N/A'}
-      </p>
+  //requests = data.filterOrders;
+  data.filterOrders.forEach(function (value:any) {
+    var x : Product[] = [];
+    value.physicalobjects.edges.forEach(function (ele: any) {
+      x.push({
+        id: ele.node.physicalobject.physId,
+        name: ele.node.physicalobject.name,
+        description: ele.node.physicalobject.description,
+        price: ele.node.physicalobject.deposit,
+        imageUrl: 'https://via.placeholder.com/300', //TODO
+        amount: 1, //TODO
+        status: ele.node.orderStatus
+      });
+    });
+    if (value.users.edges.length==0){
+      requests.push({
+        id: value.orderId,
+        name: "",
+        email: "",
+        products: x,
+      });
+    }
+    else {
+      requests.push({
+        id: value.orderId,
+        name: value.users.edges[0].node.firstName + value.users.edges[0].node.lastName,
+        email: value.users.edges[0].node.email,
+        products: x,
+      });
+    }
+  });
+  console.log("REQUESTS1");
+  console.log(requests);
+  showRequests();
+  return <div></div>;
+}
+
+const edit = (product: Product) => {
+  //TODO
+};
+const confirmed = (request: Quest) => {
+  //TODO
+};
+const lended = (request: Quest) => {
+  //TODO
+};
+const returned = (request: Quest) => {
+  //TODO
+};
+
+function showRequests(){
+  {requests.map((request) => (
+    <div key={request.id} style={requestCardStyle}>
+        {request.status=="requested" && (
+        <div style={{backgroundColor: '#ff6a6a', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
+            <div style={{textAlign: "center"}}>
+                angefragt
+            </div>
+        </div>
+        )}
+        {request.status=="confirmed" && (
+        <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
+            <div style={{textAlign: "center"}}>
+                bestätigt
+            </div>
+        </div>
+        )}
+        {request.status=="lended" && (
+        <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
+            <div style={{textAlign: "center"}}>
+                verliehen
+            </div>
+        </div>
+        )}
+
+        <div style={infoStyle}>
+            <div style={personInfoStyle}>
+                <div>{request.name}</div>
+                <div>{request.email}</div>
+                <hr />
+            </div>
+
+            <div>
+                {request.products.map((product) => (
+                    <div style={productInfoStyle}>
+                        <div>{product.name}</div>
+                        <div>{product.description}</div>
+                        <div>{product.amount}</div>
+                        <div>{product.startDate?.toLocaleDateString() ?? 'N/A'}</div>
+                        <div>{product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                        <button style={editButtonStyle} onClick={() => edit(product)}>
+                            Bearbeiten
+                        </button>
+                        <hr />
+                    </div>
+                    
+                ))}
+            </div>
+            
+            <div>
+            {request.status=="requested" && (
+                <button style={buttonStyle} onClick={() => confirmed(request)}>
+                    Anfrage bestätigen
+                </button>
+            )}
+            {request.status=="confirmed" && (
+                <button style={buttonStyle} onClick={() => lended(request)}>
+                    Verleihen
+                </button>
+            )}
+            {request.status=="lended" && (
+                <button style={buttonStyle} onClick={() => returned(request)}>
+                    Zurück gegeben
+                </button>
+            )}
+
+            </div>
+
+        </div>
+    
     </div>
-  ));
+ 
+  
+ ))}
 }
 
 export function Requests() {
-    const requests: Quest[] = [
-        {
-          id: 1,
-          name: 'Hello Test',
-          email: 'hello@test.de',
-          products: [
-            {
-                id: 1,
-                name: 'Maus',
-                description: 'Beschreibung für Objekt 1',
-                price: 'Kaution: 10€',
-                imageUrl: 'https://via.placeholder.com/300',
-                category: 'Elektronik',
-                amount: 1,
-                startDate: new Date(),
-                endDate: new Date(),
-            },
-            {
-                id: 2,
-                name: 'Maus2',
-                description: 'Beschreibung für Objekt 2',
-                price: 'Kaution: 20€',
-                imageUrl: 'https://via.placeholder.com/300',
-                category: 'Elektronik',
-                amount: 1,
-                startDate: new Date(),
-                endDate: new Date(),
-            },
-          ],
-          status: "requested",
-        },
-        {
-            id: 2,
-            name: 'Testi Test',
-            email: 'Testi@test.de',
-            products: [
-              {
-                  id: 1,
-                  name: 'Maus',
-                  description: 'Beschreibung für Objekt 1',
-                  price: 'Kaution: 10€',
-                  imageUrl: 'https://via.placeholder.com/300',
-                  category: 'Elektronik',
-                  amount: 2,
-                  startDate: new Date(),
-                  endDate: new Date(),
-              },
-              {
-                id: 3,
-                name: 'Tastatur',
-                description: 'Beschreibung für Objekt 3',
-                price: 'Kaution: 30€',
-                imageUrl: 'https://via.placeholder.com/300',
-                category: 'Office',
-                amount: 3,
-                startDate: new Date(),
-                endDate: new Date(),
-              },
-            ],
-            status: "confirmed",
-        },
-        {
-            id: 3,
-            name: 'Testi Test',
-            email: 'Testi@test.de',
-            products: [
-              {
-                  id: 1,
-                  name: 'Maus',
-                  description: 'Beschreibung für Objekt 1',
-                  price: 'Kaution: 10€',
-                  imageUrl: 'https://via.placeholder.com/300',
-                  category: 'Elektronik',
-                  amount: 2,
-                  startDate: new Date(),
-                  endDate: new Date(),
-              },
-              {
-                id: 3,
-                name: 'Tastatur',
-                description: 'Beschreibung für Objekt 3',
-                price: 'Kaution: 30€',
-                imageUrl: 'https://via.placeholder.com/300',
-                category: 'Office',
-                amount: 3,
-                startDate: new Date(),
-                endDate: new Date(),
-              },
-            ],
-            status: "lended",
-        },
-      ];
-
+    
     const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
@@ -153,26 +293,13 @@ export function Requests() {
       );
     };
 
-    const edit = (product: Product) => {
-        //TODO
-    };
-    const confirmed = (request: Quest) => {
-        //TODO
-    };
-    const lended = (request: Quest) => {
-        //TODO
-    };
-    const returned = (request: Quest) => {
-        //TODO
-    };
+    
 
 
     return (
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
-
-            <DisplayLocations />
           
             <button
               style={dropdownButtonStyle}
@@ -209,80 +336,9 @@ export function Requests() {
               </div>
             )}
 
-          {filteredRequests.map((request) => (
-            <div key={request.id} style={requestCardStyle}>
-                {request.status=="requested" && (
-                <div style={{backgroundColor: '#ff6a6a', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
-                    <div style={{textAlign: "center"}}>
-                        angefragt
-                    </div>
-                </div>
-                )}
-                {request.status=="confirmed" && (
-                <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
-                    <div style={{textAlign: "center"}}>
-                        bestätigt
-                    </div>
-                </div>
-                )}
-                {request.status=="lended" && (
-                <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
-                    <div style={{textAlign: "center"}}>
-                        verliehen
-                    </div>
-                </div>
-                )}
-
-                <div style={infoStyle}>
-                    <div style={personInfoStyle}>
-                        <div>{request.name}</div>
-                        <div>{request.email}</div>
-                        <div>{request.phone}</div>
-                        <hr />
-                    </div>
-
-                    <div>
-                        {request.products.map((product) => (
-                            <div style={productInfoStyle}>
-                                <div>{product.name}</div>
-                                <div>{product.description}</div>
-                                <div>{product.amount}</div>
-                                <div>{product.startDate?.toLocaleDateString() ?? 'N/A'}</div>
-                                <div>{product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                                <button style={editButtonStyle} onClick={() => edit(product)}>
-                                    Bearbeiten
-                                </button>
-                                <hr />
-                            </div>
-                            
-                        ))}
-                    </div>
-                    
-                    <div>
-                    {request.status=="requested" && (
-                        <button style={buttonStyle} onClick={() => confirmed(request)}>
-                            Anfrage bestätigen
-                        </button>
-                    )}
-                    {request.status=="confirmed" && (
-                        <button style={buttonStyle} onClick={() => lended(request)}>
-                            Verleihen
-                        </button>
-                    )}
-                    {request.status=="lended" && (
-                        <button style={buttonStyle} onClick={() => returned(request)}>
-                            Zurück gegeben
-                        </button>
-                    )}
-
-                    </div>
-
-                </div>
-            
-            </div>
-         
+          <DisplayRequests />
           
-         ))}
+          
         
         
         </div>

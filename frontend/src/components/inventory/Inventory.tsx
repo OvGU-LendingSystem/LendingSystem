@@ -2,53 +2,97 @@ import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
+import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+
+var products: Product[] = [
+  {
+    id: 1,
+    name: 'Maus',
+    description: 'Beschreibung für Objekt 1',
+    price: 10,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Elektronik'
+  },
+  {
+    id: 2,
+    name: 'Maus2',
+    description: 'Beschreibung für Objekt 2',
+    price: 20,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Elektronik'
+  },
+  {
+    id: 3,
+    name: 'Tastatur',
+    description: 'Beschreibung für Objekt 3',
+    price: 30,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Office'
+  },
+  {
+    id: 4,
+    name: 'Tastatur2',
+    description: 'Beschreibung für Objekt 4',
+    price: 30,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Office'
+  },
+  {
+    id: 5,
+    name: 'Beamer',
+    description: 'Beschreibung für Objekt 5',
+    price: 50,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Electronik'
+  },
+];
+
+const GET_PRODUCTS = gql`
+  query {
+    filterPhyiscalObjects {
+      physId
+      fromDate
+      tillDate
+      physicalobjects {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+      users {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+function DisplayRequests() {
+  const { loading, error, data } = useQuery(GET_PRODUCTS);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
+    {
+      id: orderId,
+      name: users,
+      email: users,
+      products: physicalobjects,
+      status: ""
+    }
+  ));
+  return <div></div>;
+}
+
+
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
-
-
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'Maus',
-      description: 'Beschreibung für Objekt 1',
-      price: 'Kaution: 10€',
-      imageUrl: 'https://via.placeholder.com/300',
-      category: 'Elektronik'
-    },
-    {
-      id: 2,
-      name: 'Maus2',
-      description: 'Beschreibung für Objekt 2',
-      price: 'Kaution: 20€',
-      imageUrl: 'https://via.placeholder.com/300',
-      category: 'Elektronik'
-    },
-    {
-      id: 3,
-      name: 'Tastatur',
-      description: 'Beschreibung für Objekt 3',
-      price: 'Kaution: 30€',
-      imageUrl: 'https://via.placeholder.com/300',
-      category: 'Office'
-    },
-    {
-      id: 4,
-      name: 'Tastatur2',
-      description: 'Beschreibung für Objekt 4',
-      price: 'Kaution: 30€',
-      imageUrl: 'https://via.placeholder.com/300',
-      category: 'Office'
-    },
-    {
-      id: 5,
-      name: 'Beamer',
-      description: 'Beschreibung für Objekt 5',
-      price: 'Kaution: 50€',
-      imageUrl: 'https://via.placeholder.com/300',
-      category: 'Electronik'
-    },
-  ];
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
