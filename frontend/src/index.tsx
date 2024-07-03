@@ -6,10 +6,13 @@ import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { CartProvider } from './context/CartContext';
+import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 
 const client = new ApolloClient({
-  uri: 'http://hades.fritz.box/api/graphql',
   cache: new InMemoryCache(),
+  link: createUploadLink({
+    uri: process.env.REACT_APP_BACKEND_URL
+  })
 });
 
 const root = ReactDOM.createRoot(
