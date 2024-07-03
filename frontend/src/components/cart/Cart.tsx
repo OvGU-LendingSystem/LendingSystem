@@ -51,12 +51,12 @@ export function Cart() {
 
     var productNew: Product;
 
-    useEffect(() => {
-      if (selectedProduct) {
+     useEffect(() => {
+       if (selectedProduct) {
           setStartDate(selectedProduct.startDate ?? null);
-          setEndDate(selectedProduct.endDate ?? null);
-      }
-  }, [selectedProduct]);
+           setEndDate(selectedProduct.endDate ?? null);
+       }
+   }, [selectedProduct]);
 
     const openModal = (product: Product) => {
         setSelectedProduct(product);
@@ -84,7 +84,7 @@ export function Cart() {
     };
     const editProduct = () => {
      if (selectedProduct && startDate && endDate){
-        productNew = {...selectedProduct!,amount,startDate : startDate ?? selectedProduct?.startDate, endDate: endDate ?? selectedProduct?.endDate  };
+        productNew = {...selectedProduct!,amount,startDate,endDate};
         itemsInCartDispatcher({ type: 'edit', item: productNew });
         setSelectedProduct(null);
         closeModal();
