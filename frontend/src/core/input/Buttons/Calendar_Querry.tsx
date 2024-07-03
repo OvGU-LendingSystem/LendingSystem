@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
 import 'react-day-picker/dist/style.css'
 import { DateRange, DayPicker, Matcher } from 'react-day-picker';
@@ -13,6 +13,12 @@ interface DateArray {
   filterOrders: Dates[];
 }
 
+type CalendarProbs = {
+  fromDate : Date | null;
+  tillDate : Date | null;
+  setStartDate : (date: Date | null) => void;
+  setEndDate : (date: Date | null) => void;
+}
 
 const client = new ApolloClient({
     uri: 'http://hades.fritz.box/api/graphql',
@@ -28,17 +34,26 @@ query {
   }
 `); 
 
-export default function Calendar_Querry() {
+export default function Calendar_Querry(probs: CalendarProbs) {
     const { loading, error, data } = useQuery<DateArray>(GET_DATES, {client}); 
     
     const pastMonth = new Date(2024, 5, 6);
     
+  
+
     const defaultSelected: DateRange = {
        from: pastMonth,
       to: addDays(pastMonth, 4)
      };
 
     const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
+
+    useEffect(() => {
+      probs.setStartDate(range?.from || null);
+      probs.setEndDate(range?.to || null);
+    }, [range]);
+
+
     let footer = <p>Please pick the first day.</p>;
     if (range?.from) {
       if (!range.to) {

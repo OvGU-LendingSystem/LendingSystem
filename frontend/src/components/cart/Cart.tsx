@@ -3,6 +3,7 @@ import { OrderPopup } from "./OrderPopup";
 import { useState, useEffect } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
 
 //APOLLO STUFF ZUM TESTEN
@@ -132,7 +133,7 @@ export function Cart() {
                         <h2 //add calendar under here
                         >Objekt bearbeiten
                         </h2>
-                         <Calendar setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}></Calendar>
+                         <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
                         
 
                         <div style={inputContainerStyle}>

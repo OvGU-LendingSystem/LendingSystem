@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
 export function Inventory(): JSX.Element {
@@ -200,7 +201,7 @@ export function Inventory(): JSX.Element {
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
             <h2>Objekt hinzufügen</h2>
-            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
+            <Calendar_Querry fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
             />
             <div style={inputContainerStyle}>
               <label>Menge:</label>
