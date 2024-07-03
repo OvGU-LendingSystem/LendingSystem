@@ -86,20 +86,12 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     }
 
   `;
-  
-  // const disabledDates = [
-  //   { from: new Date(0), to: addDays(new Date(2024,4,10), -1) }, // Disable all dates before today
-  //   ...(data?.filterOrders.map(order => ({
-  //     from: new Date(order.fromDate),
-  //     to: new Date(order.tillDate),
-  //   })) || [])
-  // ];
 
 
   const today = startOfToday();
 
   const disabledDates = [
-    { from: new Date(0), to: addDays(today, -1) }, // Disable all dates before today
+    { from: new Date(0), to: addDays(today, -1) },
     ...(data?.filterOrders.map(order => ({
       from: new Date(order.fromDate),
       to: new Date(order.tillDate),
@@ -120,7 +112,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     if(closestDate){
       additionalDisabledDates = [
         { from: new Date(0), to: addDays(range.from, -1) },
-        { from: addDays(closestDate, 1), to: new Date(8640000000000000) }, // Maximum possible date in JavaScript
+        { from: addDays(closestDate, 1), to: new Date(8640000000000000) },
       ];
     }
   }
@@ -140,7 +132,6 @@ export default function Calendar_Querry(probs: CalendarProbs) {
       }}
       id="test"
       mode="range"
-      // defaultMonth={pastMonth}
       selected={range}
       footer={footer}
       onSelect={setRange}
