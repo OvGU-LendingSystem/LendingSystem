@@ -34,6 +34,11 @@ query {
   }
 `); 
 
+/**
+ * 
+ * @param probs to display dynamic date for the cart
+ * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
+ */
 export default function Calendar_Querry(probs: CalendarProbs) {
     const { loading, error, data } = useQuery<DateArray>(GET_DATES, {client}); 
 
@@ -90,6 +95,9 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   const today = startOfToday();
 
+  /**
+   * disables all the dates before today and that are fetched from the querry
+   **/
   const disabledDates = [
     { from: new Date(0), to: addDays(today, -1) },
     ...(data?.filterOrders.map(order => ({
@@ -100,6 +108,10 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   let additionalDisabledDates: { from: Date; to: Date; }[] = [];
 
+
+  /**
+   * disables all the dates before the selected date and until the first order is reached in the calendar
+   */
   if (range && range.from !== undefined) {
     const closestDate = data?.filterOrders.reduce((closest, current) => {
       const from = new Date(current.fromDate);
