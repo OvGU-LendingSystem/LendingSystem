@@ -112,7 +112,8 @@ export default function Calendar_Querry(probs: CalendarProbs) {
   /**
    * disables all the dates before the selected date and until the first order is reached in the calendar
    */
-  if (range && range.from !== undefined) {
+  if (range && (range.from !==null)) {
+    console.log(range.from);
     const closestDate = data?.filterOrders.reduce((closest, current) => {
       const from = new Date(current.fromDate);
       if (from < range.from!) {
@@ -123,7 +124,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     
     if(closestDate){
       additionalDisabledDates = [
-        { from: new Date(0), to: addDays(range.from, -1) },
+        { from: new Date(0), to: addDays(range.from!, -1) },
         { from: addDays(closestDate, 1), to: new Date(8640000000000000) },
       ];
     }
