@@ -3,6 +3,7 @@ import './../../core/input/Buttons/ButtonStyle.css';
 import { useState, useEffect, useRef } from 'react';
 import '../cart/OrderPopup.css';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
@@ -28,6 +29,7 @@ const [Close, setClose] = useState(false);
 const [isChecked, setIsChecked] = useState(false);
 const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
+const zoomPluginInstance = zoomPlugin();
 
 
 useEffect(() => {
@@ -64,6 +66,8 @@ const handleCheckboxChange = () => {
     setIsChecked(!isChecked);
 };
 
+const { ZoomIn, ZoomOut } = zoomPluginInstance;
+
 return (
     props.trigger ?
         <div className="overlay">
@@ -76,7 +80,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl="/agb.pdf"/>
+                            <Viewer fileUrl="/agb.pdf"  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
@@ -88,6 +92,7 @@ return (
                         />
                     <label htmlFor="agreeCheckbox">Ich stimme den AGB zu.</label>
                 </div>
+                <div>
                 <button 
                     onClick={() => {SetButtonPopup(true);
                          props.setTrigger(false);}}
@@ -99,9 +104,16 @@ return (
                     onClick={() => {props.setTrigger(false)}}>
                     Back
                 </button>
-                
+                <ZoomIn>
+                {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+                </ZoomIn>
+                <ZoomOut>
+                {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+                </ZoomOut>
+                </div>
             </div>
         </div>
+        
     : <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup}/>
 );
 }
