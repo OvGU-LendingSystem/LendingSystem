@@ -17,10 +17,10 @@ class userRights(enum.Enum):
     Enum for different rights a user can have inside his organization
     rights are organized in a hierarchy
     """
-    organization_admin  = 1
-    inventory_admin     = 2
-    watcher             = 3
-    member              = 4
+    organization_admin  = 1 # dürfen innerhalb ihrer Organisation alles
+    inventory_admin     = 2 # dürfen Objekte und Groups der eigenen Organisation verwalten und Tags
+    member              = 3 # dürfen Order erstellen
+    watcher             = 4 # können nichts
 
 class orderStatus(enum.Enum):
     """
