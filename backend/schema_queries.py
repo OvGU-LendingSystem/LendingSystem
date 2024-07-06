@@ -82,6 +82,7 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all groups with the given parameters, List arguments get OR-ed together",
     )  
 
@@ -94,6 +95,7 @@ class Query(graphene.ObjectType):
         name                = graphene.Argument(type=graphene.String, required=False),
         location            = graphene.Argument(type=graphene.String, required=False),
         #list params for the relationships
+        agb                 = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
@@ -262,6 +264,7 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         # list params for the relationships
         physicalobjects: Union[List[str], None] = None,
+        pictures: Union[List[str], None] = None,
     ):
         query = Group.get_query(info=info)
 
@@ -272,7 +275,9 @@ class Query(graphene.ObjectType):
         # list params for the relationships .any() returns union (OR Statement)
         if physicalobjects:
             query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
-        
+        if pictures:
+            query = query.filter(GroupModel.pictures.any(FileModel.file_id.in_(pictures)))
+
         groups = query.all()
         return groups
     
@@ -286,6 +291,7 @@ class Query(graphene.ObjectType):
         name: Union[str, None] = None,
         location: Union[str, None] = None,
         # list params for the relationships
+        agb: Union[List[str], None] = None,
         users: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
     ):
@@ -298,6 +304,8 @@ class Query(graphene.ObjectType):
         if location:
             query = query.filter(OrganizationModel.location == location)
         # list params for the relationships .any() returns union (OR Statement)
+        if agb:
+            query = query.filter(OrganizationModel.agb.any(FileModel.file_id.in_(agb)))
         if users:
             query = query.filter(OrganizationModel.users.any(Organization_UserModel.user_id.in_(users)))
         if physicalobjects:
