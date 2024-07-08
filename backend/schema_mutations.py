@@ -222,7 +222,7 @@ class upload_file(graphene.Mutation):
                 file.save(os.path.join(pdf_directory, file_name))
 
             file = FileModel(   path            = file_name,
-                                physicalobject = physical_object,
+                                physicalobject  = physical_object,
                                 organization    = organization,
                                 group           = group,
                                 file_type       = type)
