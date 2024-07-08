@@ -42,27 +42,32 @@ class create_physical_object(graphene.Mutation):
     """
 
     class Arguments:
-        inv_num_internal = graphene.Int(required=True)
-        inv_num_external = graphene.Int(required=True)
-        deposit = graphene.Int(required=True)
-        storage_location = graphene.String(required=True)
-        faults = graphene.String()
-        name = graphene.String(required=True)
-        description = graphene.String()
-        organization_id = graphene.String(required=True)  # ein Objekt ist immer genau einer Organisation zugeordnet
+        inv_num_internal    = graphene.Int(required=True)
+        inv_num_external    = graphene.Int(required=True)
+        deposit             = graphene.Int(required=True)
+        storage_location    = graphene.String(required=True)
+        storage_location2   = graphene.String(required=True)
+        faults              = graphene.String()
+        name                = graphene.String(required=True)
+        description         = graphene.String()
+        borrowable          = graphene.Boolean(required=True)
+        lending_comment     = graphene.String()
+        return_comment      = graphene.String()
+        organization_id     = graphene.String(required=True)  # ein Objekt ist immer genau einer Organisation zugeordnet
 
-        pictures = graphene.String()
-        tags = graphene.List(graphene.String)
-        orders = graphene.List(graphene.String)
-        groups = graphene.List(graphene.String)
+        pictures    = graphene.List(graphene.String)
+        manual      = graphene.List(graphene.String)
+        tags        = graphene.List(graphene.String)
+        orders      = graphene.List(graphene.String)
+        groups      = graphene.List(graphene.String)
 
     physical_object = graphene.Field(lambda: PhysicalObject)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    ok              = graphene.Boolean()
+    info_text       = graphene.String()
 
     @staticmethod
-    def mutate(self, info, inv_num_internal, inv_num_external, storage_location, name, organization_id,
-               tags, pictures=None, orders=None, groups=None, faults=None, description=None,
+    def mutate(self, info, inv_num_internal, inv_num_external, borrowable, storage_location, storage_location2, name, organization_id,
+               tags, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
                deposit=None):
         try:
             if not is_user_authorised(info.context.user, 2, organization_id):
@@ -71,12 +76,21 @@ class create_physical_object(graphene.Mutation):
             db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
 
             physical_object = PhysicalObjectModel(
-                inv_num_internal=inv_num_internal,
-                inv_num_external=inv_num_external,
-                storage_location=storage_location,
-                name=name,
-                tags=db_tags,
+                inv_num_internal    = inv_num_internal,
+                inv_num_external    = inv_num_external,
+                borrowable          = borrowable,
+                storage_location    = storage_location,
+                storage_location2   = storage_location2,
+                name                = name,
+                organization_id     = organization_id,
+                tags                = db_tags,
             )
+            if pictures:
+                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
+                physical_object.pictures = db_pictures
+            if manual:
+                db_manual = db.query(FileModel).filter(FileModel.file_id.in_(manual)).all()
+                physical_object.manual = db_manual            
             if orders:
                 db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
                 physical_object.orders = db_orders
