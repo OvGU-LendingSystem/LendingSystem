@@ -1079,6 +1079,9 @@ def test_physicalobject_filter(client, test_db):
     msg = "PhysicalObject Filter with multiple Input params failed"
     assert(result == expected), msg
 
+#
+#   Test Order Filter
+#
 def test_order_filter(client, test_db):
 
     # Test Order Filter with NO Input params
@@ -1565,3 +1568,708 @@ def test_order_filter(client, test_db):
     }
     msg = "Order Filter with multiple Input params failed"
     assert(result == expected), msg
+
+#
+#   Test User Filter
+#
+def test_user_filter(client, test_db):
+
+    # Test User Filter with NO Input params
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers{
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'max@mustermann.de',
+                    'firstName': 'Max',
+                    'lastName': 'Mustermann',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': []}
+                },
+                {
+                    'email': 'peter.parker@gmail.com',
+                    'firstName': 'Peter',
+                    'lastName': 'Parker',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': [
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000022'}},
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000023'}}
+                    ]}
+                },
+                {
+                    'email': 'tony.stark@gmail.com',
+                    'firstName': 'Tony',
+                    'lastName': 'Stark',
+                    'organizations': {'edges': [
+                        {'node': {'organizationId': '00000000-0000-0000-0000-000000000003'}}
+                    ]},
+                    'orders': {'edges': []}
+                }
+            ]
+        }
+    }
+    
+    msg = "User Filter with no Input params failed"
+    assert(result == expected), msg
+
+    # Test User Filter with USER_ID Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(userId: "00000000-0000-0000-0000-000000000017"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'tony.stark@gmail.com',
+                    'firstName': 'Tony',
+                    'lastName': 'Stark',
+                    'organizations': {'edges': [{'node': {'organizationId': '00000000-0000-0000-0000-000000000003'}}]},
+                    'orders': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only USER_ID Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with EMAIL Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(email: "tony.stark@gmail.com"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'tony.stark@gmail.com',
+                    'firstName': 'Tony',
+                    'lastName': 'Stark',
+                    'organizations': {'edges': [{'node': {'organizationId': '00000000-0000-0000-0000-000000000003'}}]},
+                    'orders': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only EMAIL Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with FIRST_NAME Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(firstName: "Peter"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'peter.parker@gmail.com',
+                    'firstName': 'Peter',
+                    'lastName': 'Parker',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': [
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000022'}},
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000023'}}
+                    ]}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only FIRST_NAME Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with LAST_NAME Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(lastName: "Mustermann"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'max@mustermann.de',
+                    'firstName': 'Max',
+                    'lastName': 'Mustermann',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only LAST_NAME Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with ORGANIZATIONS Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(organizations: "00000000-0000-0000-0000-000000000003"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'tony.stark@gmail.com',
+                    'firstName': 'Tony',
+                    'lastName': 'Stark',
+                    'organizations': {'edges': [{'node': {'organizationId': '00000000-0000-0000-0000-000000000003'}}]},
+                    'orders': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only ORGANIZATIONS Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with ORDERS Input param
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(orders: "00000000-0000-0000-0000-000000000022"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'peter.parker@gmail.com',
+                    'firstName': 'Peter',
+                    'lastName': 'Parker',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': [
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000022'}},
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000023'}}
+                    ]}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with only ORDERS Input param failed"
+    assert(result == expected), msg
+
+    # Test User Filter with multiple Input params
+    executed = client.execute('''
+    query	filterUser{
+        filterUsers(firstName: "Peter", lastName: "Parker"){
+            ...user
+        }
+    }''' + fragment_user)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterUsers': [
+                {
+                    'email': 'peter.parker@gmail.com',
+                    'firstName': 'Peter',
+                    'lastName': 'Parker',
+                    'organizations': {'edges': []},
+                    'orders': {'edges': [
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000022'}},
+                        {'node': {'orderId': '00000000-0000-0000-0000-000000000023'}}
+                    ]}
+                }
+            ]
+        }
+    }
+
+    msg = "User Filter with multiple Input params failed"
+    assert(result == expected), msg
+
+#
+#   Test Group Filter
+#
+def test_group_filter(client, test_db):
+
+    # Test Group Filter with NO Input params
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups{
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Music System',
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}}
+                        ]
+                    },
+                    'pictures': {'edges': []}
+                },
+                {
+                    'name': 'Uno1',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': [{'node': {'path': 'Uno.jpg'}}]}
+                },
+                {
+                    'name': 'Uno2',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with no Input params failed"
+    assert(result == expected), msg
+
+    # Test Group Filter with GROUP_ID Input param
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups(groupId: "00000000-0000-0000-0000-000000000020"){
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Uno1',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': [{'node': {'path': 'Uno.jpg'}}]}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with only GROUP_ID Input param failed"
+    assert(result == expected), msg
+
+    # Test Group Filter with NAME Input param
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups(name: "Uno1"){
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Uno1',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': [{'node': {'path': 'Uno.jpg'}}]}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with only NAME Input param failed"
+    assert(result == expected), msg
+
+    # Test Group Filter with PHYSICALOBJECTS Input param
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups(physicalobjects: "00000000-0000-0000-0000-000000000009"){
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Music System',
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}}
+                        ]
+                    },
+                    'pictures': {'edges': []}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with only PHYSICALOBJECTS Input param failed"
+    assert(result == expected), msg
+
+    # Test Group Filter with PICTURES Input param
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups(pictures: "00000000-0000-0000-0000-000000000004"){
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Uno1',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': [{'node': {'path': 'Uno.jpg'}}]}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with only PICTURES Input param failed"
+    assert(result == expected), msg
+
+    # Test Group Filter with multiple Input params
+    executed = client.execute('''
+    query	filterGroup{
+        filterGroups(name: "Uno1", pictures: "00000000-0000-0000-0000-000000000004"){
+            ...group
+        }
+    }''' + fragment_group)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterGroups': [
+                {
+                    'name': 'Uno1',
+                    'physicalobjects': {
+                        'edges': [{'node': {'name': 'Uno'}}]
+                    },
+                    'pictures': {'edges': [{'node': {'path': 'Uno.jpg'}}]}
+                }
+            ]
+        }
+    }
+
+    msg = "Group Filter with multiple Input params failed"
+    assert(result == expected), msg
+
+#
+#   Test Organization Filter
+#
+def test_organization_filter(client, test_db):
+
+    # Test Organization Filter with NO Input params
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations{
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with no Input params failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with ORGANIZATION_ID Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(organizationId: "00000000-0000-0000-0000-000000000003"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only ORGANIZATION_ID Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with NAME Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(name: "Stark Industries"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only NAME Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with LOCATION Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(location: "New York"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only LOCATION Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with AGB Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(agb: "00000000-0000-0000-0000-000000000031"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only AGB Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with USERS Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(users: "00000000-0000-0000-0000-000000000017"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only USERS Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with PHYSICALOBJECTS Input param
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(physicalobjects: "00000000-0000-0000-0000-000000000009"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with only PHYSICALOBJECTS Input param failed"
+    assert(result == expected), msg
+
+    # Test Organization Filter with multiple Input params
+    executed = client.execute('''
+    query	filterOrganization{
+        filterOrganizations(name: "Stark Industries", location: "New York"){
+            ...organization
+        }
+    }''' + fragment_organization)
+
+    result = to_std_dicts(executed)
+    expected = {
+        'data': {
+            'filterOrganizations': [
+                {
+                    'name': 'Stark Industries',
+                    'location': 'New York',
+                    'agb': {'edges': [{'node': {'path': 'AGB.pdf'}}]},
+                    'users': {'edges': [{'node': {'rights': 'MEMBER'}}]},
+                    'physicalobjects': {
+                        'edges': [
+                            {'node': {'name': 'Amplifier'}},
+                            {'node': {'name': 'Boxes'}},
+                            {'node': {'name': 'Cables'}},
+                            {'node': {'name': 'Uno'}},
+                            {'node': {'name': 'Uno'}}
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    msg = "Organization Filter with multiple Input params failed"
+    assert(result == expected), msg
+
+#
+#
+#

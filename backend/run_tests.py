@@ -29,6 +29,15 @@ class Test(unittest.TestCase):
 
     def test_order_filter(self):
         filter.test_order_filter(self.client, test_db)
+    
+    def test_user_filter(self):
+        filter.test_user_filter(self.client, test_db)
+
+    def test_group_filter(self):
+        filter.test_group_filter(self.client, test_db)
+
+    def test_organization_filter(self):
+        filter.test_organization_filter(self.client, test_db)
 
     def tearDown(self):
         # Drop all tables in the database
