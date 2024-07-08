@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { addDays, format } from 'date-fns';
 import { DateRange, DayPicker, Matcher } from 'react-day-picker';
 import 'react-day-picker/dist/style.css'
 
 const pastMonth = new Date(2024, 5, 6);
 
-const functionMatcher: Matcher = (day: Date) => {
-    return day.getMonth() === 4
+const functionMatcher: Matcher = (day : Date) => {
+    return day.getMonth() === 4 ;
    };
 
 
-export default function Calendar() {
+/**
+ * defining variables for dynamic date display
+ */
+type CalendarProbs = {
+  fromDate : Date | null;
+  tillDate : Date | null;
+  setStartDate : (date: Date | null) => void;
+  setEndDate : (date: Date | null) => void;
+}
+/**
+ * 
+ * @param probs to display dynamic date for the cart
+ * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
+ */
+export default function Calendar(probs: CalendarProbs) {
 
     
     const css = `
@@ -35,11 +49,22 @@ export default function Calendar() {
   `;
 
  const defaultSelected: DateRange = {
-    from: pastMonth,
-    to: addDays(pastMonth, 4)
+  from: probs.fromDate!,
+  to: probs.tillDate!
   };
 
   const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
+
+  /**
+   * changes the startDate/EndDate if the range is changed
+   */
+  useEffect(() => {
+    probs.setStartDate(range?.from || null);
+    probs.setEndDate(range?.to || null);
+  }, [range]);
+
+
+  // display the range the user picked in the calendar object
   let footer = <p>Please pick the first day.</p>;
   if (range?.from) {
     if (!range.to) {

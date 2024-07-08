@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.4.0
+    restart: always
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=LendingSystem
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+    secrets:
+      - db-password
+    expose:
+      - 3306
+    networks:
+      - private
+
+  backend:
+    build:
+      context: backend
+    environment:
+      - DB_PASSWORD=/run/secrets/db-password
+    secrets:
+      - db-password
+    expose:
+      - 5000
+    ports:
+      - 5000:5000
+    hostname: container
+    networks:
+      - public
+      - private
+    depends_on:
+      - db
+
+networks:
+  public:
+  private:
+
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: db/password.txt

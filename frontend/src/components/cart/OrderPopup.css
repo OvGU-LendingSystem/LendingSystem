@@ -28,6 +28,7 @@
     background: rgba(0, 0, 0, 0.7);
     visibility: visible;
     opacity: 1;
+    overflow: auto
 }
 .popup-inner {
     padding-top: 30%;

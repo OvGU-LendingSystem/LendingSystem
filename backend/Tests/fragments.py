@@ -73,3 +73,70 @@ fragment_order = '''
             }
         }
     }'''
+
+fragment_user = '''
+    fragment user on User{
+        email
+        firstName
+        lastName
+        organizations{
+            edges{
+                node{
+                    organizationId
+                }
+            }
+        }
+        orders{
+            edges{
+                node{
+                    orderId
+                }
+            }
+        }
+    }'''
+
+fragment_group = '''
+    fragment group on Group{
+        name
+        physicalobjects{
+            edges{
+                node{
+                    name
+                }
+            }
+        }
+        pictures{
+            edges{
+                node{
+                    path
+                }
+            }
+        }
+    }'''
+
+fragment_organization = '''
+    fragment organization on Organization{
+        name
+        location
+        agb{
+            edges{
+                node{
+                    path
+                }
+            }
+        }
+  			users{
+          edges{
+            node{
+              rights
+            }
+          }
+        }
+        physicalobjects{
+            edges{
+                node{
+                    name
+                }
+            }
+        }
+    }'''

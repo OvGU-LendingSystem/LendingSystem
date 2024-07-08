@@ -1,17 +1,15 @@
 import React from "react";
 import { OrderPopup } from "./OrderPopup";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
+import AGBPopUp from "../AGB/AGBPopUp";
 
 //APOLLO STUFF ZUM TESTEN
 
-import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
-
-const client = new ApolloClient({
-  uri: 'http://hades.fritz.box/api/graphql',
-  cache: new InMemoryCache(),
-});
+import { useQuery, gql } from '@apollo/client';
+import { useCart, useCartDispatcher } from "../../context/CartContext";
 
 const GET_LOCATIONS = gql`
   query {
@@ -23,7 +21,7 @@ const GET_LOCATIONS = gql`
 `;
 
 function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_LOCATIONS, { client });
+  const { loading, error, data } = useQuery(GET_LOCATIONS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
@@ -39,28 +37,63 @@ function DisplayLocations() {
 
 //ENDE APOLLO STUFF
 
-type CartProbs = {
-    selectedItems: Product[];
-    removeSelectedItem: any;
-    editSelectedItem: any;
-}
+export function Cart() {
+  const itemsInCart = useCart();
+  const itemsInCartDispatcher = useCartDispatcher();
 
-export function Cart(probs: CartProbs) {
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
+    const [showDetails, setShowDetails] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [amount, setAmount] = useState<number>(1);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
 
     var productNew: Product;
 
+     useEffect(() => {
+       if (selectedProduct) {
+          setStartDate(selectedProduct.startDate ?? null);
+           setEndDate(selectedProduct.endDate ?? null);
+       }
+   }, [selectedProduct]);
+
     const openModal = (product: Product) => {
         setSelectedProduct(product);
+        setStartDate(product.startDate ?? null);
+        setEndDate(product.endDate ?? null);
+        setAmount(product.amount ?? 1);
         setShowModal(true);
     };
     const closeModal = () => {
+        if(selectedProduct){
+        setStartDate(selectedProduct?.startDate ?? null);
+        setEndDate(selectedProduct?.endDate ?? null);
+        setAmount(selectedProduct.amount ?? 1);
+        }
         setShowModal(false);
         setSelectedProduct(null);
     };
+    const openDetails = (product: Product) => {
+      setSelectedProduct(product);
+      setShowDetails(true);
+    };
+    const closeDetails = () => {
+      setShowDetails(false);
+      setSelectedProduct(null);
+    };
+    const editProduct = () => {
+     if (selectedProduct && startDate && endDate){
+        productNew = {...selectedProduct!,amount,startDate,endDate};
+        itemsInCartDispatcher({ type: 'edit', item: productNew });
+        setSelectedProduct(null);
+        closeModal();
+     }
+    };
+
+    const openMoreDetails = () => {
+
+    }
 
     return (
         
@@ -69,7 +102,7 @@ export function Cart(probs: CartProbs) {
             <div style={{padding: '20px'}}>
                 <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
-                {probs.selectedItems.map((product) => (
+                {itemsInCart.map((product) => (
                  <div key={product.id} style={productCardStyle}>
                  <img src={product.imageUrl} alt={product.name} style={imageStyle} />
                  <div style={productInfoStyle}>
@@ -77,18 +110,17 @@ export function Cart(probs: CartProbs) {
                    
                    <div style={descriptionStyle}>
                      <div style={descriptionContentStyle}>{product.description}</div>
-                     <button style={descriptionButtonStyle}>Beschreibung</button>
+                     <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                    </div>
                    <div style={priceStyle}>{product.price}</div>
-                   <div>{product.startDate?.toLocaleDateString() ?? 'N/A'}</div>
-                   <div>{product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                   <div>{product.amount}</div>
+                   <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                   <div>Anzahl: {product.amount}</div>
 
                    
                    <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                      Bearbeiten
                    </button>
-                   <button style={addToCartButtonStyle} onClick={() => probs.removeSelectedItem(product)}>
+                   <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
                      Entfernen
                    </button>
                  </div>
@@ -98,12 +130,16 @@ export function Cart(probs: CartProbs) {
                 {showModal && (
                     <div style={modalOverlayStyle}>
                     <div style={modalContentStyle}>
-                        <h2>Objekt bearbeiten</h2>
-                        <Calendar
-                        />
+                        <h2 //add calendar under here
+                        >Objekt bearbeiten
+                        </h2>
+                         <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
+                        
+
                         <div style={inputContainerStyle}>
                         <label>Menge:</label>
                         <input
+                            
                             type="number"
                             value={amount}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
@@ -112,7 +148,7 @@ export function Cart(probs: CartProbs) {
                         />
                         </div>
                         <div style={buttonContainerStyle}>
-                        <button onClick={() => probs.editSelectedItem(selectedProduct, productNew)}>Edit</button>
+                        <button onClick={() => editProduct()}>Edit</button>
                         <button onClick={closeModal} style={{ marginLeft: '10px' }}>
                             Cancel
                         </button>
@@ -120,10 +156,26 @@ export function Cart(probs: CartProbs) {
                     </div>
                     </div>
                 )}
-            
-            <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Bestellen</button>
 
-            <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />
+                {showDetails && (
+                  <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                      <h2>{selectedProduct?.name}</h2>
+                      <div style={inputContainerStyle}>
+                        <div>{selectedProduct?.description}</div>
+                      </div>
+                      <div style={buttonContainerStyle}>
+                        <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+            
+            <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
+            {<AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup}/>}
+            {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
             </div>
         </div>
     );
@@ -193,7 +245,7 @@ const filterContainerStyle: React.CSSProperties = {
     borderRadius: '4px',
     cursor: 'pointer',
     marginRight: '10px',
-    marginTop: '5px',
+    marginTop: '10px',
   };
   
   const descriptionStyle: React.CSSProperties = {
