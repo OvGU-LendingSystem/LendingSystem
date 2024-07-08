@@ -130,12 +130,17 @@ class PhysicalObject(Base):
     inv_num_internal    = Column(Integer,               unique = False, nullable = False) # unique?
     inv_num_external    = Column(Integer,               unique = False, nullable = False)
     deposit             = Column(Integer,               unique = False, nullable = False)
-    storage_location    = Column(String(600),           unique = False, nullable = False)
+    storage_location    = Column(String(60),            unique = False, nullable = False)
+    storage_location2   = Column(String(60),            unique = False, nullable = True)
     faults              = Column(String(600),           unique = False, nullable = True)
     name                = Column(String(60),            unique = False, nullable = False)
     description         = Column(String(600),           unique = False, nullable = True)
+    borrowable          = Column(Boolean,               unique = False, nullable = False, default = True)
+    lending_comment     = Column(String(600),           unique = False, nullable = True)
+    return_comment      = Column(String(600),           unique = False, nullable = True)
 
-    pictures            = relationship("File",                                                      back_populates = "physicalobject")
+    pictures            = relationship("File",          foreign_keys='File.picture_id',             back_populates = "physicalobject_picture")
+    manual              = relationship("File",          foreign_keys='File.manual_id',              back_populates = "physicalobject_manual")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
@@ -158,16 +163,18 @@ class File(Base):
 
     __tablename__       = "file"
     file_id             = Column(String(36),        primary_key = True, default=lambda: uuid.uuid4())
-    physicalobject_id   = Column(String(36),       ForeignKey('physicalobject.phys_id'),        nullable = True)
+    picture_id          = Column(String(36),       ForeignKey('physicalobject.phys_id'),        nullable = True)
+    manual_id           = Column(String(36),       ForeignKey('physicalobject.phys_id'),        nullable = True)
     organization_id     = Column(String(36),       ForeignKey('organization.organization_id'),  nullable = True)
     group_id            = Column(String(36),       ForeignKey('group.group_id'),                nullable = True)
     # String name for the file location
     path                = Column(String(600),       unique = True, nullable = False)
     file_type           = Column(Enum(FileType),    nullable = False, default = 'other')
 
-    physicalobject      = relationship("PhysicalObject",    back_populates = "pictures")
-    group               = relationship("Group",             back_populates = "pictures")
-    organization        = relationship("Organization",      back_populates = "agb")
+    physicalobject_picture  = relationship("PhysicalObject",    back_populates = "pictures",    foreign_keys=[picture_id])
+    physicalobject_manual   = relationship("PhysicalObject",    back_populates = "manual",      foreign_keys=[manual_id])
+    group                   = relationship("Group",             back_populates = "pictures")
+    organization            = relationship("Organization",      back_populates = "agb")
 
 class Order(Base):
     """
