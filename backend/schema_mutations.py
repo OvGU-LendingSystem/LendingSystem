@@ -238,29 +238,31 @@ class upload_file(graphene.Mutation):
     """
 
     class Arguments:
-        phys_id = graphene.String()
+        phys_picture_id = graphene.String()
+        phys_manual_id  = graphene.String()
         organization_id = graphene.String()
-        group_id = graphene.String()
-        file = Upload(required=True)
+        group_id        = graphene.String()
+        file            = Upload(required=True)
 
-    file = graphene.Field(lambda: File)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    file        = graphene.Field(lambda: File)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
 
     @staticmethod
-    def mutate(self, info, file, phys_id=None, organization_id=None, group_id=None):
+    def mutate(self, info, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None):
         try:
 
             if not is_user_authorised(info.context.user, 2,):
                 return upload_file(ok=False, info_text=reject)
 
             physical_object = None
-            organization = None
-            group = None
+            organization    = None
+            group           = None
 
-            physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
-            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
-            group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
+            if (phys_picture_id):   physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_picture_id).first()
+            if (phys_manual_id):    physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_manual_id).first()
+            organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            group           = GroupModel.query.filter(GroupModel.group_id == group_id).first()
 
             type = None
             pictureFileExtensions = ['jpg', 'jpeg', 'png', 'svg']
@@ -283,10 +285,14 @@ class upload_file(graphene.Mutation):
                 file.save(os.path.join(pdf_directory, file_name))
 
             file = FileModel(   path            = file_name,
-                                physicalobject  = physical_object,
                                 organization    = organization,
                                 group           = group,
                                 file_type       = type)
+            
+            if physical_object and phys_picture_id:
+                physical_object.pictures.append(file)
+            if physical_object and phys_manual_id:
+                physical_object.manual.append(file)
 
             db.add(file)
             db.commit()
