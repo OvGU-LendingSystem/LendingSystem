@@ -26,6 +26,24 @@ if hostname == "hades":
                                      autoflush=False,
                                      bind=engine))
 
+    bcrypt = Bcrypt(app)
+elif hostname == "container":
+    config = configparser.ConfigParser()
+    config.read('./config.ini') # Path to config file
+    db_pw = config.get('DB', 'db_LendingSystem_password')
+
+    # Create Flask app
+    app = Flask(__name__)
+    app.debug = True
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
+    # Connect to database
+    engine = create_engine('mysql+mysqlconnector://root:' + db_pw + '@db:3306/LendingSystem')
+    db = scoped_session(sessionmaker(   autocommit=False,
+                                        autoflush=False,
+                                        bind=engine))
+
+    bcrypt = Bcrypt(app)
 else:
     # Read database config from file
     config = configparser.ConfigParser()

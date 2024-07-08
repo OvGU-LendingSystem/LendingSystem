@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
+import { useCart, useCartDispatcher } from '../../context/CartContext';
 
-type InventoryProbs = {
-  selectedItems: Product[];
-  setSelectedItems: any;
-}
+export function Inventory(): JSX.Element {
+  const itemsInCart = useCart();
+  const itemsInCartDispatcher = useCartDispatcher();
 
-export function Inventory(probs: InventoryProbs): JSX.Element {
+
   const products: Product[] = [
     {
       id: 1,
@@ -50,12 +51,11 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
     },
   ];
 
-  const [selectedItems, setSelectedItems] = useState<Product[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -97,15 +97,11 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
   };
 
   const addToCart = () => {
-    if (selectedProduct) {
-      setSelectedItems([
-        ...selectedItems,
-        { ...selectedProduct, startDate, endDate, amount }
-      ]);
-      probs.setSelectedItems([
-        ...probs.selectedItems,
-        { ...selectedProduct, startDate, endDate, amount }
-      ]);
+    if (selectedProduct && startDate && endDate) {
+      itemsInCartDispatcher({
+        type: 'add',
+        item: { ...selectedProduct, startDate, endDate, amount }
+      });
       closeModal();
     }
   };
@@ -186,10 +182,10 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
             </div>
           ))}
         </div>
-        {selectedItems.length > 0 && (
+        {itemsInCart.length > 0 && (
           <div style={{ marginTop: '20px' }}>
             <ul>
-              {selectedItems.map((item, index) => (
+              {itemsInCart.map((item, index) => (
                 <li key={index}>
                   {products.find((product) => product.id === item.id)?.name} -{' '}
                   {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
@@ -205,7 +201,7 @@ export function Inventory(probs: InventoryProbs): JSX.Element {
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
             <h2>Objekt hinzufügen</h2>
-            <Calendar
+            <Calendar_Querry fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
             />
             <div style={inputContainerStyle}>
               <label>Menge:</label>
@@ -310,7 +306,7 @@ const addToCartButtonStyle: React.CSSProperties = {
   borderRadius: '4px',
   cursor: 'pointer',
   marginRight: '10px',
-  marginTop: '5px',
+  marginTop: '10px',
 };
 
 const descriptionStyle: React.CSSProperties = {

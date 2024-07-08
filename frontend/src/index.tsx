@@ -4,6 +4,16 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import { CartProvider } from './context/CartContext';
+import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: createUploadLink({
+    uri: process.env.REACT_APP_BACKEND_URL
+  })
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -11,7 +21,11 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ApolloProvider client={client}>
+        <CartProvider>
+          <App />
+        </CartProvider>
+      </ApolloProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

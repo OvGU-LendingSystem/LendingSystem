@@ -25,7 +25,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
   );
 }
 
-declare global{
+declare global {
   interface Product {
     id: number;
     name: string;
@@ -44,10 +44,9 @@ declare global{
     email: string;
     phone?: string;
     products: Product[];
-    status: string; //requested, confirmed, lended
+    status: string;
   }
 }
-
 
 export function Layout() {
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
@@ -77,7 +76,7 @@ export function Layout() {
 
         <ul>
           <li>
-            <button style={{ padding: "3px", marginRight: "10px" }} onClick={handleLoginClick}>Login</button>
+            <button style={{ padding: "3px" }} onClick={handleLoginClick}>Login</button>
           </li>
           <li>
             <Link to='/cart'>
@@ -95,4 +94,3 @@ export function Layout() {
     </div>
   );
 }
-  
