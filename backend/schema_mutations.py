@@ -121,28 +121,31 @@ class update_physical_object(graphene.Mutation):
     """
 
     class Arguments:
-        phys_id = graphene.String(required=True)
-        inv_num_internal = graphene.Int()
-        inv_num_external = graphene.Int()
-        deposit = graphene.Int()
-        storage_location = graphene.String()
-        faults = graphene.String()
-        name = graphene.String()
-        description = graphene.String()
-        organization_id = graphene.String()
+        phys_id             = graphene.String(required=True)
+        inv_num_internal    = graphene.Int()
+        inv_num_external    = graphene.Int()
+        deposit             = graphene.Int()
+        borrowable          = graphene.Boolean()
+        storage_location    = graphene.String()
+        storage_location2   = graphene.String()
+        faults              = graphene.String()
+        name                = graphene.String()
+        description         = graphene.String()
+        organization_id     = graphene.String()
 
-        pictures = graphene.String()
-        tags = graphene.List(graphene.String)
-        orders = graphene.List(graphene.String)
-        groups = graphene.List(graphene.String)
+        pictures    = graphene.List(graphene.String, description = "List of picture file ids; Override existing pictures")
+        manual      = graphene.List(graphene.String, description = "List of manual file ids; Override existing manual")
+        tags        = graphene.List(graphene.String, description = "List of tag ids; Override existing tags")
+        orders      = graphene.List(graphene.String, description = "List of order ids; Override existing orders")
+        groups      = graphene.List(graphene.String, description = "List of group ids; Override existing groups")
 
     physical_object = graphene.Field(lambda: PhysicalObject)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    ok              = graphene.Boolean()
+    info_text       = graphene.String()
 
     @staticmethod
-    def mutate(self, info, phys_id, inv_num_internal=None, inv_num_external=None, storage_location=None, name=None,
-               pictures=None,
+    def mutate(self, info, phys_id, inv_num_internal=None, inv_num_external=None, borrowable=None, storage_location=None, storage_location2=None, name=None,
+               pictures=None, manual=None,
                tags=None, orders=None, groups=None, faults=None, description=None, deposit=None):
 
         try:
@@ -162,8 +165,12 @@ class update_physical_object(graphene.Mutation):
                 physical_object.inv_num_external = inv_num_external
             if deposit:
                 physical_object.deposit = deposit
+            if borrowable:
+                physical_object.borrowable = borrowable
             if storage_location:
                 physical_object.storage_location = storage_location
+            if storage_location2:
+                physical_object.storage_location2 = storage_location2
             if faults:
                 physical_object.faults = faults
             if name:
@@ -171,9 +178,12 @@ class update_physical_object(graphene.Mutation):
             if description:
                 physical_object.description = description
 
-            # pictures noch nicht implementiert
             if pictures:
-                physical_object.pictures = pictures
+                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
+                physical_object.pictures = db_pictures
+            if manual:
+                db_manual = db.query(FileModel).filter(FileModel.file_id.in_(manual)).all()
+                physical_object.manual = db_manual
             if tags:
                 db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
                 physical_object.tags = db_tags
