@@ -1045,9 +1045,11 @@ class update_user_rights(graphene.Mutation):
 
                 db.commit()
                 return update_user_rights(ok=True, info_text="Benutzerrechte erfolgreich angepasst.", organization=organization)
+            else:
+                return update_user_rights(ok=False, info_text="Nicht genügend Rechte.")
         except Exception as e:
             print(e)
-            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen.")
+            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen. " + str(e))
 
 class delete_organization(graphene.Mutation):
     """
