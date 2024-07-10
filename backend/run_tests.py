@@ -9,7 +9,7 @@ import Tests.filter_tests as filter
 
 from Tests.db_test_setups import testDB_base
 
-from config import engine as test_engine, db as test_db
+from config import engine as test_engine, db as test_db, testing_on
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -44,4 +44,7 @@ class Test(unittest.TestCase):
         Base.metadata.drop_all(test_engine)
 
 if __name__ == '__main__':
-    unittest.main()
+    if (int)(testing_on):
+        unittest.main()
+    else:
+        print("Not connected to test database. (Check config file)")
