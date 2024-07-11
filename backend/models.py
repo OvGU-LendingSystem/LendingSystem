@@ -20,7 +20,8 @@ class userRights(enum.Enum):
     organization_admin  = 1 # dürfen innerhalb ihrer Organisation alles
     inventory_admin     = 2 # dürfen Objekte und Groups der eigenen Organisation verwalten und Tags
     member              = 3 # dürfen Order erstellen
-    watcher             = 4 # können nichts
+    watcher             = 4 # können nur angucken
+    customer            = 5 # können nichts
 
 class orderStatus(enum.Enum):
     """
