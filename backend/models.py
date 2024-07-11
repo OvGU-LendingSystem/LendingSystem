@@ -77,7 +77,7 @@ class Organization_User(Base):
     __tablename__       = "organization_user"
     organization_id     = Column(String(36),        ForeignKey('organization.organization_id'), primary_key=True)
     user_id             = Column(String(36),        ForeignKey('user.user_id'),                 primary_key=True)
-    rights              = Column(Enum(userRights),  nullable = False, default = userRights.member)
+    rights              = Column(Enum(userRights),  nullable = False, default = userRights.customer)
     # User want to see agb only after a change
     # Should be automatically false if agb changes (irgendwo in Mutations)
     agb_dont_show       = Column(Boolean,       nullable = False, default = False)
