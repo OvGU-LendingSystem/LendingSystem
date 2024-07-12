@@ -845,7 +845,8 @@ class create_organization(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
+            tb = traceback.format_exc()
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e) + "\n" + tb)
 
 class update_organization(graphene.Mutation):
     """
@@ -947,19 +948,20 @@ class add_user_to_organization(graphene.Mutation):
     """
 
     class Arguments:
-        user_id = graphene.String(required=True)
+        user_id         = graphene.String(required=True)
         organization_id = graphene.String(required=True)
+        user_right      = graphene.String()
 
-    organization_user = graphene.List(lambda: Organization_User)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    organization_user   = graphene.List(lambda: Organization_User)
+    ok                  = graphene.Boolean()
+    info_text           = graphene.String()
 
     @staticmethod
-    def mutate(self, info, user_id, organization_id):
+    def mutate(self, info, user_id, organization_id, user_right = "customer"):
         try:
-            executive_user = info.context.user
-            user = UserModel.query.filter(UserModel.user_id == user_id).first()
-            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            executive_user  = info.context.user
+            user            = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
             if not user or not organization:
                 return add_user_to_organization(ok=False, info_text="User oder Organisation existieren nicht.")
@@ -969,16 +971,19 @@ class add_user_to_organization(graphene.Mutation):
             if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
 
                 # create organization_user
-                organization_user = Organization_User(
-                    user_id=user_id,
-                    organization_id=organization_id,
+                organization_user = Organization_UserModel(
+                    user_id = user_id,
+                    organization_id = organization_id,
+                    rights = userRights[user_right]
                 )
+
                 db.add(organization_user)
                 db.commit()
                 return add_user_to_organization(ok=True, info_text="User erfolgreich zur Organisation hinzugefügt.")
         except Exception as e:
             print(e)
-            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert.")
+            tb = traceback.format_exc()
+            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb)
 
 class remove_user_from_organization(graphene.Mutation):
     """
