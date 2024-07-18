@@ -238,10 +238,10 @@ class upload_file(graphene.Mutation):
     """
 
     class Arguments:
-        phys_picture_id = graphene.String()
-        phys_manual_id  = graphene.String()
-        organization_id = graphene.String()
-        group_id        = graphene.String()
+        phys_picture_id = graphene.UUID()
+        phys_manual_id  = graphene.UUID()
+        organization_id = graphene.UUID()
+        group_id        = graphene.UUID()
         file            = Upload(required=True)
 
     file        = graphene.Field(lambda: File)
@@ -251,7 +251,6 @@ class upload_file(graphene.Mutation):
     @staticmethod
     def mutate(self, info, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None):
         try:
-
             if not is_user_authorised(info.context.user, 2,):
                 return upload_file(ok=False, info_text=reject)
 
@@ -845,7 +844,8 @@ class create_organization(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
+            tb = traceback.format_exc()
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e) + "\n" + str(tb))
 
 class update_organization(graphene.Mutation):
     """
@@ -1238,9 +1238,16 @@ class logout(graphene.Mutation):
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
 
+class Test(graphene.Mutation):
+    ok = graphene.Boolean()
+    info_text = graphene.String()
 
+    @staticmethod
+    def mutate(self, info):
+        return Test(ok = True, info_text = str(info.context))
 
 class Mutations(graphene.ObjectType):
+    test = Test.Field()
     login = login.Field()
     logout = logout.Field()
     checkSession = check_session.Field()
