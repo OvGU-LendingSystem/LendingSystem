@@ -20,7 +20,8 @@ class userRights(enum.Enum):
     organization_admin  = 1 # dürfen innerhalb ihrer Organisation alles
     inventory_admin     = 2 # dürfen Objekte und Groups der eigenen Organisation verwalten und Tags
     member              = 3 # dürfen Order erstellen
-    watcher             = 4 # können nichts
+    watcher             = 4 # können nur angucken
+    customer            = 5 # können nichts
 
 class orderStatus(enum.Enum):
     """
@@ -76,7 +77,7 @@ class Organization_User(Base):
     __tablename__       = "organization_user"
     organization_id     = Column(String(36),        ForeignKey('organization.organization_id'), primary_key=True)
     user_id             = Column(String(36),        ForeignKey('user.user_id'),                 primary_key=True)
-    rights              = Column(Enum(userRights),  nullable = False, default = userRights.member)
+    rights              = Column(Enum(userRights),  nullable = False, default = userRights.customer)
     # User want to see agb only after a change
     # Should be automatically false if agb changes (irgendwo in Mutations)
     agb_dont_show       = Column(Boolean,       nullable = False, default = False)
