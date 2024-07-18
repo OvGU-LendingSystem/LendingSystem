@@ -1128,7 +1128,7 @@ class update_user(graphene.Mutation):
     """
 
     class Arguments:
-        user_id     = graphene.String(required=True)
+        user_id     = graphene.String()
         email       = graphene.String()
         last_name   = graphene.String()
         first_name  = graphene.String()
@@ -1139,12 +1139,13 @@ class update_user(graphene.Mutation):
     info_text   = graphene.String()
 
     @staticmethod
-    def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None):
+    def mutate(self, info, user_id=None, email=None, last_name=None, first_name=None, password=None):
         try:
-            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            if user_id: user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            if email:   user = UserModel.query.filter(UserModel.email == email).first()
 
             if not user:
-                return update_user(ok=False, info_text="Nutzer nicht gefunden.")
+                return update_user(ok=False, info_text="User not found. Can only query by user_id or email.")
             if email:
                 user.email = email
             if last_name:
@@ -1156,11 +1157,11 @@ class update_user(graphene.Mutation):
                 user.password_hash = ph.hash(password)
 
             db.commit()
-            return update_user(ok=True, info_text="Nutzer erfolgreich aktualisiert.", user=user)
+            return update_user(ok=True, info_text="User updated successfully", user=user)
 
         except Exception as e:
             print(e)
-            return update_user(ok=False, info_text="Fehler beim Aktualisieren des Nutzers. " + str(e))
+            return update_user(ok=False, info_text="Error updating user: " + str(e))
 
 class delete_user(graphene.Mutation):
     """
