@@ -238,10 +238,10 @@ class upload_file(graphene.Mutation):
     """
 
     class Arguments:
-        phys_picture_id = graphene.String()
-        phys_manual_id  = graphene.String()
-        organization_id = graphene.String()
-        group_id        = graphene.String()
+        phys_picture_id = graphene.UUID()
+        phys_manual_id  = graphene.UUID()
+        organization_id = graphene.UUID()
+        group_id        = graphene.UUID()
         file            = Upload(required=True)
 
     file        = graphene.Field(lambda: File)
@@ -251,7 +251,6 @@ class upload_file(graphene.Mutation):
     @staticmethod
     def mutate(self, info, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None):
         try:
-
             if not is_user_authorised(info.context.user, 2,):
                 return upload_file(ok=False, info_text=reject)
 
@@ -845,7 +844,8 @@ class create_organization(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e))
+            tb = traceback.format_exc()
+            return create_organization(ok=False, info_text="Fehler beim Erstellen der Organisation. " + str(e) + "\n" + str(tb))
 
 class update_organization(graphene.Mutation):
     """
@@ -947,19 +947,20 @@ class add_user_to_organization(graphene.Mutation):
     """
 
     class Arguments:
-        user_id = graphene.String(required=True)
+        user_id         = graphene.String(required=True)
         organization_id = graphene.String(required=True)
+        user_right      = graphene.String()
 
-    organization_user = graphene.List(lambda: Organization_User)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
+    organization_user   = graphene.List(lambda: Organization_User)
+    ok                  = graphene.Boolean()
+    info_text           = graphene.String()
 
     @staticmethod
-    def mutate(self, info, user_id, organization_id):
+    def mutate(self, info, user_id, organization_id, user_right = "customer"):
         try:
-            executive_user = info.context.user
-            user = UserModel.query.filter(UserModel.user_id == user_id).first()
-            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            executive_user  = info.context.user
+            user            = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization    = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
             if not user or not organization:
                 return add_user_to_organization(ok=False, info_text="User oder Organisation existieren nicht.")
@@ -969,16 +970,19 @@ class add_user_to_organization(graphene.Mutation):
             if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
 
                 # create organization_user
-                organization_user = Organization_User(
-                    user_id=user_id,
-                    organization_id=organization_id,
+                organization_user = Organization_UserModel(
+                    user_id = user_id,
+                    organization_id = organization_id,
+                    rights = userRights[user_right]
                 )
+
                 db.add(organization_user)
                 db.commit()
                 return add_user_to_organization(ok=True, info_text="User erfolgreich zur Organisation hinzugefügt.")
         except Exception as e:
             print(e)
-            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert.")
+            tb = traceback.format_exc()
+            return add_user_to_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb)
 
 class remove_user_from_organization(graphene.Mutation):
     """
@@ -1045,9 +1049,11 @@ class update_user_rights(graphene.Mutation):
 
                 db.commit()
                 return update_user_rights(ok=True, info_text="Benutzerrechte erfolgreich angepasst.", organization=organization)
+            else:
+                return update_user_rights(ok=False, info_text="Nicht genügend Rechte.")
         except Exception as e:
             print(e)
-            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen.")
+            return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen. " + str(e))
 
 class delete_organization(graphene.Mutation):
     """
@@ -1122,7 +1128,7 @@ class update_user(graphene.Mutation):
     """
 
     class Arguments:
-        user_id     = graphene.String(required=True)
+        user_id     = graphene.String()
         email       = graphene.String()
         last_name   = graphene.String()
         first_name  = graphene.String()
@@ -1133,12 +1139,13 @@ class update_user(graphene.Mutation):
     info_text   = graphene.String()
 
     @staticmethod
-    def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None):
+    def mutate(self, info, user_id=None, email=None, last_name=None, first_name=None, password=None):
         try:
-            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            if user_id: user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            if email:   user = UserModel.query.filter(UserModel.email == email).first()
 
             if not user:
-                return update_user(ok=False, info_text="Nutzer nicht gefunden.")
+                return update_user(ok=False, info_text="User not found. Can only query by user_id or email.")
             if email:
                 user.email = email
             if last_name:
@@ -1150,11 +1157,11 @@ class update_user(graphene.Mutation):
                 user.password_hash = ph.hash(password)
 
             db.commit()
-            return update_user(ok=True, info_text="Nutzer erfolgreich aktualisiert.", user=user)
+            return update_user(ok=True, info_text="User updated successfully", user=user)
 
         except Exception as e:
             print(e)
-            return update_user(ok=False, info_text="Fehler beim Aktualisieren des Nutzers. " + str(e))
+            return update_user(ok=False, info_text="Error updating user: " + str(e))
 
 class delete_user(graphene.Mutation):
     """
@@ -1236,9 +1243,16 @@ class logout(graphene.Mutation):
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
 
+class Test(graphene.Mutation):
+    ok = graphene.Boolean()
+    info_text = graphene.String()
 
+    @staticmethod
+    def mutate(self, info):
+        return Test(ok = True, info_text = str(info.context))
 
 class Mutations(graphene.ObjectType):
+    test = Test.Field()
     login = login.Field()
     logout = logout.Field()
     checkSession = check_session.Field()
