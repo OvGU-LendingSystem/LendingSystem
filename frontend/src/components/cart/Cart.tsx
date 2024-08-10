@@ -3,6 +3,7 @@ import { OrderPopup } from "./OrderPopup";
 import { useState, useEffect } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
 
 //APOLLO STUFF ZUM TESTEN
@@ -50,12 +51,12 @@ export function Cart() {
 
     var productNew: Product;
 
-    useEffect(() => {
-      if (selectedProduct) {
+     useEffect(() => {
+       if (selectedProduct) {
           setStartDate(selectedProduct.startDate ?? null);
-          setEndDate(selectedProduct.endDate ?? null);
-      }
-  }, [selectedProduct]);
+           setEndDate(selectedProduct.endDate ?? null);
+       }
+   }, [selectedProduct]);
 
     const openModal = (product: Product) => {
         setSelectedProduct(product);
@@ -83,7 +84,7 @@ export function Cart() {
     };
     const editProduct = () => {
      if (selectedProduct && startDate && endDate){
-        productNew = {...selectedProduct!,amount,startDate : startDate ?? selectedProduct?.startDate, endDate: endDate ?? selectedProduct?.endDate  };
+        productNew = {...selectedProduct!,amount,startDate,endDate};
         itemsInCartDispatcher({ type: 'edit', item: productNew });
         setSelectedProduct(null);
         closeModal();
@@ -132,7 +133,7 @@ export function Cart() {
                         <h2 //add calendar under here
                         >Objekt bearbeiten
                         </h2>
-                         <Calendar setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}></Calendar>
+                         <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
                         
 
                         <div style={inputContainerStyle}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
+import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
@@ -244,9 +245,8 @@ export function Inventory(): JSX.Element {
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
             <h2>Objekt hinzufügen</h2>
-            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate}
-            />
-            <div style={inputContainerStyle}>
+            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
+            <div className="input-container">
               <label>Menge:</label>
               <input
                 type="number"
