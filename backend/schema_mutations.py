@@ -1222,14 +1222,15 @@ class login(graphene.Mutation):
 class check_session(graphene.Mutation):
     ok          = graphene.Boolean()
     info_text   = graphene.String()
+    user_id = graphene.String()
 
     @staticmethod
     def mutate(self, info):
         user_id = session.get('user_id')
         if user_id:
-            return check_session(ok=True, info_text='Es liegt eine gültige Session vor.')
+            return check_session(ok=True, info_text='Es liegt eine gültige Session vor.', user_id=user_id)
         else:
-            return check_session(ok=False, info_text='Unautorisierter Zugriff.')
+            return check_session(ok=False, info_text='Unautorisierter Zugriff.', user_id=None)
 
 class logout(graphene.Mutation):
     ok          = graphene.Boolean()
@@ -1238,7 +1239,7 @@ class logout(graphene.Mutation):
     @staticmethod
     def mutate(self, info):
         if session.get('user_id'):
-            session.pop("user_id")
+            session.pop('user_id')
             return logout(ok=True, info_text='Logout erfolgreich!')
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
