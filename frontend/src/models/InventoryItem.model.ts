@@ -3,29 +3,35 @@ export interface InventoryItem {
     name: string;
     inventoryNumberInternal?: number;
     inventoryNumberExternal?: number;
+    borrowable: boolean;
     deposit?: number;
     storageLocation: string;
     defects: string;
     description: string;
 }
 
-export type ImageResource = {
+export interface LocalImage {
     type: 'local',
     file: File
-} | {
-    type: 'remote',
-    path: string
 }
+
+export interface RemoteImage {
+    type: 'remote',
+    path: string,
+    fileId: string
+}
+
+export type ImageResource = LocalImage | RemoteImage;
 
 //export type AddInventoryItem = Omit<InventoryItem, 'id'>
 export interface AddInventoryItem {
     name: string;
-    inventoryNumberInternal: string;
-    inventoryNumberExternal: string;
+    inventoryNumberInternal?: number;
+    inventoryNumberExternal?: number;
+    borrowable: boolean;
     deposit?: number;
     storageLocation: string;
     defects: string;
     description: string;
-    available: boolean;
     images: ImageResource[];
 }

@@ -11,7 +11,8 @@ import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 const client = new ApolloClient({
   cache: new InMemoryCache(),
   link: createUploadLink({
-    uri: process.env.REACT_APP_BACKEND_URL
+    uri: process.env.REACT_APP_BACKEND_URL,
+    credentials: 'include'
   })
 });
 

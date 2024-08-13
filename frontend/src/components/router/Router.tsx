@@ -4,8 +4,11 @@ import { NotFound } from "../not-found/NotFound";
 import { Inventory } from "../inventory/Inventory";
 import { Cart } from "../cart/Cart";
 import { AddInventory } from "../add-inventory/AddInventory";
+import { EditInventory } from "../edit-inventory/EditInventory";
 import { Login } from "../login/Login";
 import { Requests } from "../requests/Requests";
+import { InternalInventory } from "../internal-inventory/InternalInventory";
+import { AddGroup } from "../add-group/AddGroup";
 
 export function Router() {
     return (
@@ -17,7 +20,15 @@ export function Router() {
     
             <Route path='inventory'>
               <Route index element={<Inventory />} />
+              <Route path="group">
+                <Route path="add" element={<AddGroup />} />
+              </Route>
               <Route path="add" element={<AddInventory />} />
+              <Route path="edit/:itemId" element={<EditInventory />} />
+            </Route>
+
+            <Route path='internal'>
+              <Route path='inventory' element={<InternalInventory />} />
             </Route>
 
             <Route path='login' element={<Login />}/>

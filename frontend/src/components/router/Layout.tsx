@@ -70,7 +70,7 @@ export function Layout() {
             <Link to='/requests'>Anfragen</Link>
           </li>
           <li>
-            <Link to='/todo'>Todo</Link>
+            <Link to='/internal/inventory'>Internes Inventar</Link>
           </li>
         </ul>
 
