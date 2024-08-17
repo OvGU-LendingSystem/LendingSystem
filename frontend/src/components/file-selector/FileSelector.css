@@ -1,0 +1,16 @@
+.file-input-handler {
+    visibility: hidden;
+}
+
+.file-drop-target {
+    height: 200px;
+    margin: 8px;
+    margin-top: 16px;
+    border: 1px dashed black;
+    overflow: scroll;
+}
+
+.file-list-item {
+    display: flex;
+    justify-content: space-between;
+}

@@ -4,6 +4,7 @@ import { FormikHelpers, Formik, FormikProps, Field, Form } from "formik";
 import { FormikInput, FormikSelectionInputWithCustomInput, FormikTextarea } from "../../core/input/Input";
 import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
+import { FormikFileSelector } from '../file-selector/FileSelector';
 
 export interface ModifyInventoryProps {
     initialValue: AddInventoryItem,
@@ -60,7 +61,9 @@ export function ModifyInventory({ initialValue, label, onClick }: ModifyInventor
 
                     <label htmlFor='defects'>Mängel</label>
                     <FormikTextarea id='defects' rows={6} fieldName='defects' />
-                                        
+
+                    <FormikFileSelector name='manuals' title='Anleitungen' />
+
                     <input type="submit" value={label} />
                 </Form>
             )}
