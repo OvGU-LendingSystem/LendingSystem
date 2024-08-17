@@ -21,6 +21,7 @@ export interface AddInventoryItem {
     borrowable: boolean;
     deposit?: number;
     storageLocation: string;
+    storageLocation2: string;
     defects: string;
     description: string;
     images: ImageResource[];

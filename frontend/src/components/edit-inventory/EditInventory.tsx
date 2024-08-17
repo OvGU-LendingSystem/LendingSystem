@@ -68,6 +68,7 @@ interface GetItemResponse {
         faults: string,
         invNumInternal: number,
         invNumExternal: number,
+        storageLocation2: string,
         manual: {
             edges: {
                 node: {
@@ -128,7 +129,7 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
                     pictures: imageResult.value,
                     manuals: manualsResult.value,
                     borrowable: val.borrowable,
-                    storageLocation2: ""
+                    storageLocation2: val.storageLocation2
                 }
             });
 

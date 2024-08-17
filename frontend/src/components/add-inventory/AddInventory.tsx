@@ -45,7 +45,7 @@ export function AddInventory() {
                     manuals: manualsResult.value,
                     borrowable: values.borrowable,
                     organizationId: "123", // TODO ?
-                    storageLocation2: ""
+                    storageLocation2: values.storageLocation2
                 }
             });
             if (!addObjResult.success) {
@@ -73,7 +73,7 @@ export function AddInventory() {
                     manuals: manualsResult.value,
                     borrowable: values.borrowable,
                     organizationId: "123",
-                    storageLocation2: ""
+                    storageLocation2: values.storageLocation2
                 }
             });
             if (!addObjResult.success) {
@@ -91,7 +91,7 @@ export function AddInventory() {
     return (
         <>
         { status && <ErrorView retry={status.retry} /> }
-        { !status && <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', borrowable: true, images: [], manuals: [] }}
+        { !status && <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
             onClick={submit} label='Add Item' /> }
         </>
     );

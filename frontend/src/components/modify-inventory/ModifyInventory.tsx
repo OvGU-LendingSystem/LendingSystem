@@ -13,7 +13,8 @@ export interface ModifyInventoryProps {
 }
 
 export function ModifyInventory({ initialValue, label, onClick }: ModifyInventoryProps) {
-    const storagePlaces = ["Keller", "Regal 1", "Regal 2"];
+    const storagePlaces = ["Keller", "1. Etage", "2. Etage"];
+    const storagePlaces2 = ["Regal 1", "Regal 2"];
 
     const updateDeposit = (e: React.ChangeEvent<HTMLInputElement>) => {
         return Math.trunc(e.target.valueAsNumber * 100);
@@ -47,6 +48,9 @@ export function ModifyInventory({ initialValue, label, onClick }: ModifyInventor
                                 
                                 <label htmlFor="storage">Lagerort</label>
                                 <FormikSelectionInputWithCustomInput fieldName='storageLocation' options={storagePlaces} />
+
+                                <div></div>
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' options={storagePlaces2} />
 
                                 <label htmlFor="deposit">Kaution</label>
                                 <FormikInput fieldName='deposit' after={<div className='currency-placeholder'>€</div>} className='deposit-input' type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required modifier={updateDeposit} getValue={getDeposit} />
