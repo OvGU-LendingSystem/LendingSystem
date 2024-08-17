@@ -1,5 +1,4 @@
 import '../../styles/style.css';
-import './AddInventory.css';
 import { AddInventoryItem } from '../../models/InventoryItem.model';
 import { ModifyInventory } from '../modify-inventory/ModifyInventory';
 import { UpdateFailedResult, UpdateResult, useUpdateImages } from '../../hooks/image-helpers';

@@ -1,5 +1,5 @@
 export interface InventoryItem {
-    id: number;
+    physId: string;
     name: string;
     inventoryNumberInternal?: number;
     inventoryNumberExternal?: number;
@@ -8,6 +8,7 @@ export interface InventoryItem {
     storageLocation: string;
     defects: string;
     description: string;
+    images: RemoteImage[];
 }
 
 export interface LocalImage {

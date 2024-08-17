@@ -1,5 +1,6 @@
 import { gql } from "@apollo/client";
-import { GQLResponse, useMutationWithResponse } from "./response-helper";
+import { flattenEdges, GQLResponse, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
+import { InventoryItem } from "../models/InventoryItem.model";
 
 const ADD_PYSICAL_OBJECT = gql`
     mutation AddPhysicalObject(
@@ -76,4 +77,71 @@ interface EditPhysicalObjectResponse extends GQLResponse {
 export function useEditPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse>(EDIT_PYSICAL_OBJECT, 'updatePhysicalObject');
     return [ mutate ];
+}
+
+const GET_PHYSICAL_OBJECTS = gql`
+query GetPhysicalObjects {
+  filterPhysicalObjects {
+    physId,
+    name,
+    invNumInternal,
+    invNumExternal,
+    borrowable,
+    deposit,
+    storageLocation,
+    faults,
+    description,
+    pictures(first: 1) {
+      edges {
+        node {
+          fileId,
+          path
+        }
+      }
+    }
+  }
+}
+`;
+
+interface GetPhysicalObjectsResponse {
+    physId: string;
+    name: string;
+    invNumInternal: number;
+    invNumExternal: number;
+    borrowable: boolean;
+    deposit: number;
+    storageLocation: string;
+    faults: string;
+    description: string;
+    pictures: {
+      edges: {
+        node: {
+          fileId: string,
+          path: string
+        }
+      }[]
+    }
+}
+
+export function useGetPhysicalObjects() {
+    const mapResponseToItem = (response: GetPhysicalObjectsResponse[]) => {
+        return response.map(val => {
+            const flattenedVal = flattenEdges<{fileId: string, path: string}, 'pictures', GetPhysicalObjectsResponse>(val, 'pictures');
+            const res: InventoryItem = {
+                physId: flattenedVal.physId,
+                name: flattenedVal.name,
+                inventoryNumberInternal: flattenedVal.invNumInternal,
+                inventoryNumberExternal: flattenedVal.invNumExternal,
+                borrowable: flattenedVal.borrowable,
+                deposit: flattenedVal.deposit,
+                storageLocation: flattenedVal.storageLocation,
+                defects: flattenedVal.faults,
+                description: flattenedVal.description,
+                images: flattenedVal.pictures.map((pic) => {return { type: 'remote', ...pic }})
+            };
+            return res;
+        });
+    }
+
+    return useSuspenseQueryWithResponseMapped<GetPhysicalObjectsResponse[], InventoryItem[]>(GET_PHYSICAL_OBJECTS, 'filterPhysicalObjects', {}, mapResponseToItem);
 }

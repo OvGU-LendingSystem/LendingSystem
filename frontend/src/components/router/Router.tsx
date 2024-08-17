@@ -9,6 +9,7 @@ import { Login } from "../login/Login";
 import { Requests } from "../requests/Requests";
 import { InternalInventory } from "../internal-inventory/InternalInventory";
 import { AddGroup } from "../add-group/AddGroup";
+import { EditGroup } from "../edit-group/EditGroup";
 
 export function Router() {
     return (
@@ -22,6 +23,7 @@ export function Router() {
               <Route index element={<Inventory />} />
               <Route path="group">
                 <Route path="add" element={<AddGroup />} />
+                <Route path="edit/:groupId" element={<EditGroup />} />
               </Route>
               <Route path="add" element={<AddInventory />} />
               <Route path="edit/:itemId" element={<EditInventory />} />
