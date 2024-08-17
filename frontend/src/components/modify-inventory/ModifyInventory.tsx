@@ -5,6 +5,8 @@ import { FormikInput, FormikSelectionInputWithCustomInput, FormikTextarea } from
 import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
+import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
+import { Suspense } from 'react';
 
 export interface ModifyInventoryProps {
     initialValue: AddInventoryItem,
@@ -12,9 +14,18 @@ export interface ModifyInventoryProps {
     onClick: (values: AddInventoryItem) => Promise<void>
 }
 
-export function ModifyInventory({ initialValue, label, onClick }: ModifyInventoryProps) {
-    const storagePlaces = ["Keller", "1. Etage", "2. Etage"];
-    const storagePlaces2 = ["Regal 1", "Regal 2"];
+export function ModifyInventory(props: ModifyInventoryProps) {
+    return (
+        <Suspense>
+            <ModifyInventoryScreen {...props} />
+        </Suspense>
+    );
+}
+
+export function ModifyInventoryScreen({ initialValue, label, onClick }: ModifyInventoryProps) {
+    const { data } = useStorageLocationHelper();
+    //const storagePlaces = ["Keller", "1. Etage", "2. Etage"];
+    //const storagePlaces2 = ["Regal 1", "Regal 2"];
 
     const updateDeposit = (e: React.ChangeEvent<HTMLInputElement>) => {
         return Math.trunc(e.target.valueAsNumber * 100);
@@ -47,10 +58,10 @@ export function ModifyInventory({ initialValue, label, onClick }: ModifyInventor
                                 <FormikInput fieldName='inventoryNumberExternal' getValue={(val) => val?.toString() ?? ''} modifier={(e) => { console.error(e); return e.target.valueAsNumber}} type="number" id="inventory_number_external" />
                                 
                                 <label htmlFor="storage">Lagerort</label>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' options={storagePlaces} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' /*options={storagePlaces}*/ options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
 
                                 <div></div>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' options={storagePlaces2} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' /*options={storagePlaces2}*/ options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
 
                                 <label htmlFor="deposit">Kaution</label>
                                 <FormikInput fieldName='deposit' after={<div className='currency-placeholder'>€</div>} className='deposit-input' type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required modifier={updateDeposit} getValue={getDeposit} />
