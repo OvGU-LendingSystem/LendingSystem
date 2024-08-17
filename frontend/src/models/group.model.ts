@@ -1,4 +1,5 @@
-import { ImageResource, InventoryItem, RemoteImage } from "./InventoryItem.model";
+import { ImageResource, RemoteImage } from "./file.model";
+import { InventoryItem } from "./InventoryItem.model";
 
 export interface Group {
     groupId: string;

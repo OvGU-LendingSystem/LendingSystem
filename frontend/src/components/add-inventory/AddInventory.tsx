@@ -1,7 +1,7 @@
 import '../../styles/style.css';
 import { AddInventoryItem } from '../../models/InventoryItem.model';
 import { ModifyInventory } from '../modify-inventory/ModifyInventory';
-import { UpdateFailedResult, UpdateResult, useUpdateImages } from '../../hooks/image-helpers';
+import { useUpdateFiles } from '../../hooks/image-helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
@@ -9,19 +9,26 @@ import { useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
 export function AddInventory() {
     const navigate = useNavigate();
 
-    const updateImages = useUpdateImages();
+    const updateFiles = useUpdateFiles();
     const [ addPhysicalObject ] = useAddPhysicalObject();
     const [ status, setStatus ] = useState<({ retry: () => void }) | undefined>(undefined);
 
     const submit = async (values: AddInventoryItem) => {
-        let [ imageResult, retry ] = await updateImages([], values.images);
+        let [ imageResult, retryImages ] = await updateFiles([], values.images);
+        let [ manualsResult, retryManuals ] = await updateFiles([], values.manuals);
         let addObjResult;
 
         const retryAll = async () => {
             if (!imageResult.success) {
-                imageResult = await retry();
+                imageResult = await retryImages();
             }
             if (!imageResult.success) {
+                return; // error
+            }
+            if (!manualsResult.success) {
+                manualsResult = await retryManuals();
+            }
+            if (!manualsResult.success) {
                 return; // error
             }
             addObjResult = await addPhysicalObject({
@@ -35,6 +42,7 @@ export function AddInventory() {
                     faults: values.defects,
                     tags: [],
                     pictures: imageResult.value,
+                    manuals: manualsResult.value,
                     borrowable: values.borrowable,
                     organizationId: "123", // TODO ?
                     storageLocation2: ""
@@ -50,7 +58,7 @@ export function AddInventory() {
 
         console.error(imageResult);
 
-        if (imageResult.success) {
+        if (imageResult.success && manualsResult.success) {
             addObjResult = await addPhysicalObject({
                 variables: {
                     invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
@@ -62,6 +70,7 @@ export function AddInventory() {
                     faults: values.defects,
                     tags: [],
                     pictures: imageResult.value,
+                    manuals: manualsResult.value,
                     borrowable: values.borrowable,
                     organizationId: "123",
                     storageLocation2: ""
@@ -75,14 +84,14 @@ export function AddInventory() {
 
             navigate('/');
         } else {
-            setStatus({retry: retryAll });
+            setStatus({ retry: retryAll });
         }
     }
 
     return (
         <>
         { status && <ErrorView retry={status.retry} /> }
-        { !status && <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', borrowable: true, images: [] }}
+        { !status && <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', borrowable: true, images: [], manuals: [] }}
             onClick={submit} label='Add Item' /> }
         </>
     );

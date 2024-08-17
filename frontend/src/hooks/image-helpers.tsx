@@ -1,10 +1,10 @@
 import { gql, useMutation } from "@apollo/client";
 import { useCallback } from "react";
-import { ImageResource, LocalImage, RemoteImage } from "../models/InventoryItem.model";
+import { FileResource, ImageResource, LocalImage, RemoteFile, RemoteImage } from "../models/file.model";
 
 // GQL mutations ------------------------------------------------------------------
 
-const ADD_IMAGE = gql`
+const ADD_FILE = gql`
     mutation UploadFile($file: Upload!) {
         uploadFile(file: $file) {
             ok,
@@ -16,13 +16,13 @@ const ADD_IMAGE = gql`
     }
 `;
 
-interface AddImageResult {
+interface AddFileResult {
     ok: boolean,
     infoText: string,
     file: RemoteImage
 }
 
-const REMOVE_IMAGE = gql`
+const REMOVE_FILE = gql`
     mutation RemoveFile($fileId: String!) {
         deleteFile(fileId: $fileId) {
             ok,
@@ -33,32 +33,32 @@ const REMOVE_IMAGE = gql`
 
 // Helper functions ------------------------------------------------------------------
 
-export function isLocalImage(image: ImageResource): image is LocalImage {
+export function isLocalFile(image: ImageResource): image is LocalImage {
     return image.type === 'local';
 }
 
-export function isRemoteImage(image: ImageResource): image is RemoteImage {
+export function isRemoteFile(image: ImageResource): image is RemoteImage {
     return image.type === 'remote';
 }
 
-export function getRemovedImages(oldImages: ImageResource[], newImages: ImageResource[]) {
-    const newRemoteImages = newImages.filter(isRemoteImage);
-    const notInNewImages = (oldImage: RemoteImage) => -1 === newRemoteImages.findIndex((img) => img.fileId === oldImage.fileId);
+export function getRemovedFiles(oldFiles: FileResource[], newFiles: FileResource[]) {
+    const newRemoteFiles = newFiles.filter(isRemoteFile);
+    const notInNewFiles = (oldFile: RemoteFile) => -1 === newRemoteFiles.findIndex((file) => file.fileId === oldFile.fileId);
 
-    return oldImages.filter(isRemoteImage).filter(notInNewImages);
+    return oldFiles.filter(isRemoteFile).filter(notInNewFiles);
 }
 
-export async function uploadImages(images: ImageResource[], addImage: (file: File) => Promise<RemoteImage>) {
-    const uploadedImages = images.map(async (image) => {
-        return isLocalImage(image) ? await addImage(image.file) : image;
+export async function uploadFiles(images: FileResource[], addImage: (file: File) => Promise<RemoteFile>) {
+    const uploadedImages = images.map(async (file) => {
+        return isLocalFile(file) ? await addImage(file.file) : file;
     });
 
     return Promise.allSettled(uploadedImages);
 }
 
-export async function deleteImages(images: RemoteImage[], removeImage: (id: string) => Promise<void>) {
-    for (let image of images) {
-        await removeImage(image.fileId);
+export async function deleteFiles(files: RemoteImage[], removeFile: (id: string) => Promise<void>) {
+    for (let file of files) {
+        await removeFile(file.fileId);
     };
 }
 
@@ -76,7 +76,7 @@ export interface UploadFailedResult {
     error: any
 }
 
-export function uploadSuccessful(res: Awaited<ReturnType<typeof uploadImages>>): UploadSuccessResult | UploadFailedResult {
+export function uploadSuccessful(res: Awaited<ReturnType<typeof uploadFiles>>): UploadSuccessResult | UploadFailedResult {
     const value = [];
 
     for (const elem of res) {
@@ -92,11 +92,11 @@ export function uploadSuccessful(res: Awaited<ReturnType<typeof uploadImages>>):
 
 // Helper hooks ----------------------------------------------------------------------------------------
 
-export function useUploadMissingImages() {
-    const [ addImageMutation ] = useMutation<{ uploadFile: AddImageResult }>(ADD_IMAGE);
-    const addImage = useCallback(async (file: File) => {
-        const res = await addImageMutation({ variables: { file: file } });
-        const val: RemoteImage = {
+export function useUploadMissingFiles() {
+    const [ addFileMutation ] = useMutation<{ uploadFile: AddFileResult }>(ADD_FILE);
+    const addFile = useCallback(async (file: File) => {
+        const res = await addFileMutation({ variables: { file: file } });
+        const val: RemoteFile = {
             type: 'remote',
             path: res.data!.uploadFile.file.path,
             fileId: res.data!.uploadFile.file.fileId // TODO handle error
@@ -104,21 +104,21 @@ export function useUploadMissingImages() {
         return val;
     }, []);
 
-    const upload = useCallback(async (images: ImageResource[]) => {
-        return uploadImages(images, addImage);
+    const upload = useCallback(async (files: FileResource[]) => {
+        return uploadFiles(files, addFile);
     }, []);
 
     return upload;
 }
 
-export function useDeleteImages() {
-    const [ removeImageMutation ] = useMutation(REMOVE_IMAGE);
-    const removeImage = useCallback(async (fileId: string) => {
-        await removeImageMutation({ variables: { fileId: fileId } });
+export function useDeleteFiles() {
+    const [ removeFileMutation ] = useMutation(REMOVE_FILE);
+    const removeFile = useCallback(async (fileId: string) => {
+        await removeFileMutation({ variables: { fileId: fileId } });
     }, []);
 
-    const remove = useCallback(async (images: RemoteImage[]) => {
-        await deleteImages(images, removeImage);
+    const remove = useCallback(async (files: RemoteFile[]) => {
+        await deleteFiles(files, removeFile);
     }, []);
 
     return remove;
@@ -131,37 +131,39 @@ export interface UpdateSuccessResult {
 };
 export type UpdateResult = UpdateFailedResult | UpdateSuccessResult;
 
-export function useUpdateImages() {
-    const uploadImages = useUploadMissingImages();
-    const deleteImages = useDeleteImages();
+export function useUpdateFiles() {
+    const uploadFiles = useUploadMissingFiles();
+    const deleteFiles = useDeleteFiles();
 
-    const update = async (oldImages: ImageResource[], newImages: ImageResource[]): Promise<[UpdateResult, () => Promise<UpdateResult>]> => {
-        let uploadedImages = newImages;
+    const update = async (oldFiles: FileResource[], newFiles: FileResource[]): Promise<[UpdateResult, () => Promise<UpdateResult>]> => {
+        let uploadedFiles = newFiles;
 
         const upload = async () => {
-            const uploadResult = await uploadImages(uploadedImages);
+            const uploadResult = await uploadFiles(uploadedFiles);
             const uploadResultStatus = uploadSuccessful(uploadResult);
             
             if (uploadResultStatus.success) {
-                uploadedImages = uploadResultStatus.value;
+                uploadedFiles = uploadResultStatus.value;
                 const status: UpdateSuccessResult = {
                     success: true,
-                    value: uploadResultStatus.value.map((img) => img.fileId)
+                    value: uploadResultStatus.value.map((file) => file.fileId)
                 }
                 return status;
             } else {
-                uploadedImages = uploadResult.map((res, idx) => {
+                uploadedFiles = uploadResult.map((res, idx) => {
                     if (res.status === 'fulfilled')
                         return res.value;
-                    return newImages[idx];
+                    return newFiles[idx];
                 });
                 return uploadResultStatus;
             }
         }
 
         const uploadResult = await upload();
-        const removedImages = getRemovedImages(oldImages, newImages);
-        await deleteImages(removedImages);
+        const removedFiles = getRemovedFiles(oldFiles, newFiles);
+        try {
+            await deleteFiles(removedFiles);
+        } catch(e) {} // ignore failed delete
 
         return [ uploadResult, upload ]; /* uploadResult, retry */
     }

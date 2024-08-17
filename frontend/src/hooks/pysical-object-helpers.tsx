@@ -11,7 +11,8 @@ const ADD_PYSICAL_OBJECT = gql`
         $borrowable: Boolean!,
         $storageLocation2: String!,
         $organizationId: String!,
-        $pictures: [String!]!
+        $pictures: [String!]!,
+        $manuals: [String!]!
     ) {
         createPhysicalObject(
             invNumInternal: $invNumInternal, invNumExternal: $invNumExternal,
@@ -21,7 +22,8 @@ const ADD_PYSICAL_OBJECT = gql`
             tags: $tags,
             deposit: $deposit,
             faults: $faults, description: $description,
-            pictures: $pictures
+            pictures: $pictures,
+            manual: $manuals
         ) {
             ok    
             infoText
@@ -50,6 +52,7 @@ const EDIT_PYSICAL_OBJECT = gql`
         $name: String!, $deposit: Int!,
         $faults: String!, $description: String!,
         $pictures: [String!]!,
+        $manuals: [String!]!,
         $storageLocation2: String!,
         $borrowable: Boolean!
     ) {
@@ -60,6 +63,7 @@ const EDIT_PYSICAL_OBJECT = gql`
             name: $name, deposit: $deposit,
             faults: $faults, description: $description,
             pictures: $pictures,
+            manual: $manuals,
             storageLocation2: $storageLocation2,
             borrowable: $borrowable
         ) {

@@ -2,7 +2,7 @@ import './ImageSelectorWithPreview.css';
 import { useField } from "formik";
 import { DragEvent, useState, useEffect, useRef, ReactElement } from "react";
 import { MdAddAPhoto, MdArrowLeft, MdArrowRight, MdDelete } from "react-icons/md";
-import { ImageResource } from "../../models/InventoryItem.model";
+import { ImageResource } from "../../models/file.model";
 
 export function FormikImagesSelectorComponent({ name }: { name: string }) {
     const [ props, meta, helper ] = useField<ImageResource[]>(name);

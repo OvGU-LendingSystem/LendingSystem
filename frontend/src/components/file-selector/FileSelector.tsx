@@ -2,22 +2,27 @@ import { Button, Card, CardList, Divider, H3, Icon, NonIdealState } from '@bluep
 import './FileSelector.css';
 import { useRef } from 'react';
 import { useField } from 'formik';
-import { useFile } from '../../hooks/use-file';
+import { usePdfResource } from '../../hooks/use-file';
+import { FileResource, LocalFile } from '../../models/file.model';
 
 export function FormikFileSelector({ name, title }: { name: string, title: string }) {
-    const [ props, meta, helper ] = useField<File[]>(name);
-    return <FileSelector files={meta.value} setFiles={async (val: File[]) => await helper.setValue(val)} title={title} />;
+    const [ props, meta, helper ] = useField<FileResource[]>(name);
+    return <FileSelector files={meta.value} setFiles={async (val: FileResource[]) => await helper.setValue(val)} title={title} />;
 }
 
-export function FileSelector({ files, setFiles, title }: { files: File[], setFiles: (files: File[]) => void, title: string }) {
+export function FileSelector({ files, setFiles, title }: { files: FileResource[], setFiles: (files: FileResource[]) => void, title: string }) {
     const fileInput = useRef<HTMLInputElement>(null);
     const selectFiles = async () => { fileInput.current?.click(); }
     
     const addFiles = (selectedFiles: File[]) => {
-        files ? setFiles([...files, ...selectedFiles]) : setFiles(selectedFiles);
+        const selectedFileResources = selectedFiles.map((file) => {
+            const res: LocalFile = { type: 'local', file: file };
+            return res;
+        });
+        files ? setFiles([...files, ...selectedFileResources]) : setFiles(selectedFileResources);
     }
 
-    const deleteFile = (deletedFile: File) => {
+    const deleteFile = (deletedFile: FileResource) => {
         setFiles(files.filter((file) => file !== deletedFile));
     }
 
@@ -68,10 +73,10 @@ function NoFileSelectedComponent({ selectFiles }: { selectFiles: () => Promise<v
     );
 }
 
-function FileListComponent({ files, deleteFile }: { files: File[], deleteFile: (file: File) => void }) {
+function FileListComponent({ files, deleteFile }: { files: FileResource[], deleteFile: (file: FileResource) => void }) {
     let currId = 1;
     const ids = new WeakMap();
-    const getFileId = (file: File) => {
+    const getFileId = (file: FileResource) => {
         if (ids.has(file))
             return ids.get(file);
 
@@ -89,11 +94,11 @@ function FileListComponent({ files, deleteFile }: { files: File[], deleteFile: (
     );
 }
 
-function FileListEntry({ file, deleteFile }: { file: File, deleteFile: (file: File) => void }) {
-    const [ _, url, setFile ] = useFile(file);
+function FileListEntry({ file, deleteFile }: { file: FileResource, deleteFile: (file: FileResource) => void }) {
+    const url = usePdfResource(file);
     return (
         <Card interactive className='file-list-item' onClick={() => { window.open(url, '_blank') }}>
-            {file.name}
+            {file.type === 'local' ? file.file.name : file.path }
             <Icon icon='trash' onClick={(e) => { deleteFile(file); e.stopPropagation(); e.preventDefault(); }} />
         </Card>
     );

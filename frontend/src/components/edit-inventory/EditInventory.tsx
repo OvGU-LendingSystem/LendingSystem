@@ -1,10 +1,10 @@
-import { gql, useMutation, useQuery, useSuspenseQuery } from "@apollo/client";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { gql, useSuspenseQuery } from "@apollo/client";
+import { Suspense, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AddInventoryItem, ImageResource, LocalImage, RemoteImage } from "../../models/InventoryItem.model";
+import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { ModifyInventory } from "../modify-inventory/ModifyInventory";
 import { useTitle } from "../../hooks/use-title";
-import { useUpdateImages } from "../../hooks/image-helpers";
+import { useUpdateFiles } from "../../hooks/image-helpers";
 import { useEditPhysicalObject } from "../../hooks/pysical-object-helpers";
 
 const GET_ITEM = gql`
@@ -21,6 +21,14 @@ const GET_ITEM = gql`
             description,
             borrowable,
             storageLocation2,
+            manual {
+                edges {
+                    node {
+                        path,
+                        fileId
+                    }
+                }
+            },
             pictures {
                 edges {
                     node {
@@ -60,6 +68,14 @@ interface GetItemResponse {
         faults: string,
         invNumInternal: number,
         invNumExternal: number,
+        manual: {
+            edges: {
+                node: {
+                    path: string,
+                    fileId: string
+                }
+            }[]
+        },
         pictures: {
             edges: {
                 node: {
@@ -79,24 +95,29 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
             defects: data.filterPhysicalObjects[0].faults,
             inventoryNumberInternal: data.filterPhysicalObjects[0].invNumInternal,
             inventoryNumberExternal: data.filterPhysicalObjects[0].invNumExternal,
-            images: []
+            images: [],
+            manuals: []
         };
         val.images = data.filterPhysicalObjects[0].pictures.edges.map((node: any) => {
+            return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
+        });
+        val.manuals = data.filterPhysicalObjects[0].manual.edges.map((node: any) => {
             return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
         });
         return val;
     }, [data]);
 
     const [ editPhysicalObject ] = useEditPhysicalObject();
-    const updateImages = useUpdateImages();
+    const updateFiles = useUpdateFiles();
     const navigate = useNavigate();
 
     const submit = async (val: AddInventoryItem) => {
         console.error(initialValue);
         console.error(val);
         
-        const [ result, retry ] = await updateImages(initialValue?.images ?? [], val.images);
-        if (result.success) {
+        const [ imageResult, retryImages ] = await updateFiles(initialValue?.images ?? [], val.images);
+        const [ manualsResult, retryManuals ] = await updateFiles(initialValue?.manuals ?? [], val.manuals);
+        if (imageResult.success && manualsResult.success) {
             const editResult = await editPhysicalObject({
                 variables: {
                     physId: itemId,
@@ -104,7 +125,8 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
                     storageLocation: val.storageLocation,
                     name: val.name, deposit: val.deposit,
                     faults: val.defects ?? '', description: val.description ?? '',
-                    pictures: result.value,
+                    pictures: imageResult.value,
+                    manuals: manualsResult.value,
                     borrowable: val.borrowable,
                     storageLocation2: ""
                 }

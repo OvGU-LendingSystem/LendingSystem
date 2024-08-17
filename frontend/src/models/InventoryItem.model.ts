@@ -1,3 +1,5 @@
+import { FileResource, ImageResource, RemoteImage } from "./file.model";
+
 export interface InventoryItem {
     physId: string;
     name: string;
@@ -11,19 +13,6 @@ export interface InventoryItem {
     images: RemoteImage[];
 }
 
-export interface LocalImage {
-    type: 'local',
-    file: File
-}
-
-export interface RemoteImage {
-    type: 'remote',
-    path: string,
-    fileId: string
-}
-
-export type ImageResource = LocalImage | RemoteImage;
-
 //export type AddInventoryItem = Omit<InventoryItem, 'id'>
 export interface AddInventoryItem {
     name: string;
@@ -35,4 +24,5 @@ export interface AddInventoryItem {
     defects: string;
     description: string;
     images: ImageResource[];
+    manuals: FileResource[];
 }
