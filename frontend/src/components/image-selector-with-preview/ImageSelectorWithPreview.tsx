@@ -174,7 +174,7 @@ function MultiImagePreview({images, currentIndex, setCurrentIndex}: MultiImagePr
         if (!activeElemRef.current)
             return;
 
-        activeElemRef.current.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+        activeElemRef.current.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
     }, [index]);
 
     useEffect(onScrolled, [images]);
