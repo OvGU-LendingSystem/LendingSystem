@@ -6,15 +6,56 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
+import { Button, H3, NonIdealState, Spinner } from '@blueprintjs/core';
+import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
 
-export interface ModifyInventoryProps {
+/**
+ * Props for {@link ModifyInventoryScreen}
+ */
+export interface ModifyInventoryProps<T> {
+    /**
+     * initial values for the inventory item to be displayed
+     * @see {@link AddInventoryItem}
+     */
     initialValue: AddInventoryItem,
+    /**
+     * text that is displayed on the submit button for saving
+     * the changes
+     */
     label: string,
-    onClick: (values: AddInventoryItem) => Promise<void>
+    /**
+     * This function is called when the user is finished editing
+     * the initial provided values and submits the changes.
+     * @see {@link AddInventoryItem}
+     * @param values new item data that is edited by the user
+     * @returns Contains the result status of the action:
+     * - {@link SubmitSuccessState} if the action was successful and onSuccess should be called
+     * - {@link SubmitErrorState} if the action failed, {@link ErrorScreen} should be shown and optionally the action
+     * should be retried via {@link ErrorScreen}
+     */
+    onClick: (values: AddInventoryItem) => Promise<SubmitState<T>>,
+    /**
+     * Displayed when the action performed by {@link onClick} failed.
+     * Information about the error can be passed via data.
+     */
+    ErrorScreen: React.FC<{ data: T, retry: () => void }>,
+    /**
+     * Function that is called when initial onClick call or a retry was
+     * successful. Can be used to display a success message or navigate
+     * to an other screen.
+     */
+    onSuccess: () => void
 }
 
-export function ModifyInventory(props: ModifyInventoryProps) {
+/**
+ * Renders a form to modify initial provided values for an inventory item
+ * provided via @see {@link ModifyInventoryProps}.
+ * Handles displaying loading and error states.
+ * @see {@link ModifyInventoryProps}
+ * @param props Properties for Modify Inventory Screen
+ */
+export function ModifyInventory<T>(props: ModifyInventoryProps<T>) {
     return (
         <Suspense>
             <ModifyInventoryScreen {...props} />
@@ -22,10 +63,12 @@ export function ModifyInventory(props: ModifyInventoryProps) {
     );
 }
 
-export function ModifyInventoryScreen({ initialValue, label, onClick }: ModifyInventoryProps) {
+export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorScreen, onSuccess }: ModifyInventoryProps<T>) {
     const { data } = useStorageLocationHelper();
     //const storagePlaces = ["Keller", "1. Etage", "2. Etage"];
     //const storagePlaces2 = ["Regal 1", "Regal 2"];
+
+    const [ submitState, setSubmitState ] = useState<SubmitErrorState<T>>();
 
     const updateDeposit = (e: React.ChangeEvent<HTMLInputElement>) => {
         return Math.trunc(e.target.valueAsNumber * 100);
@@ -35,15 +78,35 @@ export function ModifyInventoryScreen({ initialValue, label, onClick }: ModifyIn
         return new Intl.NumberFormat(undefined, ({ maximumFractionDigits: 2, useGrouping: false })).format(val / 100);
     }
 
-    const submit = async (values: AddInventoryItem, _: FormikHelpers<AddInventoryItem>) => {
-        await onClick(values);
+    const submit = async (values: AddInventoryItem, helpers: FormikHelpers<AddInventoryItem>) => {
+        if (!submitState) {
+            const initialResult = await onClick(values);
+            if (initialResult.type === 'success') {
+                onSuccess();
+                return;
+            }
+
+            setSubmitState(initialResult);
+            return;
+        }
+        
+        if (!submitState.retry)
+            return;
+
+        const result = await submitState.retry(submitState.data);
+        if (result.type === 'success')
+            onSuccess()
+        setSubmitState(result.type === 'error' ? result : undefined);
     }
 
     return (
         <div className='form-input--wrapper'>
             <Formik initialValues={initialValue} 
                 onSubmit={submit}>{(props: FormikProps<AddInventoryItem>) => (
-                <Form className='form-input'>
+                <>
+                { !props.isSubmitting && submitState && <ErrorScreen data={submitState.data} retry={() => props.submitForm()} /> }
+                { props.isSubmitting && <LoadingScreen /> }
+                { !props.isSubmitting && !submitState && <Form className='form-input'>
                     <div className='top-input--wrapper'>
                         <FormikImagesSelectorComponent name='images' />
                         <div className="side-input--wrapper">
@@ -71,18 +134,27 @@ export function ModifyInventoryScreen({ initialValue, label, onClick }: ModifyIn
                         </div>
                     </div>
 
-                    <label htmlFor='description'>Beschreibung</label>
+                    <H3><label htmlFor='description'>Beschreibung</label></H3>
                     <FormikTextarea id='description' rows={6} fieldName='description' />
 
-                    <label htmlFor='defects'>Mängel</label>
+                    <H3><label htmlFor='defects'>Mängel</label></H3>
                     <FormikTextarea id='defects' rows={6} fieldName='defects' />
 
                     <FormikFileSelector name='manuals' title='Anleitungen' />
 
-                    <input type="submit" value={label} />
+                    <Button type="submit" intent='primary'>{label}</Button>
                 </Form>
+                }
+                </>
             )}
             </Formik>
         </div>
+    );
+}
+
+
+function LoadingScreen() {
+    return (
+        <NonIdealState icon={<Spinner />} />
     );
 }

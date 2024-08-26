@@ -73,7 +73,7 @@ const EDIT_PYSICAL_OBJECT = gql`
     }
 `;
 
-interface EditPhysicalObjectResponse extends GQLResponse {
+export interface EditPhysicalObjectResponse extends GQLResponse {
     ok: boolean,
     infoText: string
 }

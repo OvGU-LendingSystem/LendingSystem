@@ -7,7 +7,7 @@ export interface GQLResponse {
     infoText: string;
 }
 
-export type SuccessResponse<T extends GQLResponse> = Omit<T, 'ok' | 'infoText'> & { success: true };
+export type SuccessResponse<T extends GQLResponse = GQLResponse> = Omit<T, 'ok' | 'infoText'> & { success: true };
 
 export interface ErrorResponse {
     success: false;
@@ -29,7 +29,8 @@ export function flattenEdges<U = any, Key extends string = string, T extends { [
     return res;
 }
 
-export function useMutationWithResponseMapped<T extends GQLResponse, U extends GQLResponse = T>(mutation: DocumentNode, queryName: string, map: (val: SuccessResponse<T>) => SuccessResponse<U>) {
+export function useMutationWithResponseMapped<T extends GQLResponse, U extends GQLResponse = T>(mutation: DocumentNode, queryName: string, map: (val: SuccessResponse<T>) => SuccessResponse<U>):
+    [ (options?: MutationFunctionOptions<{ [queryName: string]: T }, OperationVariables, DefaultContext, ApolloCache<any>> | undefined) => Promise<SuccessResponse<T> | ErrorResponse> ] {
     const [ mutateInternal ] = useMutation<{ [queryName: string]: T }>(mutation);
     const mutate = async (options?: MutationFunctionOptions<{ [queryName: string]: T }, OperationVariables, DefaultContext, ApolloCache<any>> | undefined) => {
         try {

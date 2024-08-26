@@ -5,7 +5,12 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { ModifyInventory } from "../modify-inventory/ModifyInventory";
 import { useTitle } from "../../hooks/use-title";
 import { useUpdateFiles } from "../../hooks/image-helpers";
-import { useEditPhysicalObject } from "../../hooks/pysical-object-helpers";
+import { EditPhysicalObjectResponse, useEditPhysicalObject } from "../../hooks/pysical-object-helpers";
+import { ErrorResponse, SuccessResponse } from "../../hooks/response-helper";
+import { useToaster } from "../../context/ToasterContext";
+import { Button, NonIdealState } from "@blueprintjs/core";
+import { MdPriorityHigh } from "react-icons/md";
+import { SubmitState } from "../../utils/submit-state";
 
 const GET_ITEM = gql`
     query GetPhysicalObject($id: String!) {
@@ -111,41 +116,105 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
     const [ editPhysicalObject ] = useEditPhysicalObject();
     const updateFiles = useUpdateFiles();
     const navigate = useNavigate();
+    const toaster = useToaster();
 
-    const submit = async (val: AddInventoryItem) => {
-        console.error(initialValue);
-        console.error(val);
-        
+    const submit = async (val: AddInventoryItem): Promise<SubmitState<EditInventoryRetryData>> => {        
         const [ imageResult, retryImages ] = await updateFiles(initialValue?.images ?? [], val.images);
         const [ manualsResult, retryManuals ] = await updateFiles(initialValue?.manuals ?? [], val.manuals);
-        if (imageResult.success && manualsResult.success) {
-            const editResult = await editPhysicalObject({
+
+        const editObject = async (images: string[], manuals: string[]) => {
+            return await editPhysicalObject({
                 variables: {
                     physId: itemId,
                     invNumInternal: val.inventoryNumberInternal, invNumExternal: val.inventoryNumberExternal,
                     storageLocation: val.storageLocation,
                     name: val.name, deposit: val.deposit,
                     faults: val.defects ?? '', description: val.description ?? '',
-                    pictures: imageResult.value,
-                    manuals: manualsResult.value,
+                    pictures: images,
+                    manuals: manuals,
                     borrowable: val.borrowable,
                     storageLocation2: val.storageLocation2
                 }
             });
+        }
+
+        if (imageResult.success && manualsResult.success) {
+            const editResult = await editObject(imageResult.value, manualsResult.value);
 
             if (editResult.success)
-                navigate('/');
-            else {
-                console.error("couldnt update") // TODO error handling
-            }
-        } else {
-            // TODO error handling
+                return SubmitState.SUCCESS;
+
+            return new SubmitState.Error({
+                imageStatus: [ imageResult, retryImages ],
+                manualsStatus: [ manualsResult, retryManuals ],
+                editObjectResult: editResult,
+                editObject: editObject
+            }, retry);
+            
         }
+
+        return new SubmitState.Error({
+            imageStatus: [ imageResult, retryImages ],
+            manualsStatus: [ manualsResult, retryManuals ],
+            editObject: editObject
+        }, retry);
+    }
+
+    const onSuccess = () => {
+        navigate('/');
+        toaster.show({ message: 'Objekt erfolgreich aktualisiert', intent: 'success' });
     }
 
     return (
-        <>
-            <ModifyInventory initialValue={initialValue} label='Save changes' onClick={submit} />
-        </>
+        <ModifyInventory initialValue={initialValue} label='Save changes' onClick={submit}
+            onSuccess={onSuccess} ErrorScreen={EditObjectErrorScreen} />
+    );
+}
+
+interface EditInventoryRetryData {
+    imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    editObjectResult?: {
+        success: boolean;
+        info: any;
+    },
+    editObject: (images: string[], manuals: string[]) => Promise<SuccessResponse<EditPhysicalObjectResponse> | ErrorResponse>
+
+}
+
+const retry = async (data: EditInventoryRetryData): Promise<SubmitState<EditInventoryRetryData>> => {
+    let [ imageResult, retryImages ] = data.imageStatus;
+    let [ manualsResult, retryManuals ] = data.manualsStatus;
+    
+    if (!imageResult.success)
+        imageResult = await retryImages();
+
+    if (!manualsResult.success)
+        manualsResult = await retryManuals();
+
+    if (!imageResult.success || !manualsResult.success) {
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            editObject: data.editObject
+        }, retry);
+    }
+
+    const editObjectResult = await data.editObject(imageResult.value, manualsResult.value);
+    if (editObjectResult.success)
+        return SubmitState.SUCCESS;
+
+    return new SubmitState.Error({
+        imageStatus: [imageResult, retryImages],
+        manualsStatus: [manualsResult, retryManuals],
+        editObjectResult,
+        editObject: data.editObject
+    }, retry);
+}
+
+function EditObjectErrorScreen({ data, retry }: { data: EditInventoryRetryData, retry: () => void }) {
+    return (
+        <NonIdealState title='Fehler' description='Objekt konnte nicht aktualisiert werden'
+            action={<Button onClick={retry} intent='primary'>Erneut versuchen</Button>} icon={<MdPriorityHigh color='red' />} />
     );
 }

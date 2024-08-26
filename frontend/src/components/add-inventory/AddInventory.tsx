@@ -2,36 +2,67 @@ import '../../styles/style.css';
 import { AddInventoryItem } from '../../models/InventoryItem.model';
 import { ModifyInventory } from '../modify-inventory/ModifyInventory';
 import { useUpdateFiles } from '../../hooks/image-helpers';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
+import { AddPhysicalObjectResponse, useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
+import { ErrorResponse, SuccessResponse } from '../../hooks/response-helper';
+import { Button, NonIdealState } from '@blueprintjs/core';
+import { MdPriorityHigh } from 'react-icons/md';
+import { useToaster } from '../../context/ToasterContext';
+import { SubmitState } from '../../utils/submit-state';
+
+interface AddInventoryRetryData {
+    imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    addObjectResult?: {
+        success: boolean;
+        info: any;
+    },
+    addObject: (images: string[], manuals: string[]) => Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse>
+}
+
+const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInventoryRetryData>> => {
+    let [ imageResult, retryImages ] = data.imageStatus;
+    let [ manualsResult, retryManuals ] = data.manualsStatus;
+    
+    if (!imageResult.success)
+        imageResult = await retryImages();
+
+    if (!manualsResult.success)
+        manualsResult = await retryManuals();
+
+    if (!imageResult.success || !manualsResult.success) {
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            addObject: data.addObject
+        }, retry);
+    }
+
+    const addObjectResult = await data.addObject(imageResult.value, manualsResult.value);
+    if (addObjectResult.success)
+        return SubmitState.SUCCESS;
+
+    return new SubmitState.Error({
+        imageStatus: [imageResult, retryImages],
+        manualsStatus: [manualsResult, retryManuals],
+        addObjectResult,
+        addObject: data.addObject
+    }, retry);
+}
 
 export function AddInventory() {
     const navigate = useNavigate();
+    const toaster = useToaster();
 
     const updateFiles = useUpdateFiles();
     const [ addPhysicalObject ] = useAddPhysicalObject();
-    const [ status, setStatus ] = useState<({ retry: () => void }) | undefined>(undefined);
 
-    const submit = async (values: AddInventoryItem) => {
+    const submit = async (values: AddInventoryItem): Promise<SubmitState<AddInventoryRetryData>> => {
         let [ imageResult, retryImages ] = await updateFiles([], values.images);
         let [ manualsResult, retryManuals ] = await updateFiles([], values.manuals);
-        let addObjResult;
 
-        const retryAll = async () => {
-            if (!imageResult.success) {
-                imageResult = await retryImages();
-            }
-            if (!imageResult.success) {
-                return; // error
-            }
-            if (!manualsResult.success) {
-                manualsResult = await retryManuals();
-            }
-            if (!manualsResult.success) {
-                return; // error
-            }
-            addObjResult = await addPhysicalObject({
+        const addObject = async (images: string[], manuals: string[]): Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse> => {
+            return await addPhysicalObject({
                 variables: {
                     invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
                     invNumExternal: values.inventoryNumberExternal ?? 0, // TODO: mandatory field
@@ -41,67 +72,50 @@ export function AddInventory() {
                     deposit: values.deposit,
                     faults: values.defects,
                     tags: [],
-                    pictures: imageResult.value,
-                    manuals: manualsResult.value,
-                    borrowable: values.borrowable,
-                    organizationId: "123", // TODO ?
-                    storageLocation2: values.storageLocation2
-                }
-            });
-            if (!addObjResult.success) {
-                console.error(addObjResult);
-                return // TODO show error
-            }
-
-            navigate('/');
-        }
-
-        console.error(imageResult);
-
-        if (imageResult.success && manualsResult.success) {
-            addObjResult = await addPhysicalObject({
-                variables: {
-                    invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
-                    invNumExternal: values.inventoryNumberExternal ?? 0, // TODO: mandatory field
-                    storageLocation: values.storageLocation,
-                    name: values.name,
-                    description: values.description,
-                    deposit: values.deposit,
-                    faults: values.defects,
-                    tags: [],
-                    pictures: imageResult.value,
-                    manuals: manualsResult.value,
+                    pictures: images,
+                    manuals: manuals,
                     borrowable: values.borrowable,
                     organizationId: "123",
                     storageLocation2: values.storageLocation2
                 }
             });
+        }
+
+        if (imageResult.success && manualsResult.success) {
+            const addObjResult = await addObject(imageResult.value, manualsResult.value);
             if (!addObjResult.success) {
-                console.error(addObjResult)
-                setStatus({ retry: retryAll });
-                return // TODO show error
+                return new SubmitState.Error<AddInventoryRetryData>({
+                    imageStatus: [imageResult, retryImages],
+                    manualsStatus: [manualsResult, retryManuals],
+                    addObjectResult: addObjResult,
+                    addObject: addObject
+                }, retry);
             }
 
-            navigate('/');
-        } else {
-            setStatus({ retry: retryAll });
+            return SubmitState.SUCCESS;
         }
+
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            addObject: addObject
+        }, retry);
+    }
+
+    const onSuccess = () => {
+        navigate('/');
+        toaster.show({ message: 'Objekt erfolgreich erstellt', intent: 'success' });
     }
 
     return (
-        <>
-        { status && <ErrorView retry={status.retry} /> }
-        { !status && <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
-            onClick={submit} label='Add Item' /> }
-        </>
+        <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
+            ErrorScreen={AddInventoryErrorView} onClick={submit} label='Add Item' onSuccess={onSuccess} />
     );
 }
 
-export function ErrorView({ retry }: { retry: () => void }) {
+function AddInventoryErrorView({ data, retry }: { data: AddInventoryRetryData, retry: () => void }) {
     return (
-        <div>
-            Couldnt add item!
-            <button onClick={retry}>Retry</button>
-        </div>
+        <NonIdealState title='Fehler' description='Objekt konnte nicht gespeichert werden'
+            action={<Button onClick={retry} intent='primary'>Erneut versuchen</Button>} icon={<MdPriorityHigh color='red' />} />
     );
 }
