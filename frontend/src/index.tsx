@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { CartProvider } from './context/CartContext';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
+import { ToasterProvider } from './context/ToasterContext';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
@@ -26,7 +27,9 @@ root.render(
     <BrowserRouter>
       <ApolloProvider client={client}>
         <CartProvider>
-          <App />
+          <ToasterProvider>
+            <App />
+          </ToasterProvider>
         </CartProvider>
       </ApolloProvider>
     </BrowserRouter>
