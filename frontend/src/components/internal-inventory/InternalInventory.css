@@ -1,7 +1,9 @@
 .internal-inventory-screen {
     max-width: 800px;
     margin: auto;
+    padding-inline: 16px;
     padding-bottom: 32px;
+    height: 100%;
 }
 
 .toolbar {

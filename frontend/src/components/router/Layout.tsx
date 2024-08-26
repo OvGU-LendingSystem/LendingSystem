@@ -86,7 +86,7 @@ export function Layout() {
         </ul>
       </nav>
       <main className="content">
-        <div><Outlet /></div>
+        <Outlet />
       </main>
       <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
         <Login />

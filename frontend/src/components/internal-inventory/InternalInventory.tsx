@@ -1,10 +1,11 @@
 import './InternalInventory.css';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { gql, useSuspenseQuery } from "@apollo/client";
+import { gql, isApolloError, useSuspenseQuery } from "@apollo/client";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
-import { PreviewGroup, useGetGroupsQuery } from "../../hooks/group-helpers";
-import { Button, ButtonGroup, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, InputGroup, Menu, MenuItem, NonIdealState, Popover, Spinner, Text } from "@blueprintjs/core";
+import { useGetGroupsQuery } from "../../hooks/group-helpers";
+import { Button, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, InputGroup, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { MdBugReport, MdWifiOff } from 'react-icons/md';
 
 const GET_INVENTORY = gql`
     query GetInventory($name: String) {
@@ -255,18 +256,17 @@ function LoadingScreen() {
 }
 
 function ErrorScreen({ error, resetErrorBoundary }: FallbackProps) {
-    const errorText = error.networkError ? 'Network' : 'Other';
-    console.error(JSON.stringify(error));
-
-    const apolloError = error.name === 'ApolloError';
-    const graphQLError = error.graphQLErrors;
-    //protocolErrors, clientErrors, networkError
-    //TODO
+    if (!isApolloError(error))
+        throw error;
+    
+    if (error.networkError && error.networkError.name !== 'ServerError' && error.networkError.name !== 'ServerParseError') {
+        return (
+            <NonIdealState title='Keine Internetverbindung' icon={<MdWifiOff />}
+                action={<Button onClick={resetErrorBoundary}>Erneut versuchen</Button>} />
+        );
+    }
 
     return (
-        <>
-            Something went wrong!
-            {errorText}
-        </>
+        <NonIdealState title='Ein interner Fehler ist aufgetreten' icon={<MdBugReport />} />
     );
 }
