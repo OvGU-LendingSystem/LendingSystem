@@ -1,6 +1,7 @@
 import os
 import time
 import traceback
+from datetime import datetime
 
 import graphene
 from sqlalchemy.orm import *
@@ -338,8 +339,8 @@ class create_order(graphene.Mutation):
     """
 
     class Arguments:
-        from_date       = graphene.Date()
-        till_date       = graphene.Date()
+        from_date       = graphene.DateTime()
+        till_date       = graphene.DateTime()
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
 
@@ -352,10 +353,11 @@ class create_order(graphene.Mutation):
         try:
             # wenn er keiner Organisation angehört, darf er keine Orders erstellen
             # ggf muss ich das nochmal anpassen, da ja auch 'Watcher' Orga_user sein können
-            if not info.context.user.organizations:
-                create_order(ok=False, info_text=reject)
+            # if not info.context.user.organizations:
+            #     create_order(ok=False, info_text=reject)
 
             order = OrderModel()
+            order.creation_time = datetime.now()
 
             if from_date:
                 order.from_date = from_date
