@@ -51,6 +51,7 @@ class Query(graphene.ObjectType):
         from_date           = graphene.Argument(type=graphene.DateTime, required=False),
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
+        creation_date       = graphene.Argument(type=graphene.DateTime, required=False),
         #list params for the relationships
         order_status        = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
@@ -67,6 +68,15 @@ class Query(graphene.ObjectType):
         first_name          = graphene.Argument(type=graphene.String, required=False),
         last_name           = graphene.Argument(type=graphene.String, required=False),
         email               = graphene.Argument(type=graphene.String, required=False),
+        #additional User information
+        country             = graphene.Argument(type=graphene.String, required=False),
+        postcode            = graphene.Argument(type=graphene.Int,    required=False),
+        city                = graphene.Argument(type=graphene.String, required=False),
+        street              = graphene.Argument(type=graphene.String, required=False),
+        house_number        = graphene.Argument(type=graphene.Int,    required=False),
+
+        phone_number        = graphene.Argument(type=graphene.Int,    required=False),
+        matricle_number     = graphene.Argument(type=graphene.Int,    required=False),
         #list params for the relationships
         orders              = graphene.Argument(type=graphene.List(graphene.String), required=False),
         organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
@@ -192,6 +202,7 @@ class Query(graphene.ObjectType):
         from_date: Union[str, None] = None,
         till_date: Union[str, None] = None,
         return_date: Union[str, None] = None,
+        creation_date: Union[str, None] = None,
         # list params for the relationships
         order_status: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
@@ -207,6 +218,8 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.till_date == till_date)
         if return_date:
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
+        if creation_date:
+            query = query.filter(OrderModel.creation_time == creation_date)
         # list params for the relationships .any() returns union (OR Statement)
         if order_status:
             orderStatus_ = []
@@ -231,6 +244,14 @@ class Query(graphene.ObjectType):
         first_name: Union[str, None] = None,
         last_name: Union[str, None] = None,
         email: Union[str, None] = None,
+        #additional User information
+        country: Union[str, None] = None,
+        postcode: Union[int, None] = None,
+        city: Union[str, None] = None,
+        street: Union[str, None] = None,
+        house_number: Union[int, None] = None,
+        phone_number: Union[int, None] = None,
+        matricle_number: Union[int, None] = None,
         # list params for the relationships
         orders: Union[List[str], None] = None,
         organizations: Union[List[str], None] = None,
@@ -245,6 +266,20 @@ class Query(graphene.ObjectType):
             query = query.filter(UserModel.last_name == last_name)
         if email:
             query = query.filter(UserModel.email == email)
+        if country:
+            query = query.filter(UserModel.address.country == country)
+        if postcode:
+            query = query.filter(UserModel.address.postcode == postcode)
+        if city:
+            query = query.filter(UserModel.address.city == city)
+        if street:
+            query = query.filter(UserModel.address.street == street)
+        if house_number:
+            query = query.filter(UserModel.address.house_number == house_number)
+        if phone_number:
+            query = query.filter(UserModel.phone_number == phone_number)
+        if matricle_number:
+            query = query.filter(UserModel.matricle_number == matricle_number)
         # list params for the relationships .any() returns union (OR Statement)
         if orders:
             query = query.filter(UserModel.orders.any(OrderModel.order_id.in_(orders)))
