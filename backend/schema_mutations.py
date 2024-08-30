@@ -8,7 +8,7 @@ from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
 from flask import session
 
-from models import User as UserModel, orderStatus, userRights
+from models import User as UserModel, orderStatus, userRights, Address
 from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
@@ -338,8 +338,8 @@ class create_order(graphene.Mutation):
     """
 
     class Arguments:
-        from_date       = graphene.Date()
-        till_date       = graphene.Date()
+        from_date       = graphene.DateTime()
+        till_date       = graphene.DateTime()
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
 
@@ -1096,17 +1096,26 @@ class create_user(graphene.Mutation):
     """
 
     class Arguments:
-        email       = graphene.String(required=True)
-        last_name   = graphene.String(required=True)
-        first_name  = graphene.String(required=True)
-        password    = graphene.String(required=True)
+        email           = graphene.String(required=True)
+        last_name       = graphene.String(required=True)
+        first_name      = graphene.String(required=True)
+        password        = graphene.String(required=True)
+
+        country         = graphene.String(required=False)
+        city            = graphene.String(required=False)
+        postcode        = graphene.Int(required=False)
+        street          = graphene.String(required=False)
+        house_number    = graphene.Int(required=False)
+        phone_number    = graphene.Int(required=False)
+        matricle_number = graphene.Int(required=False)
+
 
     user        = graphene.Field(lambda: User)
     ok          = graphene.Boolean()
     info_text   = graphene.String()
 
     @staticmethod
-    def mutate(self, info, email, last_name, first_name, password):
+    def mutate(self, info, email, last_name, first_name, password, country=None, city=None, postcode=None, street=None, house_number=None, phone_number=None, matricle_number=None):
         try:
             user_exists = UserModel.query.filter_by(email=email).first()
             if user_exists:
@@ -1114,38 +1123,62 @@ class create_user(graphene.Mutation):
             else:
                 ph = PasswordHasher()
                 password_hashed = ph.hash(password)
-                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
+                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed, address=Address())
+
+                if country:
+                    user.address.country = country
+                if city:
+                    user.address.city = city
+                if postcode:
+                    user.address.postcode = postcode
+                if street:
+                    user.address.street = street
+                if house_number:
+                    user.address.house_number = house_number
+
+                if phone_number:
+                    user.phone_number = phone_number
+                if matricle_number:
+                    user.matricle_number = matricle_number
+
                 db.add(user)
                 db.commit()
                 return create_user(ok=True, info_text="Der Nutzer wurde erfolgreich angelegt.", user=user)
         except Exception as e:
             print(e)
-            return create_user(ok=False, info_text="Fehler beim Erstellen des Nutzers. " + str(e))
+            tb = traceback.format_exc()
+            return create_user(ok=False, info_text="Fehler beim Erstellen des Nutzers. " + str(e) + "\nTraceback: " + str(tb))
 
 class update_user(graphene.Mutation):
     """
     Updates content of the user with the given user_id.
     """
-
     class Arguments:
-        user_id     = graphene.String()
-        email       = graphene.String()
-        last_name   = graphene.String()
-        first_name  = graphene.String()
-        password    = graphene.String()
+        user_id     = graphene.String(required=True)
+        email       = graphene.String(required=False)
+        last_name   = graphene.String(required=False)
+        first_name  = graphene.String(required=False)
+        password    = graphene.String(required=False)
+
+        country         = graphene.String(required=False)
+        city            = graphene.String(required=False)
+        postcode        = graphene.Int(required=False)
+        street          = graphene.String(required=False)
+        house_number    = graphene.Int(required=False)
+        phone_number    = graphene.Int(required=False)
+        matricle_number = graphene.Int(required=False)
 
     user        = graphene.Field(lambda: User)
     ok          = graphene.Boolean()
     info_text   = graphene.String()
 
     @staticmethod
-    def mutate(self, info, user_id=None, email=None, last_name=None, first_name=None, password=None):
+    def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None, country=None, city=None, postcode=None, street=None, house_number=None, phone_number=None, matricle_number=None):
         try:
-            if user_id: user = UserModel.query.filter(UserModel.user_id == user_id).first()
-            if email:   user = UserModel.query.filter(UserModel.email == email).first()
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
 
             if not user:
-                return update_user(ok=False, info_text="User not found. Can only query by user_id or email.")
+                return update_user(ok=False, info_text="User not found. Can only query by user_id.")
             if email:
                 user.email = email
             if last_name:
@@ -1156,12 +1189,32 @@ class update_user(graphene.Mutation):
                 ph = PasswordHasher()
                 user.password_hash = ph.hash(password)
 
+            if ( not user.address ):
+                user.address = Address()
+
+            if country:
+                    user.address.country = country
+            if city:
+                user.address.city = city
+            if postcode:
+                user.address.postcode = postcode
+            if street:
+                user.address.street = street
+            if house_number:
+                user.address.house_number = house_number
+
+            if phone_number:
+                user.phone_number = phone_number
+            if matricle_number:
+                user.matricle_number = matricle_number
+
             db.commit()
             return update_user(ok=True, info_text="User updated successfully", user=user)
 
         except Exception as e:
             print(e)
-            return update_user(ok=False, info_text="Error updating user: " + str(e))
+            tb = traceback.format_exc()
+            return update_user(ok=False, info_text="Error updating user: " + str(e) + "\nTraceback: " + str(tb))
 
 class delete_user(graphene.Mutation):
     """

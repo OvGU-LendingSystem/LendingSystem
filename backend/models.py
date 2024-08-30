@@ -37,7 +37,7 @@ class Address(TypeDecorator):
         })
 
     def process_result_value(self, value, dialect):
-        if value is None:
+        if not value:
             return None
         data = json.loads(value)
         return Address(
@@ -266,7 +266,7 @@ class User(Base):
     email               = Column(String(60),    unique = True,  nullable = False)
     password_hash       = Column(String(120),   unique = False, nullable = False) # hashed
 
-    address             = Column(Address, unique = False, nullable = False, default = Address())
+    address             = Column(Address, unique = False, nullable = True)
     phone_number        = Column(Integer, unique = True, nullable = True)
     matricle_number     = Column(Integer, unique = True, nullable = True)
 
