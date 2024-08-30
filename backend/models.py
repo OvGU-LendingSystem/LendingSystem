@@ -14,40 +14,6 @@ from sqlalchemy.types import TypeDecorator, VARCHAR, INTEGER
 Base = declarative_base()
 Base.query = db.query_property()
 
-class Address(TypeDecorator):
-    impl = VARCHAR(120)
-
-    def __init__(self, country=None, postcode=None, city=None, street=None, house_number=None):
-        self.country        = country
-        self.postcode       = postcode
-        self.city           = city
-        self.street         = street
-        self.house_number   = house_number
-        super().__init__()
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return '{}'
-        return json.dumps({
-            'country': value.country,
-            'postcode': value.postcode,
-            'city': value.city,
-            'street': value.street,
-            'house_number': value.house_number
-        })
-
-    def process_result_value(self, value, dialect):
-        if not value:
-            return None
-        data = json.loads(value)
-        return Address(
-            country=data.get('country'),
-            postcode=data.get('postcode'),
-            city=data.get('city'),
-            street=data.get('street'),
-            house_number=data.get('house_number')
-        )
-
 class userRights(enum.Enum):
     """
     Enum for different rights a user can have inside his organization
@@ -266,7 +232,12 @@ class User(Base):
     email               = Column(String(60),    unique = True,  nullable = False)
     password_hash       = Column(String(120),   unique = False, nullable = False) # hashed
 
-    address             = Column(Address, unique = False, nullable = True)
+    country             = Column(String(60),    unique = False, nullable = True)
+    postcode            = Column(Integer,       unique = False, nullable = True)
+    city                = Column(String(60),    unique = False, nullable = True)
+    street              = Column(String(60),    unique = False, nullable = True)
+    house_number        = Column(String(10),    unique = False, nullable = True)
+    
     phone_number        = Column(Integer, unique = True, nullable = True)
     matricle_number     = Column(Integer, unique = True, nullable = True)
 

@@ -8,7 +8,7 @@ from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
 from flask import session
 
-from models import User as UserModel, orderStatus, userRights, Address
+from models import User as UserModel, orderStatus, userRights
 from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
@@ -1123,18 +1123,18 @@ class create_user(graphene.Mutation):
             else:
                 ph = PasswordHasher()
                 password_hashed = ph.hash(password)
-                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed, address=Address())
+                user = UserModel(first_name=first_name, last_name=last_name, email=email, password_hash=password_hashed)
 
                 if country:
-                    user.address.country = country
+                    user.country = country
                 if city:
-                    user.address.city = city
+                    user.city = city
                 if postcode:
-                    user.address.postcode = postcode
+                    user.postcode = postcode
                 if street:
-                    user.address.street = street
+                    user.street = street
                 if house_number:
-                    user.address.house_number = house_number
+                    user.house_number = house_number
 
                 if phone_number:
                     user.phone_number = phone_number
@@ -1189,19 +1189,16 @@ class update_user(graphene.Mutation):
                 ph = PasswordHasher()
                 user.password_hash = ph.hash(password)
 
-            if ( not user.address ):
-                user.address = Address()
-
             if country:
-                    user.address.country = country
+                    user.country = country
             if city:
-                user.address.city = city
+                user.city = city
             if postcode:
-                user.address.postcode = postcode
+                user.postcode = postcode
             if street:
-                user.address.street = street
+                user.street = street
             if house_number:
-                user.address.house_number = house_number
+                user.house_number = house_number
 
             if phone_number:
                 user.phone_number = phone_number
