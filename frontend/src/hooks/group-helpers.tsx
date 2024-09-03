@@ -32,6 +32,23 @@ export function useEditGroupMutation() {
     return useMutationWithResponse<EditGroupResponse>(EDIT_GROUP_MUTATION, 'updateGroup')
 }
 
+// -------------------------------------------------------------------------------------------------
+
+const DELETE_GROUP_MUTATION = gql`
+    mutation DeleteGroup($id: String!) {
+        deleteGroup(groupId: $id) {
+            ok,
+            infoText
+        }
+    }
+`;
+
+export function useDeleteGroupMutation() {
+    return useMutationWithResponse(DELETE_GROUP_MUTATION, 'deleteGroup');
+}
+
+// -------------------------------------------------------------------------------------------------
+
 const GET_GROUPS_QUERY = gql`
 query GetGroups {
   filterGroups {
