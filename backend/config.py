@@ -9,6 +9,7 @@ import socket
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import redis
+import smtplib, ssl
 
 hostname = socket.gethostname()
 print("Hostname: ", hostname)
@@ -31,6 +32,12 @@ tmp_picture_directory = config.get('PATHS', 'picture_directory')
 tmp_pdf_directory = config.get('PATHS', 'pdf_directory')
 picture_directory = os.path.join(root_directory, tmp_picture_directory)
 pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
+
+mail_server_address = config.get('MAIL', 'mail_server_address')
+mail_server_port = config.get('MAIL', 'mail_server_port')
+use_ssl = config.get('MAIL', 'use_ssl')
+sender_email_address = config.get('MAIL', 'sender_email_address')
+sender_email_password = config.get('MAIL', 'sender_email_password')
 
 testing_on = config.get('TESTING', 'testing')
 
@@ -59,3 +66,12 @@ else:
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 server_session = Session(app)
+
+# create Mail Server
+if (int)(use_ssl):
+    context = ssl.create_default_context()
+    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port, context=context)
+else:
+    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port)
+
+mail_server.login(sender_email_address, sender_email_password)
