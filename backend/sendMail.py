@@ -14,6 +14,3 @@ def sendMail(receiver, subject, body):
     message.attach(body_text)
 
     mail_server.sendmail(sender_email_address, receiver, message.as_string())
-
-
-sendMail("rainer.zufall@prhn.dynpc.net", "Test", "This is a test mail.")
