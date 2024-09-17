@@ -1,183 +1,121 @@
-import { DragEvent, ReactElement, useEffect, useRef, useState } from 'react';
-import './AddInventory.css';
-import { MdAddAPhoto, MdArrowLeft, MdArrowRight, MdDelete } from "react-icons/md";
-import { Input } from '../../core/input/Input';
-import { useFiles } from '../../hooks/use-files';
+import '../../styles/style.css';
+import { AddInventoryItem } from '../../models/InventoryItem.model';
+import { ModifyInventory } from '../modify-inventory/ModifyInventory';
+import { useUpdateFiles } from '../../hooks/image-helpers';
+import { useNavigate } from 'react-router-dom';
+import { AddPhysicalObjectResponse, useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
+import { ErrorResponse, SuccessResponse } from '../../hooks/response-helper';
+import { Button, NonIdealState } from '@blueprintjs/core';
+import { MdPriorityHigh } from 'react-icons/md';
+import { useToaster } from '../../context/ToasterContext';
+import { SubmitState } from '../../utils/submit-state';
+
+interface AddInventoryRetryData {
+    imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    addObjectResult?: {
+        success: boolean;
+        info: any;
+    },
+    addObject: (images: string[], manuals: string[]) => Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse>
+}
+
+const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInventoryRetryData>> => {
+    let [ imageResult, retryImages ] = data.imageStatus;
+    let [ manualsResult, retryManuals ] = data.manualsStatus;
+    
+    if (!imageResult.success)
+        imageResult = await retryImages();
+
+    if (!manualsResult.success)
+        manualsResult = await retryManuals();
+
+    if (!imageResult.success || !manualsResult.success) {
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            addObject: data.addObject
+        }, retry);
+    }
+
+    const addObjectResult = await data.addObject(imageResult.value, manualsResult.value);
+    if (addObjectResult.success)
+        return SubmitState.SUCCESS;
+
+    return new SubmitState.Error({
+        imageStatus: [imageResult, retryImages],
+        manualsStatus: [manualsResult, retryManuals],
+        addObjectResult,
+        addObject: data.addObject
+    }, retry);
+}
 
 export function AddInventory() {
-    const [images, imageUrls, setImages] = useFiles();
-    const [deposit, setDeposit] = useState<string>('');
+    const navigate = useNavigate();
+    const toaster = useToaster();
 
-    const [storage, setStorage] = useState<string>('');
-    const [showCustomStorageInput, setShowCustomStorageInput] = useState<boolean>(false);
+    const updateFiles = useUpdateFiles();
+    const [ addPhysicalObject ] = useAddPhysicalObject();
 
-    const storagePlaces = ["Keller", "Regal 1", "Regal 2"];
+    const submit = async (values: AddInventoryItem): Promise<SubmitState<AddInventoryRetryData>> => {
+        let [ imageResult, retryImages ] = await updateFiles([], values.images);
+        let [ manualsResult, retryManuals ] = await updateFiles([], values.manuals);
 
-    useEffect(() => {
-        setStorage(storagePlaces[0]);
-    }, []);
+        const addObject = async (images: string[], manuals: string[]): Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse> => {
+            return await addPhysicalObject({
+                variables: {
+                    invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
+                    invNumExternal: values.inventoryNumberExternal ?? 0, // TODO: mandatory field
+                    storageLocation: values.storageLocation,
+                    name: values.name,
+                    description: values.description,
+                    deposit: values.deposit,
+                    faults: values.defects,
+                    tags: [],
+                    pictures: images,
+                    manuals: manuals,
+                    borrowable: values.borrowable,
+                    organizationId: "123",
+                    storageLocation2: values.storageLocation2
+                }
+            });
+        }
 
-    const updateDeposit = (e: any) => {
-        setDeposit(new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(e.target.valueAsNumber));
-        e.preventDefault();
+        if (imageResult.success && manualsResult.success) {
+            const addObjResult = await addObject(imageResult.value, manualsResult.value);
+            if (!addObjResult.success) {
+                return new SubmitState.Error<AddInventoryRetryData>({
+                    imageStatus: [imageResult, retryImages],
+                    manualsStatus: [manualsResult, retryManuals],
+                    addObjectResult: addObjResult,
+                    addObject: addObject
+                }, retry);
+            }
+
+            return SubmitState.SUCCESS;
+        }
+
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            addObject: addObject
+        }, retry);
     }
 
-    const submit = (event: any) => {
-        console.error("Hello Add");
-        console.error(storage);
-        event.preventDefault();
-    }
-
-    const onStorageSelected = (e: any) => {
-        const show = e.target.value === '';
-        setShowCustomStorageInput(show);
-        setStorage(e.target.value);
+    const onSuccess = () => {
+        navigate('/');
+        toaster.show({ message: 'Objekt erfolgreich erstellt', intent: 'success' });
     }
 
     return (
-        <div className='form-input--wrapper'>
-            <form onSubmit={submit} className='form-input'>
-                <div className='top-input--wrapper'>
-                    <ImagesSelecorComponent images={images} imageUrls={imageUrls} setImages={setImages} />
-                    <div className="side-input--wrapper">
-                        <div className='text-input'>
-                            <label htmlFor="name">Name</label>
-                            <input type="text" id="name" required />
-                            <label htmlFor="inventory_number">Inventarnummer</label>
-                            <input type="text" id="inventory_number" />
-                            <label htmlFor="description">Beschreibung</label>
-                            <input type="text" id="description" />
-                            <label htmlFor='owner'>Eigentümer</label>
-                            <input type="text" id="owner" />
-                            <label htmlFor="storage">Lagerort</label>
-                            <div>
-                                <select id="storage" value={showCustomStorageInput ? '' : storage} onChange={onStorageSelected}>
-                                    {storagePlaces.map(name =>
-                                        <option key={name} value={name}>{name}</option>
-                                    )}
-                                    <option value={''}>Custom</option>
-                                </select>
-                                { showCustomStorageInput && <input id='storage' type='text'  value={storage} onChange={(e) => setStorage(e.target.value)} /> }
-                            </div>
-
-                            <label htmlFor="deposit">Kaution</label>
-                            {/*<input type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required />*/}
-                            <Input after={<div className='currency-placeholder'>€</div>} props={{type: "number", id: "deposit", step: 0.01, inputMode: 'numeric', min: 0, required: true, value: deposit, onInput: updateDeposit}} />
-                        </div>
-                        <input type="checkbox" id="available" />
-                        <label htmlFor="available">Öffentlich ausleihbar</label>
-                    </div>
-                </div>
-                
-                <label htmlFor='defects'>Mängel</label>
-                <textarea id='defects' rows={6} />
-                
-                <input type="submit" value="Add Object" />
-            </form>
-        </div>
+        <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
+            ErrorScreen={AddInventoryErrorView} onClick={submit} label='Add Item' onSuccess={onSuccess} />
     );
 }
 
-function ImagesSelecorComponent({images, imageUrls, setImages}: {  images: File[], imageUrls: string[], setImages: React.Dispatch<React.SetStateAction<File[]>> }) {
+function AddInventoryErrorView({ data, retry }: { data: AddInventoryRetryData, retry: () => void }) {
     return (
-        <div>
-            <AddImageComponent imageUrl={imageUrls.length == 0 ? null : imageUrls[0]} setImage={(image) => image !== undefined ? setImages([...images, image]) : null} />
-            <MultiImagePreview imageUrls={imageUrls} />
-        </div>
-    )
-}
-
-function AddImageComponent({imageUrl, setImage}: {imageUrl: string | null, setImage: (image: File | undefined) => any}) {
-    const fileInput = useRef<HTMLInputElement>(null);
-    const getFile = async () => { fileInput.current?.click(); }
-    
-    const onFileSelected = async (event: any) => {
-        if (event.target.files && event.target.files[0]) {
-            setImage(event.target.files[0]);            
-        }
-    }
-    const onFileDropped = async (event: DragEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
-        
-        if (event.dataTransfer.files && event.dataTransfer.files[0]) {
-            setImage(event.dataTransfer.files[0]);
-        }
-    }
-
-    const stopEvent = async (event: any) => {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-
-    return (
-        <div className='add-image--wrapper'>
-            { imageUrl !== null && <img src={imageUrl}></img> }
-            <div className="add-image" onDragEnter={stopEvent} onDragOver={stopEvent} onDrop={onFileDropped}>
-                <input type='file' accept='image/*' ref={fileInput} onChange={onFileSelected} />
-                { imageUrl !== null || <MdAddAPhoto className='add-image--icon' onClick={getFile} /> }
-            </div>
-            
-            <MdArrowLeft className='left' onClick={() => console.error("left")} />
-            <MdArrowRight className='right' />
-            <MdDelete className='top' />
-        </div>
-    );
-}
-
-function MultiImagePreview({imageUrls}: {imageUrls: string[]}) {
-    const [index, setIndex] = useState(0);
-
-    const scrollerRef = useRef<HTMLUListElement>(null)
-    const activeElemRef = useRef<HTMLLIElement>(null)
-    const previews = imageUrls.map<ReactElement<HTMLUListElement>>((imageUrl, i) => 
-        <li key={imageUrl} onClick={() => setIndex(i)} ref={i === index ? activeElemRef : null} className={i === index ? 'preview preview--active' : 'preview'}><img src={imageUrl}></img></li>
-    );
-
-    const [isAtStart, setIsAtStart] = useState(false);
-    const [isAtEnd, setIsAtEnd] = useState(false);
-    const onScrolled = () => {
-        if (!scrollerRef.current) {
-            setIsAtStart(false);
-            setIsAtEnd(false);
-            return;
-        }
-
-        const atStart = scrollerRef.current.scrollLeft === 0;
-        const atEnd = scrollerRef.current.scrollWidth <= scrollerRef.current.scrollLeft + scrollerRef.current.offsetWidth;
-
-        setIsAtStart(atStart);
-        setIsAtEnd(atEnd);
-    };
-
-    useEffect(() => {
-        if (!activeElemRef.current)
-            return;
-
-        activeElemRef.current.scrollIntoView({ behavior: 'smooth', inline: 'start' });
-    }, [index]);
-
-    useEffect(onScrolled, [imageUrls]);
-
-    const onClick = (left: boolean) => {
-        if (!scrollerRef.current)
-            return;
-
-        const elemWidth = scrollerRef.current.scrollWidth / imageUrls.length;
-        scrollerRef.current.scrollBy({ left: left ? -elemWidth : elemWidth, behavior: 'smooth' });
-    }
-
-    const arrowBaseClass = 'multi-image-preview--nav';
-    const leftArrowClassNames = arrowBaseClass + `${isAtStart ? ` ${arrowBaseClass}-disabled` :  ` ${arrowBaseClass}-enabled`}`;
-    const rightArrowClassNames = arrowBaseClass + `${isAtEnd ? ` ${arrowBaseClass}-disabled` :  ` ${arrowBaseClass}-enabled`}`;
-
-    return (
-        <div className='multi-image-preview--wrapper'>
-            <MdArrowLeft className={leftArrowClassNames} onClick={() => onClick(true)} />
-            <ul className='multi-image-preview--image-list' ref={scrollerRef} onScroll={onScrolled}>
-                {previews}
-            </ul>
-            <MdArrowRight className={rightArrowClassNames} onClick={() => onClick(false)} />
-        </div>
+        <NonIdealState title='Fehler' description='Objekt konnte nicht gespeichert werden'
+            action={<Button onClick={retry} intent='primary'>Erneut versuchen</Button>} icon={<MdPriorityHigh color='red' />} />
     );
 }

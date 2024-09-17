@@ -1,0 +1,359 @@
+import './InternalInventory.css';
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { gql, isApolloError, useSuspenseQuery } from "@apollo/client";
+import { Suspense, useMemo, useState } from "react";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-helpers";
+import { ActionProps, Alert, Button, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, InputGroup, Intent, LinkProps, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { MdBugReport, MdRefresh, MdWifiOff } from 'react-icons/md';
+import { SubmitState } from '../../utils/submit-state';
+import { useToaster } from '../../context/ToasterContext';
+
+const GET_INVENTORY = gql`
+    query GetInventory($name: String) {
+        filterPhysicalObjects(name: $name) {
+            physId,
+            name,
+            description,
+            pictures {
+                edges {
+                    node {
+                        path
+                    }
+                }
+            }
+        }
+    }
+`;
+
+type SearchTypeOptions = 'group' | 'object' | 'both' | 'none';
+interface InternalInventorySearchParams {
+    name: string | null;
+    type: SearchTypeOptions;
+}
+
+function isSearchTypeOption(val: string): val is SearchTypeOptions {
+    return ['group', 'object', 'both', 'none'].includes(val);
+}
+
+function hasValue<T>(entry: [string, T | null | undefined]): entry is [string, T] {
+    return !!entry[1];
+}
+
+export function InternalInventory() {
+    const [ searchParams, setSearchParams ] = useSearchParams({ type: 'both' } satisfies Partial<InternalInventorySearchParams>);
+    const validSearchParams = useMemo(() => {
+        const queryType = searchParams.get('type');
+        const validQueryType = queryType !== null && isSearchTypeOption(queryType) ? queryType : 'both';
+        const params = {
+            name: searchParams.get('name'),
+            type: {
+                group: validQueryType === 'both' || validQueryType === 'group',
+                object: validQueryType === 'both' || validQueryType === 'object'
+            }
+        };
+        return params;
+    }, [searchParams]);
+    const updateSearchParams = (params: Partial<{ name?: string, type: { object: boolean, group: boolean } }>) => {
+        const getType = (value: { object: boolean, group: boolean }) => {
+            if (value.object === true && value.group === true)
+                return undefined;
+            else if (value.object === true && !value.group)
+                return 'object';
+            else if (!value.object && value.group === true)
+                return 'group';
+            return 'none';
+        }
+        const type = getType(params.type ?? validSearchParams.type);
+        const newParams = Object.entries({ ...validSearchParams, ...params, type }).filter(entry => hasValue(entry));
+        setSearchParams(new URLSearchParams(newParams as [string, string][]));
+    };
+    const updateSearchText = withDelay(250)((text: string) => {
+        updateSearchParams({ name: text.trim().length > 0 ? text : undefined })
+    });
+    const updateSearchType = ((value: { object?: boolean, group?: boolean }) => {
+        updateSearchParams({ type: { ...validSearchParams.type, ...value} });
+    });
+
+    const [ filterOptionsOpen, setFilterOptionsOpen ] = useState(false);
+
+    return (
+        <div className='internal-inventory-screen'>
+            <ControlGroup className='toolbar' fill={true}>
+                <Button outlined={true} className={Classes.FIXED} onClick={() => setFilterOptionsOpen(!filterOptionsOpen)}>Filter</Button>
+                <InputGroup type="text" large={true} placeholder='Suchen...' onChange={(e) => updateSearchText(e.target.value)} />
+                <Popover content={<AddPopoverList />} placement='bottom-end' className={Classes.FIXED}>
+                    <Button large={true} intent='primary' outlined={true} icon='add-to-artifact'>Neu</Button>
+                </Popover>
+            </ControlGroup>
+            <Collapse isOpen={filterOptionsOpen}>
+                <Card>
+                    <Checkbox checked={validSearchParams.type.object}
+                        onChange={(e) => updateSearchType({ object: e.target.checked })}>Objekte</Checkbox>
+                    <Checkbox checked={validSearchParams.type.group}
+                        onChange={(e) => updateSearchType({ group: e.target.checked })}>Gruppen</Checkbox>
+                </Card>
+            </Collapse>
+
+            <ErrorBoundary FallbackComponent={ErrorScreen}>
+                { validSearchParams.type.object &&
+                    <div className="internal-inventory-list">
+                        <H3>Objekte</H3>
+                        <Suspense fallback={<LoadingScreen />}>
+                            <InventoryList name={validSearchParams.name ?? undefined} />
+                        </Suspense>
+                    </div>
+                }
+                
+                { validSearchParams.type.group &&
+                    <div className="internal-inventory-list">
+                        <H3>Gruppen</H3>
+                        <Suspense fallback={<LoadingScreen />}>
+                            <GroupList name={validSearchParams.name ?? undefined} />
+                        </Suspense>
+                    </div>
+                }
+            </ErrorBoundary>
+        </div>
+    );
+}
+
+function AddPopoverList() {
+    const navigate = useNavigate();
+    return (
+        <Menu>
+            <MenuItem text='Neues Objekt hinzufügen' onClick={() => navigate('/inventory/add')} />
+            <MenuItem text='Neue Gruppe hinzufügen' onClick={() => navigate('/inventory/group/add')} />
+        </Menu>
+    );
+}
+
+function withDelay(ms: number) {
+    let id: number | undefined = undefined;
+
+    const run = (func: Function) => (...args: any[]) => {
+        window.clearTimeout(id);
+        id = window.setTimeout(func, ms, ...args);    
+    }
+    return run;
+}
+
+interface InventoryListQueryResult {
+    filterPhysicalObjects: { physId: string, name: string, description: string
+        pictures: {
+            edges: {
+                node: {
+                    path: string
+                }
+            }[]
+        }
+     }[]
+}
+
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+
+function InventoryList({ name }: { name?: string }) {
+    const { data } = useSuspenseQuery<InventoryListQueryResult>(GET_INVENTORY, {
+        variables: {
+            name: name
+        }
+    });
+
+    const items = data.filterPhysicalObjects.map(item => {
+        const path = item.pictures.edges[0]?.node?.path;
+        const imageSrc = path !== undefined ? BASE_IMAGE_PATH + path : undefined;
+        const it = { ...item, id: item.physId, imageSrc }
+        return it;
+    });
+
+    return (
+        <BaseInventoryList items={items} menu={(id) => <InventoryOptionsOverlay id={id} />} />
+    );
+}
+
+function BaseInventoryList({ items, menu }: { items: { name: string, id: string, description: string, imageSrc?: string }[], menu: (id: string) => React.JSX.Element }) {
+    const list = items.map(item => {
+        return <InventoryListItem key={item.id} item={item} menu={menu} />
+    });
+
+    return (
+        <CardList>{list}</CardList>
+    );
+}
+
+function InventoryListItem({ item, menu }: { item: { name: string, id: string, description: string, imageSrc?: string }, menu: (id: string) => React.JSX.Element }) {
+    return (
+        <Card interactive={true} className='inventory-list-item'>
+            <EntityTitle title={item.name} icon={<PreviewImage imageSrc={item.imageSrc} />} subtitle={item.description} ellipsize={true} />
+            <InventoryOptions id={item.id} menu={menu} />
+        </Card>
+    );
+}
+
+function PreviewImage({ imageSrc }: { imageSrc?: string }) {
+    return (
+        <>
+            { imageSrc
+                ? <img src={imageSrc} className='preview-image' />
+                : <div className='preview-image' />
+            }
+        </>
+    );
+}
+
+function InventoryOptions({ id, menu }: { id: string, menu: (id: string) => React.JSX.Element }) {
+    return (
+        <Popover content={menu(id)} placement='bottom-end'>
+            <Button minimal={true} icon='more' />
+        </Popover>
+    );
+}
+
+function InventoryOptionsOverlay({ id }: { id: string }) {
+    const navigate = useNavigate();
+    return (
+        <Menu>
+            <MenuItem text='Edit' onClick={() => navigate(`/inventory/edit/${id}`)} />
+            <MenuItem text='View history' />
+        </Menu>
+    );
+}
+
+function GroupList({ name }: { name?: string }) {
+    const { data } = useGetGroupsQuery();
+    const [ deleteId, setDeleteId ] = useState<string>();
+    const toaster = useToaster();
+
+    const formatter = new Intl.ListFormat(undefined, {
+        style: 'short',
+        type: 'conjunction'
+    });
+
+    const onDeleteDialogClose = (state: SubmitState<Reason>) => {
+        setDeleteId(undefined);
+
+        if (state.type === 'success') {
+            toaster.show({
+                message: 'Gruppe erfolgreich gelöscht',
+                intent: Intent.SUCCESS
+            });
+            return;
+        }
+
+        if (state.data === 'cancel') {
+            return;
+        }
+
+        let action: (ActionProps & LinkProps) | undefined = undefined;
+        if (state.retry) {
+            const onRetryClick = async () => {
+                if (!state.retry) {
+                    return;
+                }
+
+                const loadingToastKey = toaster.show({
+                    message: 'Gruppe wird gelöscht...',
+                    timeout: 0,
+                    isCloseButtonShown: false
+                });
+                const submitState = await state.retry(state.data);
+                toaster.dismiss(loadingToastKey);
+                onDeleteDialogClose(submitState);
+            }
+
+            action = {
+                text: 'Erneut versuchen',
+                icon: <MdRefresh />,
+                onClick: onRetryClick
+            }
+        }
+
+        toaster.show({
+            message: 'Gruppe konnte nicht gelöscht werden',
+            intent: Intent.DANGER,
+            action: action
+        });
+    }
+
+    const items = data.map(item => {
+        const path = item.pictures[0]?.path;
+        const src = path !== undefined ? BASE_IMAGE_PATH + path : undefined;
+        return {
+            id: item.groupId,
+            name: item.name,
+            description: 'Enthält: ' + formatter.format(item.pysicalObjectNames),
+            imageSrc: src
+        };
+    });
+
+    return (
+        <>
+            <DeleteGroupDialog id={deleteId} close={onDeleteDialogClose} />
+            <BaseInventoryList items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
+        </>
+    );
+}
+
+function GroupListItemMenu({ id, onDeleteClick }: { id: string, onDeleteClick: () => void }) {
+    const navigate = useNavigate();
+    return (
+        <Menu>
+            <MenuItem text='Bearbeiten' onClick={() => navigate(`/inventory/group/edit/${id}`)} />
+            <MenuItem text='Löschen' onClick={onDeleteClick} />
+        </Menu>
+    );
+}
+
+type Reason = 'cancel' | 'error';
+
+function DeleteGroupDialog({ id, close }: { id?: string, close: (state: SubmitState<Reason>) => void }) {
+    const [ deleteGroup ] = useDeleteGroupMutation();
+    const [ isDeleting, setIsDeleting ] = useState(false);
+
+    const onDelete = async (): Promise<SubmitState<Reason>> => {
+        const deleteRes = await deleteGroup({ variables: { id: id } });
+        if (!deleteRes.success) {
+            return new SubmitState.Error('error', onDelete);
+        }
+        return SubmitState.SUCCESS;
+    }
+
+    const onDeleteClick = async () => {
+        setIsDeleting(true);
+        const state = await onDelete();
+        setIsDeleting(false);
+        close(state);
+    }
+
+    return (
+        <Alert cancelButtonText='Abbrechen' confirmButtonText='Gruppe löschen'
+            intent='danger' icon='trash' isOpen={!!id} onCancel={() => close(new SubmitState.Error<Reason>('cancel'))}
+            onConfirm={onDeleteClick} canEscapeKeyCancel canOutsideClickCancel loading={isDeleting}>
+            <p>
+                Diese Gruppe löschen?
+            </p>
+        </Alert>
+    );
+}
+
+function LoadingScreen() {
+    return (
+        <NonIdealState icon={<Spinner />} />
+    );
+}
+
+function ErrorScreen({ error, resetErrorBoundary }: FallbackProps) {
+    if (!isApolloError(error))
+        throw error;
+    
+    if (error.networkError && error.networkError.name !== 'ServerError' && error.networkError.name !== 'ServerParseError') {
+        return (
+            <NonIdealState title='Keine Internetverbindung' icon={<MdWifiOff />}
+                action={<Button onClick={resetErrorBoundary}>Erneut versuchen</Button>} />
+        );
+    }
+
+    return (
+        <NonIdealState title='Ein interner Fehler ist aufgetreten' icon={<MdBugReport />} />
+    );
+}

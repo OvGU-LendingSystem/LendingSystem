@@ -1,33 +1,14 @@
-.form-input--wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-.form-input {
-    width: 100vw;
-    max-width: 700px;
-}
-
-.top-input--wrapper {
-    /*display: grid;
-    grid-template-columns: 1fr 2fr;*/
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 16px;
-}
-
 .add-image--wrapper {
     aspect-ratio: 16/9;
     position: relative;
-    border: 2px dashed grey;
+    border: 2px solid grey;
     min-width: 300px;
     max-width: 600px;
     margin: 16px;
 }
 
-.side-input--wrapper {
-    align-self: center;
+.add-image--wrapper:has(.add-image--icon) {
+    border: 2px dashed grey;
 }
 
 .add-image--wrapper * {
@@ -90,7 +71,6 @@
     width: 40px;
     height: 40px;
     margin-left: -20px;
-    color: #FF0000;
 }
 
 .left:hover, .right:hover {
@@ -98,38 +78,16 @@
     color: white;
 }
 
+.left-disabled, .right-disabled {
+    color: var(--color-disabled);
+}
+
+.left-enabled, .right-enabled {
+    color: var(--color-enabled);
+}
+
 .top:hover {
     background-color: rgba(0, 0, 0, 0.7);
-}
-
-.text-input {
-    justify-self: center;
-    align-self: center;
-
-    display: grid;
-    grid-template-columns: min-content min-content;
-    grid-auto-rows: min-content;
-    gap: 8px;
-}
-
-input:invalid {
-    outline: red;
-    border-color: red;
-}
-
-input:valid {
-    outline: green;
-    border-color: green;
-}
-
-.currency-placeholder {
-    margin: 0 8px;
-    user-select: none;
-}
-
-#defects {
-    width: 100%;
-    resize: vertical;
 }
 
 .multi-image-preview--wrapper {

@@ -1,0 +1,62 @@
+.form-input--wrapper {
+    height: 100%;
+    width: fit-content;
+    margin: auto;
+    padding-bottom: 32px;
+}
+
+.form-input {
+    width: 100vw;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+
+.top-input--wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 16px;
+    row-gap: 16px;
+}
+
+.side-input--wrapper {
+    align-self: center;
+}
+
+.text-input {
+    justify-self: center;
+    align-self: center;
+
+    display: grid;
+    grid-template-columns: min-content min-content;
+    grid-auto-rows: min-content;
+    gap: 8px;
+}
+
+input:invalid {
+    outline: red;
+    border-color: red;
+}
+
+input:valid {
+    outline: green;
+    border-color: green;
+}
+
+.deposit-input {
+    text-align: end;
+}
+
+.currency-placeholder {
+    margin: 0 8px;
+    user-select: none;
+}
+
+#defects, #description {
+    width: 100%;
+    resize: vertical;
+    margin-bottom: 24px;
+}
