@@ -76,7 +76,6 @@ export function Login(props: LoginProps) {
               type="text"
               id="login-email"
               value={email}
-              style={{width:"380px"}}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
@@ -88,7 +87,6 @@ export function Login(props: LoginProps) {
                 type={showPassword ? "text" : "password"}
                 id="login-password"
                 value={password}
-                style={{width:"380px"}}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
@@ -111,7 +109,6 @@ export function Login(props: LoginProps) {
               type="text"
               id="register-first-name"
               value={first_name}
-              style={{width:"380px"}}
               onChange={(e) => setFirstName(e.target.value)}
               required
             />
@@ -122,7 +119,6 @@ export function Login(props: LoginProps) {
               type="text"
               id="register-name"
               value={name}
-              style={{width:"380px"}}
               onChange={(e) => setName(e.target.value)}
               required
             />
@@ -133,7 +129,6 @@ export function Login(props: LoginProps) {
               type="email"
               id="register-email"
               value={email}
-              style={{width:"380px"}}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
@@ -145,7 +140,6 @@ export function Login(props: LoginProps) {
                 type={showPassword ? "text" : "password"}
                 id="register-password"
                 value={password}
-                style={{width:"380px"}}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
@@ -160,8 +154,6 @@ export function Login(props: LoginProps) {
               type={showPassword ? "text" : "password"}
               id="register-repeat-password"
               value={repeatPassword}
-              style={{width:"380px"}}
-
               onChange={(e) => setRepeatPassword(e.target.value)}
               required
             />

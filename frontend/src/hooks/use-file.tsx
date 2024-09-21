@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { FileResource, ImageResource } from "../models/file.model";
 
-export function useFile(initialFile: File): [ File, string, React.Dispatch<React.SetStateAction<File>> ] {
-    const [ file, setFile ] = useState<File>(initialFile);
-    const [ fileUrl, setFileUrl ] = useState<string>('');
+export function useFile(): [ File | undefined, string | null, React.Dispatch<React.SetStateAction<File | undefined>> ] {
+    const [ file, setFile ] = useState<File>();
+    const [ fileUrl, setFileUrl ] = useState<string | null>('');
 
     useEffect(() => {
-        const url = URL.createObjectURL(file);
+        const url = file ? URL.createObjectURL(file) : null;
         setFileUrl(url);
 
         return () => {

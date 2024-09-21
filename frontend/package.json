@@ -16,9 +16,7 @@
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",
     "@types/react-router-dom": "^5.3.3",
-    "apollo-upload-client": "^18.0.1",
     "date-fns": "^3.6.0",
-    "formik": "^2.4.6",
     "graphql": "^16.8.1",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.2.0",
@@ -33,7 +31,6 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:local": "env-cmd -f .env.local-backend react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -58,8 +55,6 @@
     ]
   },
   "devDependencies": {
-    "@types/apollo-upload-client": "^18.0.0",
-    "env-cmd": "^10.1.0",
     "typedoc": "^0.25.13"
   }
 }
