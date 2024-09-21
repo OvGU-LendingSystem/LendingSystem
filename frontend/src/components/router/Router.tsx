@@ -10,6 +10,7 @@ import { Requests } from "../requests/Requests";
 import { InternalInventory } from "../internal-inventory/InternalInventory";
 import { AddGroup } from "../add-group/AddGroup";
 import { EditGroup } from "../edit-group/EditGroup";
+import { EditRequest } from "../../components/requests/EditRequest";
 
 export function Router() {
     return (
@@ -36,6 +37,10 @@ export function Router() {
             <Route path='login' element={<Login />}/>
 
             <Route path='requests' element={<Requests />}/>
+
+            <Route path='requests'>
+              <Route path='edit/:orderId' element={<EditRequest/>}/>
+            </Route>
           </Route>
         </Routes>
       );
