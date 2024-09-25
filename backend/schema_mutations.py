@@ -82,7 +82,7 @@ class create_physical_object(graphene.Mutation):
                 storage_location    = storage_location,
                 storage_location2   = storage_location2,
                 name                = name,
-                organization_id     = organization_id,
+                #organization_id     = organization_id,
                 tags                = db_tags,
             )
             if pictures:

@@ -1,0 +1,18 @@
+server {
+    listen       80;
+    server_name  localhost;
+    root         /app;
+
+    location /pictures {
+
+    }
+
+    location /pdfs {
+
+    }
+
+    location / {
+        proxy_pass   http://backend:5000;
+    }
+
+}

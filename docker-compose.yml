@@ -13,6 +13,20 @@ services:
       - 3306
     networks:
       - private
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=test123
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+  redis:
+    image: 'redislabs/redismod'
+    ports:
+      - '6379:6379'
+    hostname: redis
+    networks:
+      - private
 
   backend:
     build:
@@ -21,6 +35,9 @@ services:
       - DB_PASSWORD=/run/secrets/db-password
     secrets:
       - db-password
+    volumes:
+      - images:/app/pictures
+      - pdfs:/app/pdfs
     expose:
       - 5000
     ports:
@@ -30,7 +47,21 @@ services:
       - public
       - private
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+  
+  proxy:
+    build: proxy
+    restart: always
+    volumes:
+      - images:/app/pictures
+      - pdfs:/app/pdfs
+    ports:
+      - 80:80
+    depends_on:
+      - backend
+    networks:
+      - public
 
 networks:
   public:
@@ -38,6 +69,8 @@ networks:
 
 volumes:
   db-data:
+  images:
+  pdfs:
 
 secrets:
   db-password:

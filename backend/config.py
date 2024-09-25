@@ -12,12 +12,17 @@ import redis
 
 hostname = socket.gethostname()
 print("Hostname: ", hostname)
+redis_url = '127.0.0.1'
 
 config = configparser.ConfigParser()
 # Read config file on host
 if hostname == "hades":
     config.read("/var/www/LendingSystem/config.ini")
     db_host = "localhost"
+elif hostname == "container":
+    config.read("./config.ini")
+    db_host = "db:3306"
+    redis_url = 'redis'
 else:
     config.read("../config.ini")
     db_host = "hades.fritz.box:3306"
@@ -49,7 +54,7 @@ app.secret_key = config.get('SECRET_KEY', 'secret_key')
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
-app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
+app.config['SESSION_REDIS'] = redis.from_url('redis://' + redis_url + ':6379')
 
 if not (int)(testing_on):
     app.config[
@@ -57,5 +62,5 @@ if not (int)(testing_on):
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 server_session = Session(app)
