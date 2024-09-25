@@ -54,8 +54,12 @@ const GET_ORDERS = gql`
             orderStatus
             physId
             physicalobject{
-            name
-            description
+              invNumInternal
+              invNumExternal
+              deposit
+              storageLocation
+              name
+              description
             }
           }
         }
@@ -252,7 +256,7 @@ useEffect(() => {
           id: edge.node.physId,
           name: edge.node.physicalobject.name, 
           description: edge.node.physicalobject.description,
-          price: '',
+          price: edge.node.physicalobject.deposit,
           imageUrl: 'https://via.placeholder.com/300', 
           category: '',
           amount: 1,
@@ -270,7 +274,7 @@ useEffect(() => {
       .sort((a, b) => {
         const now = new Date().getTime();
     
-    if (a.status === 'requested' && b.status === 'requested') {
+    if (a.status === 'requested' && b.status === 'requested' && b.products.length > 0) {
       const aTimeDifference = a.products[0].startDate.getTime() - now;
       const bTimeDifference = b.products[0].startDate.getTime() - now;
       

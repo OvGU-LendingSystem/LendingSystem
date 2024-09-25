@@ -30,21 +30,23 @@ declare global {
     id: number;
     name: string;
     description: string;
-    price: string;
-    imageUrl: string;
+    price: number;
     startDate?: Date;
     endDate?: Date;
+    imageUrl: string;
     amount?: number;
     category?: string;
+    status?: string;
   }
 
   interface Quest {
     id: number;
     name: string;
     email: string;
-    phone?: string;
+    startDate?: Date;
+    endDate?: Date;
     products: Product[];
-    status: string;
+    status?: string;
   }
 }
 

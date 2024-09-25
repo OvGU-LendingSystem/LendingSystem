@@ -15,7 +15,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
   link: createUploadLink({
     uri: process.env.REACT_APP_BACKEND_URL,
-    credentials: 'include'
   })
 });
 
