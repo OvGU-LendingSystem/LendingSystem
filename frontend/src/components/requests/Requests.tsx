@@ -513,12 +513,13 @@ useEffect(() => {
                 </div>
                 )}
 
-        <div style={infoStyle}>
-            <div style={personInfoStyle}>
-                <div>{request.name}</div>
-                <div>{request.email}</div>
-                <hr />
-            </div>
+                <div style={infoStyle}>
+                    <div style={personInfoStyle}>
+                        <div>{request.name}</div>
+                        <div>{request.email}</div>
+                        <div>{request.phone}</div>
+                        <hr />
+                    </div>
 
                     <div>
                         {request.products.map((product : Product) => (
@@ -569,76 +570,12 @@ useEffect(() => {
                         </button>
                     </div>
 
-        </div>
-    
-    </div>
- 
-  
- ))}
-}
-
-export function Requests() {
-    
-    const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-    const filteredRequests = requests.filter(request =>
-      (selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
-    );
-    const handleCategoryChange = (category: string) => {
-      setSelectedCategories(prevCategories =>
-        prevCategories.includes(category)
-          ? prevCategories.filter(c => c !== category)
-          : [...prevCategories, category]
-      );
-    };
-
-    
-
-
-    return (
-        
-        <div style={{padding: '20px'}}>
-            <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
+                </div>
+            
+            </div>
+         
           
-            <button
-              style={dropdownButtonStyle}
-              onClick={() => setDropdownVisible(!dropdownVisible)}
-            >
-              Filter
-            </button>
-            {dropdownVisible && (
-              <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('requested')}
-                    onChange={() => handleCategoryChange('requested')}
-                  />
-                  angefragt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('confirmed')}
-                    onChange={() => handleCategoryChange('confirmed')}
-                  />
-                  bestätigt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('lended')}
-                    onChange={() => handleCategoryChange('lended')}
-                  />
-                  verliehen
-                </label>
-              </div>
-            )}
-
-          <DisplayRequests />
-          
-          
+         ))}
         
         
         </div>

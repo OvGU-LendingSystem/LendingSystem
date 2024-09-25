@@ -12,7 +12,6 @@ import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { ToasterProvider } from './context/ToasterContext';
 
 const client = new ApolloClient({
-  uri: 'http://hades.fritz.box/api/graphql',
   cache: new InMemoryCache(),
   link: createUploadLink({
     uri: process.env.REACT_APP_BACKEND_URL,

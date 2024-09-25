@@ -1,10 +1,12 @@
+import { useField } from 'formik';
 import './Input.css';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
-export function Input({before, after, props }: Partial<{ before: JSX.Element | null, after: JSX.Element | null, props: React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> }>) {
+export function Input({ before, after, touched, ...inputProps }: InputProps) {
     return (
-        <span className="input--wrapper">
+        <span className={`input--wrapper ${ touched ? 'touched' : 'untouched' }`}>
             <span>{ before }</span>
-            <input {...props} />
+            <input {...inputProps} />
             <span>{ after }</span>
         </span>
     );
