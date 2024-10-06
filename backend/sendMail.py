@@ -10,7 +10,7 @@ def sendMail(receiver, subject, body):
     message["To"] = receiver
 
     # HTML hier möglich
-    body_text = MIMEText(body, "plain")
+    body_text = MIMEText(body, "HTML")
     message.attach(body_text)
 
     mail_server.sendmail(sender_email_address, receiver, message.as_string())

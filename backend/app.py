@@ -1,6 +1,7 @@
 import graphene
 from flask_graphql import GraphQLView
 from graphene_file_upload.flask import FileUploadGraphQLView as UploadView
+
 from config import app, db
 from schema_queries import Query
 from schema_mutations import Mutations
@@ -19,6 +20,9 @@ app.add_url_rule(
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.remove()
+
+def check_for_return_dates():
+    pass
 
 # for local testing
 if __name__ == '__main__':

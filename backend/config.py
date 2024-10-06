@@ -10,6 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import redis
 import smtplib, ssl
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.executors.pool import ThreadPoolExecutor
+import pytz
 
 hostname = socket.gethostname()
 print("Hostname: ", hostname)
@@ -75,3 +79,10 @@ else:
     mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port)
 
 mail_server.login(sender_email_address, sender_email_password)
+
+# Create scheduler for automated mail sending
+jobstores = {
+    'default': SQLAlchemyJobStore(engine=engine)
+}
+scheduler = BackgroundScheduler(jobstores=jobstores, timezone=pytz.timezone('Europe/Berlin'))
+scheduler.start()
