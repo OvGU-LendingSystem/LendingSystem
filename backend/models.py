@@ -142,13 +142,14 @@ class PhysicalObject(Base):
     borrowable          = Column(Boolean,               unique = False, nullable = False, default = True)
     lending_comment     = Column(String(600),           unique = False, nullable = True)
     return_comment      = Column(String(600),           unique = False, nullable = True)
+    organization_id     = Column(String(36), ForeignKey('organization.organization_id'), nullable=False)
 
+    organization        = relationship("Organization", back_populates="physicalobjects")
     pictures            = relationship("File",          foreign_keys='File.picture_id',             back_populates = "physicalobject_picture")
     manual              = relationship("File",          foreign_keys='File.manual_id',              back_populates = "physicalobject_manual")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
     orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
-    organizations       = relationship("Organization",  secondary = physicalobject_organization,    back_populates = "physicalobjects")
 
     def __repr__(self):
         return "Physical Object ID: " + str(self.phys_id) + "; Name: " + self.name
@@ -272,7 +273,7 @@ class Organization(Base):
     agb                 = relationship("File",                                                          back_populates = "organization", cascade="all, delete-orphan")
 
     users               = relationship("Organization_User",                                             back_populates = "organization")
-    physicalobjects     = relationship("PhysicalObject",    secondary = physicalobject_organization,    back_populates = "organizations")
+    physicalobjects     = relationship("PhysicalObject", back_populates="organization")
 
     def addUser(self, user, rights = userRights.member):
         """
