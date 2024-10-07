@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import "normalize.css";
+import "@blueprintjs/core/lib/css/blueprint.css";
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -7,11 +9,12 @@ import { BrowserRouter } from 'react-router-dom';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { CartProvider } from './context/CartContext';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
+import { ToasterProvider } from './context/ToasterContext';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
   link: createUploadLink({
-    uri: process.env.REACT_APP_BACKEND_URL
+    uri: process.env.REACT_APP_BACKEND_URL,
   })
 });
 
@@ -23,7 +26,9 @@ root.render(
     <BrowserRouter>
       <ApolloProvider client={client}>
         <CartProvider>
-          <App />
+          <ToasterProvider>
+            <App />
+          </ToasterProvider>
         </CartProvider>
       </ApolloProvider>
     </BrowserRouter>

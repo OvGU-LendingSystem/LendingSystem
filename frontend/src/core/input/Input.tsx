@@ -40,14 +40,15 @@ export interface FormikInputProps<T> extends Omit<InputProps, 'touched'> {
     getValue?: (val: T) => string;
 }
 
-export function SelectionInputWithCustomInput({ options, value, setValue, initialSelected, ...props }: { options: string[], value: string, setValue: (val: string) => void, initialSelected?: number }) {
+export function SelectionInputWithCustomInput({ options, value, setValue, ...props }: { options: string[], value: string, setValue: (val: string) => void }) {
     const [ showCustomInput, setShowCustomInput ] = useState(true);
     useLayoutEffect(() => {
-        if (initialSelected !== undefined && initialSelected < options.length) {
-            setValue(options[initialSelected]);
-            setShowCustomInput(false);
+        if (value !== undefined) {
+            const option = options.find(option => option === value);
+            setValue(value);
+            setShowCustomInput(option === undefined);
         }
-    }, []);
+    }, [value, options]);
 
     const onStorageSelected = (e: any) => {
         const show = e.target.value === '';
@@ -68,9 +69,24 @@ export function SelectionInputWithCustomInput({ options, value, setValue, initia
     );
 }
 
-export function FormikSelectionInputWithCustomInput({ options, fieldName, ...props }: { options: string[], fieldName: string }) {
+export function FormikSelectionInputWithCustomInput({ options, fieldName, onChange, ...props }: { options: string[], fieldName: string, onChange?: () => void }) {
     const [ field, meta, helper ] = useField(fieldName);
-    return (<SelectionInputWithCustomInput options={options} value={field.value} setValue={helper.setValue} initialSelected={0} />);
+    const setValue = (value: string) => {
+        if (value === field.value)
+            return;
+
+        helper.setValue(value);
+        if (onChange)
+            onChange();
+    };
+    useLayoutEffect(() => {
+        if (options.length === 0)
+            return;
+        
+        setValue(!field.value || field.value === '' ? options[0] : field.value);
+    }, [options]);
+
+    return (<SelectionInputWithCustomInput options={options} value={field.value} setValue={setValue} />);
 }
 
 export interface FormikTextareaProps extends React.DetailedHTMLProps<React.TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement> {

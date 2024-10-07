@@ -20,11 +20,6 @@ type CalendarProbs = {
   setEndDate : (date: Date | null) => void;
 }
 
-const client = new ApolloClient({
-    uri: 'http://hades.fritz.box/api/graphql',
-    cache: new InMemoryCache(),
-  });
-
 const GET_DATES = gql(/* GraphQL */ `
 query {
     filterOrders {
@@ -40,7 +35,7 @@ query {
  * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
  */
 export default function Calendar_Querry(probs: CalendarProbs) {
-    const { loading, error, data } = useQuery<DateArray>(GET_DATES, {client}); 
+    const { loading, error, data } = useQuery<DateArray>(GET_DATES); 
 
     const defaultSelected: DateRange = {
       from: probs.fromDate!,
