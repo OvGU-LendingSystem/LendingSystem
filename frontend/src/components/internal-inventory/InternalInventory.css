@@ -1,0 +1,28 @@
+.internal-inventory-screen {
+    max-width: 800px;
+    margin: auto;
+    padding-inline: 16px;
+    padding-bottom: 32px;
+    height: 100%;
+}
+
+.toolbar {
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.internal-inventory-list {
+    max-width: 800px;
+    margin: auto;
+    margin-top: 24px;
+}
+
+.preview-image {
+    width: 64px;
+    aspect-ratio: 16/9;
+}
+
+.inventory-list-item {
+    display: flex;
+    justify-content: space-between;
+}

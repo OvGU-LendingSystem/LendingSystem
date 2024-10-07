@@ -16,6 +16,14 @@
   position: relative;
 }
 
+.modal-content {
+  box-sizing: unset;
+}
+
+.submit-button {
+  box-sizing: border-box;
+}
+
 h2 {
   margin-bottom: 20px;
   color: #333;

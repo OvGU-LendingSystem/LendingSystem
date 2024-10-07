@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
+import { gql, useMutation } from "@apollo/client";
 
 interface LoginProps {}
+
+const query = gql`
+mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    ok,
+    infoText
+  }
+}
+`;
 
 export function Login(props: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,6 +28,12 @@ export function Login(props: LoginProps) {
     event.preventDefault();
     console.log('Login email:', email);
     console.log('Login Password:', password);
+    login({
+      variables: {
+        email: email,
+        password: password
+      }
+    });
   };
 
   const handleRegister = (event: React.FormEvent) => {
@@ -46,6 +62,8 @@ export function Login(props: LoginProps) {
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
+
+  const [login] = useMutation(query);
 
   return (
     <div className="login-container">

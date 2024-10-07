@@ -30,21 +30,23 @@ declare global {
     id: number;
     name: string;
     description: string;
-    price: string;
-    imageUrl: string;
+    price: number;
     startDate?: Date;
     endDate?: Date;
+    imageUrl: string;
     amount?: number;
     category?: string;
+    status?: string;
   }
 
   interface Quest {
     id: number;
     name: string;
     email: string;
-    phone?: string;
+    startDate?: Date;
+    endDate?: Date;
     products: Product[];
-    status: string;
+    status?: string;
   }
 }
 
@@ -70,7 +72,7 @@ export function Layout() {
             <Link to='/requests'>Anfragen</Link>
           </li>
           <li>
-            <Link to='/todo'>Todo</Link>
+            <Link to='/internal/inventory'>Internes Inventar</Link>
           </li>
         </ul>
 
@@ -86,7 +88,7 @@ export function Layout() {
         </ul>
       </nav>
       <main className="content">
-        <div><Outlet /></div>
+        <Outlet />
       </main>
       <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
         <Login />
