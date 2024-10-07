@@ -1,16 +1,12 @@
-FROM python:3.12.3-alpine
+FROM python:3.12
 
-WORKDIR /app
+WORKDIR /backend
+COPY . /backend/
 
-RUN apk update
-
-COPY requirements.txt /app
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip3 install -r requirements.txt
-
-COPY . /app
-COPY docker-config.ini /app/config.ini
-
+# Installiere System-Abhängigkeiten
+RUN apt-get update && apt-get install -y \
+    pkg-config
+RUN pip install -r requirements.txt
 EXPOSE 5000
 
-CMD ["flask", "run", "--host", "0.0.0.0"]
+CMD [ "gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app" ]

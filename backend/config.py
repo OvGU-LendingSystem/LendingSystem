@@ -23,31 +23,59 @@ config = configparser.ConfigParser()
 if hostname == "hades":
     config.read("/var/www/LendingSystem/config.ini")
     db_host = "localhost"
+elif (hostname == "container"):
+    config.read("./backend/backend-config.ini")
+    db_host = "database"
 else:
-    config.read("../config.ini")
-    db_host = "hades.fritz.box:3306"
+    config.read("backend-config.ini")
+    db_host = "hades.fritz.box"
 
-# Read config from File
-db_database = config.get('DB', 'db_LendingSystem_Database')
-db_user = config.get('DB', 'db_LendingSystem_User')
-db_pw = config.get('DB', 'db_LendingSystem_Password')
-root_directory = config.get('PATHS', 'root_directory')
-tmp_picture_directory = config.get('PATHS', 'picture_directory')
-tmp_pdf_directory = config.get('PATHS', 'pdf_directory')
-picture_directory = os.path.join(root_directory, tmp_picture_directory)
-pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
+if not hostname == "container":
+    # Read config from File
+    db_database = config.get('DB', 'db_LendingSystem_Database')
+    db_port="3306"
+    db_user = config.get('DB', 'db_LendingSystem_User')
+    db_pw = config.get('DB', 'db_LendingSystem_Password')
+    root_directory = config.get('PATHS', 'root_directory')
+    tmp_picture_directory = config.get('PATHS', 'picture_directory')
+    tmp_pdf_directory = config.get('PATHS', 'pdf_directory')
+    picture_directory = os.path.join(root_directory, tmp_picture_directory)
+    pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
 
-mail_server_address = config.get('MAIL', 'mail_server_address')
-mail_server_port = config.get('MAIL', 'mail_server_port')
-use_ssl = config.get('MAIL', 'use_ssl')
-sender_email_address = config.get('MAIL', 'sender_email_address')
-sender_email_password = config.get('MAIL', 'sender_email_password')
+    mail_server_address = config.get('MAIL', 'mail_server_address')
+    mail_server_port = config.get('MAIL', 'mail_server_port')
+    use_ssl = config.get('MAIL', 'use_ssl')
+    sender_email_address = config.get('MAIL', 'sender_email_address')
+    sender_email_password = config.get('MAIL', 'sender_email_password')
 
-testing_on = config.get('TESTING', 'testing')
+    secret_key = config.get('SECRET_KEY', 'secret_key')
+    testing_on = config.get('TESTING', 'testing')
+else:
+    # Read docker env variables
+    db_database = os.getenv('db_LendingSystem_Database')
+    db_port = os.getenv('db_LendingSystem_Port')
+    db_user = os.getenv('db_LendingSystem_User')
+    with open(os.getenv('db_LendingSystem_Password'), 'r') as f:
+        db_pw = f.read().strip()
+    root_directory = os.getenv('root_directory')
+    tmp_picture_directory = os.getenv('picture_directory')
+    tmp_pdf_directory = os.getenv('pdf_directory')
+    picture_directory = os.path.join(root_directory, tmp_picture_directory)
+    pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
+
+    mail_server_address = os.getenv('mail_server_address')
+    mail_server_port = os.getenv('mail_server_port')
+    use_ssl = os.getenv('use_ssl')
+    sender_email_address = os.getenv('sender_email_address')
+    sender_email_password = os.getenv('sender_email_password')
+
+    secret_key = os.getenv("secret_key")
+    testing_on = 0
 
 # Create engine depending on test mode
 if not (int)(testing_on):
-    engine = create_engine('mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + '/' + db_database)
+    print("Connection String: " + 'mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
+    engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
 else:
     engine = create_engine('sqlite:///:memory:')
 
@@ -56,11 +84,11 @@ db = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Create Flask app
 app = Flask(__name__)
 app.debug = True
-app.secret_key = config.get('SECRET_KEY', 'secret_key')
+app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
-app.config['SESSION_REDIS'] = redis.from_url('redis://127.0.0.1:6379')
+app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
 
 if not (int)(testing_on):
     app.config[
