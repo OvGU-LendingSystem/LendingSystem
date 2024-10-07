@@ -47,7 +47,7 @@ services:
       - pdf-files:/backend/pdfs
       - image-files:/backend/pictures
     env_file:
-      - .env
+      - backend.env
     secrets:
       - db-password
     healthcheck:

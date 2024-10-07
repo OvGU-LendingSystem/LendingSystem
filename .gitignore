@@ -185,5 +185,5 @@ pyvenv.cfg
 alembic.ini
 
 # Docker
-.env
+*.env
 db-password.txt

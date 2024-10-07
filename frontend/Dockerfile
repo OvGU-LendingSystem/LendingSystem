@@ -1,15 +1,12 @@
 # Dockerfile für das React-Frontend und Nginx
-FROM node:14 AS build
+FROM node:16 AS build
 
 # Arbeitsverzeichnis setzen
 WORKDIR /app
 
-# Abhängigkeiten kopieren und installieren
-COPY package*.json ./
-RUN npm install
-
 # Quellcode kopieren
 COPY . .
+RUN npm install
 
 # Build des React-Frontends
 RUN npm run build
