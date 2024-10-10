@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 import traceback
 
 import graphene
@@ -369,6 +370,7 @@ class create_order(graphene.Mutation):
         till_date       = graphene.DateTime()
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
+        deposit         = graphene.Int()
 
     order       = graphene.Field(lambda: Order)
     ok          = graphene.Boolean()
@@ -376,7 +378,7 @@ class create_order(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.customer)
-    def mutate(self, info, executive_user_id, from_date=None, till_date=None, users=None, physicalobjects=None):
+    def mutate(self, info, executive_user_id, from_date=None, till_date=None, users=None, physicalobjects=None, deposit=None):
         try:
             # wenn er keiner Organisation angehört, darf er keine Orders erstellen
             # ggf muss ich das nochmal anpassen, da ja auch 'Watcher' Orga_user sein können
@@ -395,6 +397,14 @@ class create_order(graphene.Mutation):
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 order.physicalobjects = db_physicalobjects
+            
+            if deposit:
+                order.deposit = deposit
+            else:
+                # if no deposit is given the deposit is the sum of the deposits of the physical objects
+                order.deposit = sum([phys.deposit for phys in db_physicalobjects])
+
+            order.creation_time = datetime.datetime.now()
 
             db.add(order)
 
@@ -414,6 +424,7 @@ class update_order(graphene.Mutation):
         order_id    = graphene.String(required=True)
         from_date   = graphene.Date()
         till_date   = graphene.Date()
+        deposit     = graphene.Int()
 
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
@@ -424,8 +435,7 @@ class update_order(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.customer)
-    def mutate(self, info, executive_user_id, order_id, from_date=None, till_date=None, return_date=None, status=None,
-               physicalobjects=None, users=None):
+    def mutate(self, info, executive_user_id, order_id, from_date=None, till_date=None, return_date=None, status=None, physicalobjects=None, users=None, deposit = None):
         try:
 
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
@@ -447,6 +457,9 @@ class update_order(graphene.Mutation):
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
+
+            if deposit:
+                order.deposit = deposit
 
             db.commit()
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)

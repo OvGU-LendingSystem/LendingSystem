@@ -52,6 +52,8 @@ class Query(graphene.ObjectType):
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
         creation_date       = graphene.Argument(type=graphene.DateTime, required=False),
+        # float params
+        deposit             = graphene.Argument(type=graphene.Float, required=False),
         #list params for the relationships
         order_status        = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
@@ -203,6 +205,8 @@ class Query(graphene.ObjectType):
         till_date: Union[str, None] = None,
         return_date: Union[str, None] = None,
         creation_date: Union[str, None] = None,
+        # int params
+        deposit: Union[float, None] = None,
         # list params for the relationships
         order_status: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
@@ -220,6 +224,8 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
         if creation_date:
             query = query.filter(OrderModel.creation_time == creation_date)
+        if deposit:
+            query = query.filter(OrderModel.deposit == deposit)
         # list params for the relationships .any() returns union (OR Statement)
         if order_status:
             orderStatus_ = []

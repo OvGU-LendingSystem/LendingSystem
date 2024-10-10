@@ -187,9 +187,11 @@ class Order(Base):
     """
     __tablename__       = "order"
     order_id            = Column(String(36),        primary_key = True, default=lambda: str(uuid.uuid4()))
+    creation_date       = Column(DateTime,          unique = False, nullable = False)
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
     creation_time       = Column(DateTime,          unique = False, nullable = False)
+    deposit             = Column(Float,             unique = False, nullable = True)
 
     physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
