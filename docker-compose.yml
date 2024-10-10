@@ -1,6 +1,8 @@
 services:
   database:
     image: mysql:9.0.1
+    expose:
+      - 3310
     ports:
       - 3310:3306
     volumes:
@@ -17,6 +19,7 @@ services:
       retries: 5
     networks:
       - database
+      - public
 
   redis:
     image: redis:8.0-M01
