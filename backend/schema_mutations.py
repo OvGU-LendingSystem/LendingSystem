@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 import traceback
 
 import graphene
@@ -271,6 +272,7 @@ class upload_file(graphene.Mutation):
         phys_manual_id  = graphene.UUID()
         organization_id = graphene.UUID()
         group_id        = graphene.UUID()
+        show_index      = graphene.Int()
         file            = Upload(required=True)
 
     file        = graphene.Field(lambda: File)
@@ -279,7 +281,7 @@ class upload_file(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.inventory_admin)
-    def mutate(self, info, executive_user_id, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None):
+    def mutate(self, info, executive_user_id, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None, show_index=None):
         try:
 
             physical_object = None
@@ -320,6 +322,12 @@ class upload_file(graphene.Mutation):
                 physical_object.pictures.append(file)
             if physical_object and phys_manual_id:
                 physical_object.manual.append(file)
+            if organization:
+                organization.agb = file
+            if group:
+                group.pictures.append(file)
+            if show_index:
+                file.show_index = show_index
 
             db.add(file)
             db.commit()
@@ -329,6 +337,38 @@ class upload_file(graphene.Mutation):
             print(e)
             tb = traceback.format_exc()
             return upload_file(ok=False, info_text="Error uploading file. " + str(e) + "\n" + tb)
+
+class update_file(graphene.Mutation):
+    """
+    Updates the file with the given file_id.
+    """
+
+    class Arguments:
+        file_id     = graphene.String(required=True)
+        show_index  = graphene.Int()
+
+    file        = graphene.Field(lambda: File)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    @is_authorised(userRights.inventory_admin)
+    def mutate(self, info, executive_user_id, file_id, show_index=None):
+        try:
+            file = FileModel.query.filter(FileModel.file_id == file_id).first()
+
+            if not file:
+                return update_file(ok=False, info_text="File not found.")
+
+            if show_index:
+                file.show_index = show_index
+
+            db.commit()
+            return update_file(ok=True, info_text="File updated successfully.", file=file)
+
+        except Exception as e:
+            print(e)
+            return update_file(ok=False, info_text="Error updating file. " + str(e))
 
 class delete_file(graphene.Mutation):
     """
@@ -369,6 +409,7 @@ class create_order(graphene.Mutation):
         till_date       = graphene.DateTime()
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
+        deposit         = graphene.Int()
 
     order       = graphene.Field(lambda: Order)
     ok          = graphene.Boolean()
@@ -376,7 +417,7 @@ class create_order(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.customer)
-    def mutate(self, info, executive_user_id, from_date=None, till_date=None, users=None, physicalobjects=None):
+    def mutate(self, info, executive_user_id, from_date=None, till_date=None, users=None, physicalobjects=None, deposit=None):
         try:
             # wenn er keiner Organisation angehört, darf er keine Orders erstellen
             # ggf muss ich das nochmal anpassen, da ja auch 'Watcher' Orga_user sein können
@@ -395,6 +436,14 @@ class create_order(graphene.Mutation):
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 order.physicalobjects = db_physicalobjects
+            
+            if deposit:
+                order.deposit = deposit
+            else:
+                # if no deposit is given the deposit is the sum of the deposits of the physical objects
+                order.deposit = sum([phys.deposit for phys in db_physicalobjects])
+
+            order.creation_date = datetime.datetime.now()
 
             db.add(order)
 
@@ -414,6 +463,7 @@ class update_order(graphene.Mutation):
         order_id    = graphene.String(required=True)
         from_date   = graphene.Date()
         till_date   = graphene.Date()
+        deposit     = graphene.Int()
 
         physicalobjects = graphene.List(graphene.String)
         users           = graphene.List(graphene.String)
@@ -424,8 +474,7 @@ class update_order(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.customer)
-    def mutate(self, info, executive_user_id, order_id, from_date=None, till_date=None, return_date=None, status=None,
-               physicalobjects=None, users=None):
+    def mutate(self, info, executive_user_id, order_id, from_date=None, till_date=None, return_date=None, status=None, physicalobjects=None, users=None, deposit = None):
         try:
 
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
@@ -447,6 +496,9 @@ class update_order(graphene.Mutation):
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
+
+            if deposit:
+                order.deposit = deposit
 
             db.commit()
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
@@ -1308,6 +1360,7 @@ class Mutations(graphene.ObjectType):
     delete_physical_object = delete_physical_object.Field()
 
     upload_file = upload_file.Field()
+    update_file = update_file.Field()
     delete_file = delete_file.Field()
 
     create_order = create_order.Field()

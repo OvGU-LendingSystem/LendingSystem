@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install -y \
 RUN pip install -r requirements.txt
 EXPOSE 5000
 
-CMD [ "gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app" ]
+CMD [ "gunicorn", "-w", "1", "-b", "0.0.0.0:5000", "app:app" ]
