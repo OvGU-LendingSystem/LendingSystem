@@ -113,6 +113,18 @@ class Query(graphene.ObjectType):
         description         = "Returns all organizations with the given parameters, List arguments get OR-ed together",
     )
 
+    filter_files = graphene.List(
+        #return type
+        File,
+        #uuid params
+        file_id             = graphene.Argument(type=graphene.String, required=False),
+        # list params for the relationships
+        physicalobjects    = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        groups             = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations      = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        description         = "Returns all files with the given parameters, List arguments get OR-ed together",
+    )
+
     @staticmethod
     def resolve_filter_tags(
         args,
@@ -354,3 +366,18 @@ class Query(graphene.ObjectType):
         
         organizations = query.all()
         return organizations
+    
+    @staticmethod
+    def resolve_filter_files(
+        args,
+        info,
+        # uuid params
+        file_id: Union[str, None] = None,
+    ):
+        query = File.get_query(info=info)
+
+        if file_id:
+            query = query.filter(FileModel.file_id == file_id)
+        
+        files = query.all()
+        return files

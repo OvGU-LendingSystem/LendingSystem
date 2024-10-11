@@ -272,6 +272,7 @@ class upload_file(graphene.Mutation):
         phys_manual_id  = graphene.UUID()
         organization_id = graphene.UUID()
         group_id        = graphene.UUID()
+        show_index      = graphene.Int()
         file            = Upload(required=True)
 
     file        = graphene.Field(lambda: File)
@@ -280,7 +281,7 @@ class upload_file(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.inventory_admin)
-    def mutate(self, info, executive_user_id, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None):
+    def mutate(self, info, executive_user_id, file, phys_picture_id=None, phys_manual_id=None, organization_id=None, group_id=None, show_index=None):
         try:
 
             physical_object = None
@@ -321,6 +322,12 @@ class upload_file(graphene.Mutation):
                 physical_object.pictures.append(file)
             if physical_object and phys_manual_id:
                 physical_object.manual.append(file)
+            if organization:
+                organization.agb = file
+            if group:
+                group.pictures.append(file)
+            if show_index:
+                file.show_index = show_index
 
             db.add(file)
             db.commit()
@@ -330,6 +337,38 @@ class upload_file(graphene.Mutation):
             print(e)
             tb = traceback.format_exc()
             return upload_file(ok=False, info_text="Error uploading file. " + str(e) + "\n" + tb)
+
+class update_file(graphene.Mutation):
+    """
+    Updates the file with the given file_id.
+    """
+
+    class Arguments:
+        file_id     = graphene.String(required=True)
+        show_index  = graphene.Int()
+
+    file        = graphene.Field(lambda: File)
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    @is_authorised(userRights.inventory_admin)
+    def mutate(self, info, executive_user_id, file_id, show_index=None):
+        try:
+            file = FileModel.query.filter(FileModel.file_id == file_id).first()
+
+            if not file:
+                return update_file(ok=False, info_text="File not found.")
+
+            if show_index:
+                file.show_index = show_index
+
+            db.commit()
+            return update_file(ok=True, info_text="File updated successfully.", file=file)
+
+        except Exception as e:
+            print(e)
+            return update_file(ok=False, info_text="Error updating file. " + str(e))
 
 class delete_file(graphene.Mutation):
     """
@@ -1321,6 +1360,7 @@ class Mutations(graphene.ObjectType):
     delete_physical_object = delete_physical_object.Field()
 
     upload_file = upload_file.Field()
+    update_file = update_file.Field()
     delete_file = delete_file.Field()
 
     create_order = create_order.Field()

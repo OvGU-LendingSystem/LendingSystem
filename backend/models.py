@@ -175,6 +175,7 @@ class File(Base):
     # String name for the file location
     path                = Column(String(600),       unique = True, nullable = False)
     file_type           = Column(Enum(FileType),    nullable = False, default = 'other')
+    show_index          = Column(Integer,           nullable = True)
 
     physicalobject_picture  = relationship("PhysicalObject",    back_populates = "pictures",    foreign_keys=[picture_id])
     physicalobject_manual   = relationship("PhysicalObject",    back_populates = "manual",      foreign_keys=[manual_id])
