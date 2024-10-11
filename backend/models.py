@@ -190,7 +190,6 @@ class Order(Base):
     creation_date       = Column(DateTime,          unique = False, nullable = False)
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
-    creation_time       = Column(DateTime,          unique = False, nullable = False)
     deposit             = Column(Float,             unique = False, nullable = True)
 
     physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order")

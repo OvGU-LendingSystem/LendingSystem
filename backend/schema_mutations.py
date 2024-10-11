@@ -404,7 +404,7 @@ class create_order(graphene.Mutation):
                 # if no deposit is given the deposit is the sum of the deposits of the physical objects
                 order.deposit = sum([phys.deposit for phys in db_physicalobjects])
 
-            order.creation_time = datetime.datetime.now()
+            order.creation_date = datetime.datetime.now()
 
             db.add(order)
 

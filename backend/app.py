@@ -1,5 +1,5 @@
-from sqlalchemy import inspect
 import graphene
+from sqlalchemy import inspect
 from flask_graphql import GraphQLView
 from flask import Flask, jsonify
 from graphene_file_upload.flask import FileUploadGraphQLView as UploadView
@@ -9,6 +9,10 @@ from schema_queries import Query
 from schema_mutations import Mutations
 from models import Base
 
+# Create tables if they don't exist
+inspector = inspect(engine)
+if not inspector.has_table('users'):
+    Base.metadata.create_all(engine)
 schema = graphene.Schema(query=Query, mutation=Mutations)
 
 app.add_url_rule(
