@@ -105,11 +105,9 @@ class create_physical_object(graphene.Mutation):
     @staticmethod
     @is_authorised(userRights.inventory_admin)
     def mutate(self, info, executive_user_id, inv_num_internal, inv_num_external, borrowable, storage_location, storage_location2, name, organization_id,
-               tags, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
+               tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
                deposit=None):
         try:
-            db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
-
             physical_object = PhysicalObjectModel(
                 inv_num_internal    = inv_num_internal,
                 inv_num_external    = inv_num_external,
@@ -118,7 +116,6 @@ class create_physical_object(graphene.Mutation):
                 storage_location2   = storage_location2,
                 name                = name,
                 organization_id     = organization_id,
-                tags                = db_tags,
             )
             if pictures:
                 db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
@@ -138,6 +135,9 @@ class create_physical_object(graphene.Mutation):
                 physical_object.description = description
             if deposit:
                 physical_object.deposit = deposit
+            if tags:
+                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+                physical_object.tags = db_tags
 
             db.add(physical_object)
             db.commit()
@@ -433,15 +433,18 @@ class create_order(graphene.Mutation):
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
             if physicalobjects:
-                db_physicalobjects = db.query(PhysicalObjectModel).filter(
-                    PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
-                order.physicalobjects = db_physicalobjects
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                for physObj in db_physicalobjects:
+                    order.addPhysicalObject(physObj)
             
             if deposit:
                 order.deposit = deposit
             else:
                 # if no deposit is given the deposit is the sum of the deposits of the physical objects
-                order.deposit = sum([phys.deposit for phys in db_physicalobjects])
+                if physicalobjects:
+                    order.deposit = sum([phys.deposit for phys in db_physicalobjects])
+                else:
+                    order.deposit = 0
 
             order.creation_date = datetime.datetime.now()
 
@@ -452,7 +455,8 @@ class create_order(graphene.Mutation):
 
         except Exception as e:
             print(e)
-            return create_order(ok=False, info_text="Order konnte nicht erstellt werden. " + str(e))
+            tb = traceback.format_exc()
+            return create_order(ok=False, info_text="Order konnte nicht erstellt werden. " + str(e) + "\n" + str(tb))
 
 class update_order(graphene.Mutation):
     """
@@ -634,12 +638,17 @@ class delete_order(graphene.Mutation):
     @staticmethod
     @is_authorised(userRights.customer)
     def mutate(self, info, executive_user_id, order_id):
-
         order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
         if order:
-            db.delete(order)
-            db.commit()
-            return delete_order(ok=True, info_text="Order erfolgreich entfernt.")
+            try:
+                order.removeAllPhysicalObjects()
+                db.delete(order)
+                db.commit()
+                return delete_order(ok=True, info_text="Order erfolgreich entfernt.")
+            except Exception as e:
+                print(e)
+                tb = traceback.format_exc()
+                return delete_order(ok=False, info_text="Fehler beim Entfernen der Order. " + str(e) + "\n" + str(tb))
         else:
             return delete_order(ok=False, info_text="Order konnte nicht entfernt werden. Order ID not found.")
 
@@ -858,7 +867,7 @@ class create_organization(graphene.Mutation):
 
     class Arguments:
         name        = graphene.String(required=True)
-        location    = graphene.String()
+        location    = graphene.String(required=True)
 
         users           = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
@@ -870,14 +879,16 @@ class create_organization(graphene.Mutation):
 
     @staticmethod
     @is_authorised(userRights.system_admin)
-    def mutate(self, info, executive_user_id, name, location=None, users=None, physicalobjects=None, agb=None):
+    def mutate(self, info, executive_user_id, name, location, users=None, physicalobjects=None, agb=None):
         try:
-            organization = OrganizationModel(name=name)
+            organization = OrganizationModel(
+                name = name,
+                location=location,
+            )
             if agb:
-                agb = FileModel.query.filter(FileModel.file_id == agb).first()
+                db_agb = FileModel.query.filter(FileModel.file_id == agb).first()
+                organization.agb = db_agb
 
-            if location:
-                organization.location = location
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 organization.users = db_users
@@ -892,7 +903,7 @@ class create_organization(graphene.Mutation):
 
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.",
-                                       organizations=organization)
+                                       organization=organization)
 
         except Exception as e:
             print(e)

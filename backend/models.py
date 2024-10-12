@@ -215,9 +215,8 @@ class Order(Base):
         """
         removes all physicalObjects from the order
         """
-        for physicalobject in self.physicalobjects:
-            self.physicalobjects.remove(physicalobject)
-            physicalobject.orders.remove(physicalobject)
+        for physicalobject_order in self.physicalobjects:
+            db.delete(physicalobject_order)
 
     def __repr__(self):
         return "Order ID: " + str(self.order_id) + "; From: " + str(self.from_date) + "; Till: " + str(self.till_date)
