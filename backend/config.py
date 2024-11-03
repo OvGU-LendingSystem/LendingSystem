@@ -74,7 +74,6 @@ else:
 
 # Create engine depending on test mode
 if not (int)(testing_on):
-    print("Connection String: " + 'mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
     engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
 else:
     engine = create_engine('sqlite:///:memory:')
@@ -86,7 +85,7 @@ app = Flask(__name__)
 app.debug = True
 app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_PERMANENT'] = False
 app.permanent_session_lifetime = timedelta(hours=2)
 app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
 
