@@ -121,7 +121,6 @@ class create_physical_object(graphene.Mutation):
         lending_comment = graphene.String()
         return_comment = graphene.String()
         organization_id = graphene.String(required=True)  # ein Objekt ist immer genau einer Organisation zugeordnet
-        executive_user_id = graphene.String(required=True)
 
         pictures = graphene.List(graphene.String)
         manual = graphene.List(graphene.String)
@@ -134,12 +133,22 @@ class create_physical_object(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, inv_num_internal, inv_num_external, borrowable, storage_location,
+    def mutate(self, info, inv_num_internal, inv_num_external, borrowable, storage_location,
                storage_location2, name, organization_id,
                tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
                deposit=None):
-        if not is_authorised(userRights.inventory_admin, executive_user_id, organization_id=organization_id):
+        
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return create_physical_object(ok=False, info_text="Keine valide session vorhanden")
+
+        if not is_authorised(userRights.inventory_admin, session_user_id, organization_id=organization_id):
             return create_physical_object(ok=False, info_text=reject)
+
+
+
         try:
             physical_object = PhysicalObjectModel(
                 inv_num_internal=inv_num_internal,
@@ -192,7 +201,6 @@ class update_physical_object(graphene.Mutation):
 
     class Arguments:
         phys_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
         inv_num_internal = graphene.Int()
         inv_num_external = graphene.Int()
         deposit = graphene.Int()
@@ -215,12 +223,22 @@ class update_physical_object(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, phys_id, inv_num_internal=None, inv_num_external=None, borrowable=None,
+    def mutate(self, info, phys_id, inv_num_internal=None, inv_num_external=None, borrowable=None,
                storage_location=None, storage_location2=None, name=None,
                pictures=None, manual=None,
                tags=None, orders=None, groups=None, faults=None, description=None, deposit=None):
-        if not is_authorised(userRights.inventory_admin, executive_user_id, phys_id=phys_id):
+        
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return update_physical_object(ok=False, info_text="Keine valide session vorhanden")
+
+        if not is_authorised(userRights.inventory_admin, session_user_id, phys_id=phys_id):
             return update_physical_object(ok=False, info_text=reject)
+        
+
+
         try:
             physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
 
@@ -281,15 +299,23 @@ class delete_physical_object(graphene.Mutation):
 
     class Arguments:
         phys_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
     def mutate(self, info, executive_user_id, phys_id):
-        if not is_authorised(userRights.inventory_admin, executive_user_id, phys_id=phys_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_physical_object(ok=False, info_text="Keine valide session vorhanden")
+
+        if not is_authorised(userRights.inventory_admin, session_user_id, phys_id=phys_id):
             return delete_physical_object(ok=False, info_text=reject)
+
+
+
 
         physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
 
@@ -316,20 +342,26 @@ class upload_file(graphene.Mutation):
         group_id = graphene.String()
         show_index = graphene.Int()
         file = Upload(required=True)
-        executive_user_id = graphene.String(required=True)
 
     file = graphene.Field(lambda: File)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, file, phys_picture_id=None, phys_manual_id=None, organization_id=None,
+    def mutate(self, info, file, phys_picture_id=None, phys_manual_id=None, organization_id=None,
                group_id=None, show_index=None):
+        # Check if user is authorised
         try:
+            session_user_id = session['user_id']
+        except:
+            return create_physical_object(ok=False, info_text="Keine valide session vorhanden")
 
-            if not is_authorised(userRights.inventory_admin, executive_user_id):
-                return upload_file(ok=False, info_text=reject)
+        if not is_authorised(userRights.inventory_admin, session_user_id):
+            return upload_file(ok=False, info_text=reject)
 
+
+
+        try:
             physical_object = None
             organization = None
             group = None
@@ -394,7 +426,6 @@ class update_file(graphene.Mutation):
 
     class Arguments:
         file_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
         show_index = graphene.Int()
 
@@ -403,11 +434,19 @@ class update_file(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, file_id, show_index=None):
+    def mutate(self, info, file_id, show_index=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.inventory_admin, executive_user_id):
-                return update_file(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_file(ok=False, info_text="Keine valide session vorhanden")
 
+        if not is_authorised(userRights.inventory_admin, session_user_id):
+            return update_file(ok=False, info_text=reject)
+
+
+
+        try:
             file = FileModel.query.filter(FileModel.file_id == file_id).first()
 
             if not file:
@@ -437,9 +476,17 @@ class delete_file(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, file_id):
-        if not is_authorised(userRights.inventory_admin, executive_user_id):
+    def mutate(self, info, file_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_file(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id):
             return delete_file(ok=False, info_text=reject)
+
+
 
         file = FileModel.query.filter(FileModel.file_id == file_id).first()
         if file:
@@ -462,7 +509,6 @@ class create_order(graphene.Mutation):
     """
 
     class Arguments:
-        executive_user_id = graphene.String(required=True)
         from_date = graphene.DateTime()
         till_date = graphene.DateTime()
         physicalobjects = graphene.List(graphene.String)
@@ -474,12 +520,18 @@ class create_order(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, from_date=None, till_date=None, users=None, physicalobjects=None,
+    def mutate(self, info, from_date=None, till_date=None, users=None, physicalobjects=None,
                deposit=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.customer, executive_user_id):
-                return create_order(ok=False, info_text=reject)
-
+            session_user_id = session['user_id']
+        except:
+            return create_order(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.customer, session_user_id):
+            return create_order(ok=False, info_text=reject)
+        
+        try:
             order = OrderModel()
 
             if from_date:
@@ -525,7 +577,6 @@ class update_order(graphene.Mutation):
 
     class Arguments:
         order_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
         from_date = graphene.Date()
         till_date = graphene.Date()
         deposit = graphene.Int()
@@ -538,11 +589,18 @@ class update_order(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, order_id, from_date=None, till_date=None, return_date=None, status=None,
+    def mutate(self, info, order_id, from_date=None, till_date=None, return_date=None, status=None,
                physicalobjects=None, users=None, deposit=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.customer, executive_user_id):
+            session_user_id = session['user_id']
+        except:
+            return update_order(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.customer, session_user_id):
                 return update_order(ok=False, info_text=reject)
+        
+        try:            
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             # Abort if object does not exist
             if not order:
@@ -582,7 +640,6 @@ class update_order_status(graphene.Mutation):
     class Arguments:
         order_id = graphene.String(required=True)
         physicalObjects = graphene.List(graphene.String, required=True)
-        executive_user_id = graphene.String(required=True)
 
         return_date = graphene.Date()
         status = graphene.String()
@@ -592,10 +649,19 @@ class update_order_status(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, order_id, physicalObjects, return_date=None, status=None):
+    def mutate(self, info, order_id, physicalObjects, return_date=None, status=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.member, executive_user_id):
-                return update_order_status(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_order_status(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.member, session_user_id):
+            return update_order_status(ok=False, info_text=reject)
+
+
+
+        try:
             phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id,
                                                                 PhysicalObject_OrderModel.phys_id == physicalObjects).all()
             # Abort if object does not exist
@@ -626,17 +692,25 @@ class add_physical_object_to_order(graphene.Mutation):
     class Arguments:
         order_id = graphene.String(required=True)
         physicalObjects = graphene.List(graphene.String, required=True)
-        executive_user_id = graphene.String(required=True)
 
     phys_order = graphene.List(lambda: PhysicalObject_Order)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, order_id, physicalObjects):
+    def mutate(self, info, order_id, physicalObjects):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.customer, executive_user_id):
-                return add_physical_object_to_order(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return add_physical_object_to_order(ok=False, info_text="Keine valide session vorhanden")
+    
+        if not is_authorised(userRights.customer, session_user_id):
+            return add_physical_object_to_order(ok=False, info_text=reject)
+        
+        
+        
+        try:
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             if not order:
                 return add_physical_object_to_order(ok=False, info_text="Order nicht gefunden.")
@@ -664,18 +738,25 @@ class remove_physical_object_from_order(graphene.Mutation):
     class Arguments:
         order_id = graphene.String(required=True)
         physicalObjects = graphene.List(graphene.String, required=True)
-        executive_user_id = graphene.String(required=True)
 
     phys_order = graphene.List(lambda: PhysicalObject_Order)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, order_id, physicalObjects):
+    def mutate(self, info, order_id, physicalObjects):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.customer, executive_user_id):
-                return remove_physical_object_from_order(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return remove_physical_object_from_order(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.customer, session_user_id):
+            return remove_physical_object_from_order(ok=False, info_text=reject)
 
+
+
+        try:
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             if not order:
                 return remove_physical_object_from_order(ok=False, info_text="Order nicht gefunden.")
@@ -702,15 +783,22 @@ class delete_order(graphene.Mutation):
 
     class Arguments:
         order_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, order_id):
-        if not is_authorised(userRights.customer, executive_user_id):
+    def mutate(self, info, order_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_order(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.customer, session_user_id):
             return delete_order(ok=False, info_text=reject)
+
+
 
         order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
         if order:
@@ -739,18 +827,25 @@ class create_tag(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         physicalobjects = graphene.List(graphene.String)
-        executive_user_id = graphene.String(required=True)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, name, physicalobjects=None):
+    def mutate(self, info, name, physicalobjects=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.inventory_admin, executive_user_id):
-                return create_tag(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return create_tag(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id):
+            return create_tag(ok=False, info_text=reject)
 
+
+
+        try:
             tag = TagModel(
                 name=name)
 
@@ -779,18 +874,25 @@ class update_tag(graphene.Mutation):
         tag_id = graphene.String(required=True)
         name = graphene.String()
         physicalobjects = graphene.List(graphene.String)
-        executive_user_id = graphene.String(required=True)
 
     tag = graphene.Field(lambda: Tag)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, tag_id, name=None, physicalobjects=None):
+    def mutate(self, info, tag_id, name=None, physicalobjects=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.inventory_admin, executive_user_id, tag_id=tag_id):
-                return update_tag(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_tag(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id, tag_id=tag_id):
+            return update_tag(ok=False, info_text=reject)
 
+
+
+        try:
             tag = TagModel.query.filter(TagModel.tag_id == tag_id).first()
 
             if not tag:
@@ -817,15 +919,22 @@ class delete_tag(graphene.Mutation):
 
     class Arguments:
         tag_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, tag_id):
-        if not is_authorised(userRights.inventory_admin, executive_user_id, tag_id=tag_id):
+    def mutate(self, info, tag_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_tag(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id, tag_id=tag_id):
             return delete_tag(ok=False, info_text=reject)
+
+
 
         tag = TagModel.query.filter(TagModel.tag_id == tag_id).first()
 
@@ -849,18 +958,25 @@ class create_group(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         physicalobjects = graphene.List(graphene.String)
-        executive_user_id = graphene.String(required=True)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, name, physicalobjects=None):
+    def mutate(self, info, name, physicalobjects=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.inventory_admin, executive_user_id):
-                return create_group(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return create_group(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id):
+            return create_group(ok=False, info_text=reject)
 
+
+
+        try:
             group = GroupModel(name=name)
 
             if physicalobjects:
@@ -888,17 +1004,25 @@ class update_group(graphene.Mutation):
         group_id = graphene.String(required=True)
         name = graphene.String()
         physicalobjects = graphene.List(graphene.String)
-        executive_user_id = graphene.String(required=True)
 
     group = graphene.Field(lambda: Group)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, group_id, name=None, physicalobjects=None):
+    def mutate(self, info, group_id, name=None, physicalobjects=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.inventory_admin, executive_user_id,group_id=group_id):
-                return update_group(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_group(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id, group_id=group_id):
+            return update_group(ok=False, info_text=reject)
+        
+
+        
+        try:
             group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
 
             if not group:
@@ -925,15 +1049,23 @@ class delete_group(graphene.Mutation):
 
     class Arguments:
         group_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, group_id):
-        if not is_authorised(userRights.inventory_admin, executive_user_id, group_id=group_id):
+    def mutate(self, info, group_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_group(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.inventory_admin, session_user_id, group_id=group_id):
             return delete_group(ok=False, info_text=reject)
+        
+
+
         group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
 
         if group:
@@ -956,7 +1088,6 @@ class create_organization(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         location = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
         users = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
@@ -967,11 +1098,19 @@ class create_organization(graphene.Mutation):
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, name, location, users=None, physicalobjects=None, agb=None):
+    def mutate(self, info, name, location, users=None, physicalobjects=None, agb=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.system_admin, executive_user_id):
-                return create_organization(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return create_organization(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.system_admin, session_user_id):
+            return create_organization(ok=False, info_text=reject)
 
+
+
+        try:
             organization = OrganizationModel(
                 name=name,
                 location=location,
@@ -1026,10 +1165,18 @@ class update_organization(graphene.Mutation):
     @staticmethod
     def mutate(self, info, executive_user_id, organization_id, name=None, location=None, users=None,
                physicalobjects=None, agb=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.organization_admin, executive_user_id, organization_id=organization_id):
-                return update_organization(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_organization(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return update_organization(ok=False, info_text=reject)
 
+
+        
+        try:
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
             if agb:
                 agb = FileModel.query.filter(FileModel.file_id == agb).first()
@@ -1069,18 +1216,25 @@ class update_organization_user_status(graphene.Mutation):
         organization_id = graphene.String()
         user_id = graphene.List(graphene.String)
         user_agreement = graphene.Boolean()
-        executive_user_id = graphene.String(required=True)
 
     organization_user = graphene.List(lambda: Organization_User)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, organization_id, user_id, user_agreement=None):
+    def mutate(self, info, organization_id, user_id, user_agreement=None):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.customer, executive_user_id, organization_id=organization_id):
-                return update_organization_user_status(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_organization_user_status(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.customer, session_user_id, organization_id=organization_id):
+            return update_organization_user_status(ok=False, info_text=reject)
 
+
+
+        try:
             organization_user = Organization_UserModel.query.filter(
                 Organization_UserModel.organization_id == organization_id,
                 Organization_UserModel.user_id == user_id).all()
@@ -1110,18 +1264,25 @@ class add_user_to_organization(graphene.Mutation):
         user_id = graphene.String(required=True)
         organization_id = graphene.String(required=True)
         user_right = graphene.String()
-        executive_user_id = graphene.String(required=True)
 
     organization_user = graphene.List(lambda: Organization_User)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, user_id, organization_id, user_right="customer"):
+    def mutate(self, info, user_id, organization_id, user_right="customer"):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.organization_admin, executive_user_id, organization_id=organization_id):
-                return add_user_to_organization(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return add_user_to_organization(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return add_user_to_organization(ok=False, info_text=reject)
 
+
+
+        try:
             user = UserModel.query.filter(UserModel.user_id == user_id).first()
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
@@ -1156,18 +1317,25 @@ class remove_user_from_organization(graphene.Mutation):
     class Arguments:
         user_id = graphene.String(required=True)
         organization_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, user_id, organization_id):
+    def mutate(self, info, user_id, organization_id):
+        # Check if user is authorised
         try:
-            if not is_authorised(userRights.organization_admin, executive_user_id, organization_id=organization_id):
-                return remove_user_from_organization(ok=False, info_text=reject)
+            session_user_id = session['user_id']
+        except:
+            return update_file(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return remove_user_from_organization(ok=False, info_text=reject)
+        
 
+
+        try:
             user = UserModel.query.filter(UserModel.user_id == user_id).first()
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
@@ -1200,19 +1368,25 @@ class update_user_rights(graphene.Mutation):
         user_id = graphene.String(required=True)
         new_rights = graphene.Int(required=True) or graphene.String(required=True)
         organization_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     organization = graphene.Field(lambda: Organization)
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, user_id, organization_id, new_rights):
+    def mutate(self, info, user_id, organization_id, new_rights):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return update_user_rights(ok=False, info_text="Keine valide session vorhanden")
+
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return update_user_rights(ok=False, info_text=reject)
+            
+
 
         try:
-            if not is_authorised(userRights.organization_admin,organization_id=organization_id):
-                return update_user_rights(ok=False, info_text=reject)
-
             user = UserModel.query.filter(UserModel.user_id == user_id).first()
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
@@ -1246,15 +1420,21 @@ class delete_organization(graphene.Mutation):
 
     class Arguments:
         organization_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, organization_id):
-        if not is_authorised(userRights.system_admin, executive_user_id, organization_id=organization_id):
-            return delete_organization(ok=False, info_text=remove_user_from_organization())
+    def mutate(self, info, organization_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_organization(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not is_authorised(userRights.system_admin, session_user_id, organization_id=organization_id):
+            return delete_organization(ok=False, info_text=reject)
+        
         organization = OrganizationModel.query.filter(
             OrganizationModel.organization_id.order_id == organization_id).first()
 
@@ -1357,6 +1537,15 @@ class update_user(graphene.Mutation):
     @staticmethod
     def mutate(self, info, user_id, email=None, last_name=None, first_name=None, password=None, country=None, city=None,
                postcode=None, street=None, house_number=None, phone_number=None, matricle_number=None):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return update_file(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not (session_user_id == user_id):
+            return update_user(ok=False, info_text=reject)
+        
         try:
             user = UserModel.query.filter(UserModel.user_id == user_id).first()
 
@@ -1404,15 +1593,23 @@ class delete_user(graphene.Mutation):
 
     class Arguments:
         user_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
 
     ok = graphene.Boolean()
     info_text = graphene.String()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, user_id):
-        if not is_authorised(userRights.organization_admin, executive_user_id):
+    def mutate(self, info, user_id):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return delete_user(ok=False, info_text="Keine valide session vorhanden")
+        
+        if not (session_user_id == user_id):
             return delete_user(ok=False, info_text=reject)
+        
+
+
         user = UserModel.query.filter(UserModel.user_id == user_id).first()
         if user:
             db.delete(user)
@@ -1480,16 +1677,7 @@ class logout(graphene.Mutation):
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
 
-class Test(graphene.Mutation):
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info):
-        return Test(ok = True, info_text = str(info.context))
-
 class Mutations(graphene.ObjectType):
-    test = Test.Field()
     login = login.Field()
     logout = logout.Field()
     checkSession = check_session.Field()
