@@ -81,7 +81,7 @@ def is_authorised(required_rights, executive_user_id, phys_id=None, organization
     else:
         # ist der User der Organisation zugeordnet
         if organization_id not in [org.organization_id for org in executive_user.organizations]:
-            raise VerificationError("Organisation nicht zugeordnet")
+            return False
 
     # userRights des Users in gegebener Organisation bestimmen
     for organization in executive_user.organizations:
