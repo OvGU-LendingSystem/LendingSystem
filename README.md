@@ -1,6 +1,6 @@
 # LendingSystem
 ## Config file
-- Create a config.ini file in the root directory of the project
+- Create a backend-config.ini file in the backend directory of the project
   ```ini
   [DB]
   db_LendingSystem_Database = <Database for the application (LendingSystem)>
@@ -17,27 +17,36 @@
 
   [TESTING]
   testing = <0 for production / 1 for testing>
+
+  [MAIL]
+  mail_server_address = mail.prhn.dynpc.net
+  mail_server_port = 465
+  use_ssl = 0
+  sender_email_address = noreply@prhn.dynpc.net
+  sender_email_password = <Password for noreply>
   ```
 
+- For docker create a backend.env file in the LendingSystem directory
+```env
+db_LendingSystem_Database=
+db_LendingSystem_Port=
+db_LendingSystem_User=
+db_LendingSystem_Password=
+root_directory=
+picture_directory=
+pdf_directory=
+secret_key=
+mail_server_address=
+mail_server_port=
+use_ssl=
+sender_email_address=
+sender_email_password=
+```
 ## For Backend
-### SQLAlchemy and Graphene with SQLAlchemy support
+### Install requirements
 ```shell
-pip install SQLAlchemy
-pip install graphene_sqlalchemy
-pip install graphene_file_upload
+pip install -r requirements.txt
 ```
-### Install Flask and GraphQL Flask
-```shell
-pip install Flask
-pip install Flask-GraphQL
-```
-### Install more packages
-```shell
-pip install flask_cors
-pip install alembic
-pip install argon2-cffi
-```
-
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
 

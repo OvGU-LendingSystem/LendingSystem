@@ -17,23 +17,25 @@ from argon2.exceptions import VerificationError, InvalidHashError
 def is_authorised(required_rights):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            executive_user_id   = args[2]
+            phys_id = None
+            organization_id = None
+            executive_user_id = None
+            user_rights = 5
+
+            for arg in args:
+                if hasattr(arg, 'executive_user_id'):
+                    executive_user_id = getattr(arg, 'executive_user_id')
+                if hasattr(arg, 'phys_id'):
+                    phys_id = getattr(arg,  'phys_id')
+                if hasattr(arg, 'organization_id'):
+                    organization_id = getattr(arg, 'organization_id')
+
             if executive_user_id is None:
                 raise VerificationError("Executive User ID fehlt")
 
             executive_user      = UserModel.query.filter(UserModel.user_id == executive_user_id).first()
             if not executive_user:
                 raise VerificationError("Executive User nicht gefunden")
-
-            phys_id = None
-            organization_id = None
-            user_rights = 5
-
-            for arg in args:
-                if hasattr(arg, 'phys_id'):
-                    phys_id = getattr(arg,  'phys_id')
-                if hasattr(arg, 'organization_id'):
-                    organization_id = getattr(arg, 'organization_id')
 
             # falls phys_obj Mutation ausgeführt wird
             if phys_id is not None and organization_id is None:
@@ -64,6 +66,45 @@ def is_authorised(required_rights):
 
     return decorator
 
+def is_authorised2(required_rights, executive_user_id, phys_id=None, organization_id=None):
+
+    user_rights = 5
+
+    if executive_user_id is None:
+        raise VerificationError("Executive User ID fehlt")
+
+    executive_user = UserModel.query.filter(UserModel.user_id == executive_user_id).first()
+    if not executive_user:
+        raise VerificationError("Executive User nicht gefunden")
+
+    # falls phys_obj Mutation ausgeführt wird
+    if phys_id is not None and organization_id is None:
+        phys_obj = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+        if not phys_obj:
+            raise VerificationError("Fehler")
+        organization_id = phys_obj.organisation_id
+
+    # falls immer noch keine orga_id gefunden wurde
+    if organization_id is None:
+        for user_organization in executive_user.organizations:
+            if user_organization.rights.value < user_rights:
+                user_rights = user_organization.rights.value
+                organization_id = user_organization.organization_id
+    else:
+        if organization_id not in [org.organization_id for org in executive_user.organizations]:
+            raise VerificationError("Organisation nicht zugeordnet")
+
+    # user_rights = executive_user.organizations[organization_id].rights.value
+    for organization in executive_user.organizations:
+        if organization.organization_id == organization_id:
+            user_rights = organization.rights.value
+            break
+
+    # Berechtigungen prüfen
+    if user_rights <= required_rights.value:
+        return True
+    else:
+        return False
 
 reject = "Sie sind nicht autorisiert diese Aktion auszuführen"
 
@@ -91,6 +132,7 @@ class create_physical_object(graphene.Mutation):
         lending_comment     = graphene.String()
         return_comment      = graphene.String()
         organization_id     = graphene.String(required=True)  # ein Objekt ist immer genau einer Organisation zugeordnet
+        executive_user_id   = graphene.String(required=True)
 
         pictures    = graphene.List(graphene.String)
         manual      = graphene.List(graphene.String)
@@ -103,10 +145,12 @@ class create_physical_object(graphene.Mutation):
     info_text       = graphene.String()
 
     @staticmethod
-    @is_authorised(userRights.inventory_admin)
+    # @is_authorised(userRights.inventory_admin)
     def mutate(self, info, executive_user_id, inv_num_internal, inv_num_external, borrowable, storage_location, storage_location2, name, organization_id,
                tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
                deposit=None):
+        if not is_authorised2(userRights.inventory_admin, executive_user_id,organization_id=organization_id):
+            return create_physical_object(ok=False, info_text=reject)
         try:
             physical_object = PhysicalObjectModel(
                 inv_num_internal    = inv_num_internal,
@@ -1009,6 +1053,7 @@ class add_user_to_organization(graphene.Mutation):
         user_id         = graphene.String(required=True)
         organization_id = graphene.String(required=True)
         user_right      = graphene.String()
+        executive_user_id = graphene.String(required=True)
 
     organization_user   = graphene.List(lambda: Organization_User)
     ok                  = graphene.Boolean()
@@ -1026,7 +1071,8 @@ class add_user_to_organization(graphene.Mutation):
 
             # wenn executive_User OrgaAdmin dieser Organisation ist und user nicht bereits Member ist
             # darf er den User zur Organisation hinzufügen
-            if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
+            # if executive_user.organizations[organization_id].rights == 1 and organization not in user.organizations:
+            if True:
 
                 # create organization_user
                 organization_user = Organization_UserModel(
