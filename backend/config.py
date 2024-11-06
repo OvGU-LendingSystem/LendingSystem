@@ -85,7 +85,7 @@ app = Flask(__name__)
 app.debug = True
 app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
 app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
 
