@@ -31,10 +31,11 @@ class orderStatus(enum.Enum):
     Enum for the status of an order
     """
     pending  = 1
-    accepted = 2
-    picked   = 3
-    rejected = 4
-    returned = 5
+    reserved = 2
+    accepted = 3
+    picked   = 4
+    rejected = 5
+    returned = 6
 
 
 
