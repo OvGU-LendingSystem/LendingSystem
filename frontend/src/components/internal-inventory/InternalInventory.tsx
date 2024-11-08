@@ -1,29 +1,13 @@
 import './InternalInventory.css';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { gql, isApolloError, useSuspenseQuery } from "@apollo/client";
+import { isApolloError, useSuspenseQuery } from "@apollo/client";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-helpers";
-import { Button, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
 import { MdBugReport, MdWifiOff } from 'react-icons/md';
 import { ActionDialogWithRetryToast } from '../action-dialog/ActionDialog';
-
-const GET_INVENTORY = gql`
-    query GetInventory($name: String) {
-        filterPhysicalObjects(name: $name) {
-            physId,
-            name,
-            description,
-            pictures {
-                edges {
-                    node {
-                        path
-                    }
-                }
-            }
-        }
-    }
-`;
+import { PreviewPhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
 
 type SearchTypeOptions = 'group' | 'object' | 'both' | 'none';
 interface InternalInventorySearchParams {
@@ -137,20 +121,6 @@ function withDelay(ms: number) {
     return run;
 }
 
-interface InventoryListQueryResult {
-    filterPhysicalObjects: { physId: string, name: string, description: string
-        pictures: {
-            edges: {
-                node: {
-                    path: string
-                }
-            }[]
-        }
-     }[]
-}
-
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
-
 const inventoryItemDeleteDialogText = {
     cancelText: 'Abbrechen',
     confirmText: 'Objekt löschen',
@@ -162,45 +132,68 @@ const inventoryItemDeleteDialogText = {
 };
 
 function InventoryList({ name }: { name?: string }) {
-    const { data } = useSuspenseQuery<InventoryListQueryResult>(GET_INVENTORY, {
-        variables: {
-            name: name
-        }
-    });
+    const { data: items } = useFilterPhysicalObjectsByName(name);
     const [ deleteItem ] = useDeleteGroupMutation();
     const [ deleteId, setDeleteId ] = useState<string>();
-
-    const items = data.filterPhysicalObjects.map(item => {
-        const path = item.pictures.edges[0]?.node?.path;
-        const imageSrc = path !== undefined ? BASE_IMAGE_PATH + path : undefined;
-        const it = { ...item, id: item.physId, imageSrc }
-        return it;
-    });
 
     return (
         <>
             <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteItem({ variables: { id: deleteId } })}
                 icon='trash' {...inventoryItemDeleteDialogText} />
-            <BaseInventoryList items={items} menu={(id) => <InventoryOptionsOverlay id={id} onDeleteClick={() => setDeleteId(id)} />} />
+            <BaseInventoryListWithMenu items={items} menu={(id) => <InventoryOptionsOverlay id={id} onDeleteClick={() => setDeleteId(id)} />} />
         </>
     );
 }
 
-function BaseInventoryList({ items, menu }: { items: { name: string, id: string, description: string, imageSrc?: string }[], menu: (id: string) => React.JSX.Element }) {
-    const list = items.map(item => {
-        return <InventoryListItem key={item.id} item={item} menu={menu} />
-    });
+export interface BaseInventoryListWithMenuProps extends CardListProps {
+    items: PreviewPhysicalObject[],
+    onItemClick?: (id: string) => void,
+    menu: (id: string) => React.JSX.Element
+}
+
+export interface BaseInventoryListProps extends CardListProps {
+    items: PreviewPhysicalObject[],
+    onItemClick?: (id: string) => void,
+    after: (id: string) => React.JSX.Element
+}
+
+function BaseInventoryListWithMenu({ menu, ...props }: BaseInventoryListWithMenuProps) {
+    const after = (id: string) => <InventoryOptions id={id} menu={menu} />
 
     return (
-        <CardList>{list}</CardList>
+        <BaseInventoryList {...props} after={after} />
     );
 }
 
-function InventoryListItem({ item, menu }: { item: { name: string, id: string, description: string, imageSrc?: string }, menu: (id: string) => React.JSX.Element }) {
+export function BaseInventoryList({ items, after, onItemClick, ...props }: BaseInventoryListProps) {
+    const onClick = (id: string, e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (!onItemClick)
+            return;
+        onItemClick(id);
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    const list = items.map(item => {
+        return <InventoryListItem key={item.id} item={item} after={after}
+            onClick={(e) => onClick(item.id, e)} />
+    });
+
     return (
-        <Card interactive={true} className='inventory-list-item'>
+        <CardList {...props}>{list}</CardList>
+    );
+}
+
+interface InventoryListItemProps extends CardProps {
+    item: PreviewPhysicalObject;
+    after: (id: string) => React.JSX.Element;
+}
+
+function InventoryListItem({ item, after, ...props }: InventoryListItemProps) {
+    return (
+        <Card interactive={true} {...props} className='inventory-list-item'>
             <EntityTitle title={item.name} icon={<PreviewImage imageSrc={item.imageSrc} />} subtitle={item.description} ellipsize={true} />
-            <InventoryOptions id={item.id} menu={menu} />
+            {after(item.id)}
         </Card>
     );
 }
@@ -245,6 +238,8 @@ const groupDeleteDialogText = {
     toasterMessageLoading: 'Gruppe wird gelöscht...'
 };
 
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+
 function GroupList({ name }: { name?: string }) {
     const { data } = useGetGroupsQuery();
     const [ deleteGroup ] = useDeleteGroupMutation();
@@ -270,7 +265,7 @@ function GroupList({ name }: { name?: string }) {
         <>
             <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteGroup({ variables: { id: deleteId } })}
                 icon='trash' {...groupDeleteDialogText} />
-            <BaseInventoryList items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
+            <BaseInventoryListWithMenu items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
         </>
     );
 }
