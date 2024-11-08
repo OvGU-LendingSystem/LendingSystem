@@ -1,7 +1,8 @@
 import { useNavigate, useSearchParams, useParams  } from "react-router-dom";
 import { useSuspenseQuery, useQuery, gql, ApolloClient, InMemoryCache, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
+import Calendar_Querry_New from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
 
 enum OrderStatus {
@@ -10,7 +11,6 @@ enum OrderStatus {
     PICKED = 'PICKED',
     REJECTED = 'REJECTED',
     RETURNED = 'RETURNED',
-    // Add other statuses as needed
 }
 
 
@@ -26,6 +26,10 @@ const EDIT_ORDER = gql`
             orderStatus
             physId
             physicalobject {
+              invNumInternal
+              invNumExternal
+              deposit
+              storageLocation
               name
               description
             }
@@ -42,6 +46,38 @@ const EDIT_ORDER = gql`
           }
         }
       }
+    }
+  }
+`;
+
+const DELETE_ORDER = gql`
+mutation DeleteOrder(
+    $orderId: String!
+) {
+    deleteOrder(
+        orderId: $orderId
+    ) {
+    ok
+    infoText
+    }
+}
+`;  
+
+const UPDATE_ORDER_STATUS = gql`
+mutation UpdateOrderStatus(
+    $orderId: String!,
+    $physicalObjects: [String]!,
+    $returnDate: Date,
+    $status: String
+  ) {
+    updateOrderStatus(
+      orderId: $orderId,
+      physicalObjects: $physicalObjects,
+      returnDate: $returnDate,
+      status: $status
+    ) {
+      ok
+      infoText
     }
   }
 `;
@@ -70,6 +106,10 @@ interface EditRequestProps {
 interface PhysicalObject {
     name: string;
     description: string;
+    invNumInternal:  number;
+    invNumExternal:  number;
+    deposit: number;
+    storageLocation: string;
 }
 
 interface FilterOrdersData {
@@ -100,28 +140,93 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId }: EditRequestProps) {
+    const [showModal, setShowModal] = useState<boolean>(false);
+    const [showDeletePopUp, setShowDeletePopUp] = useState<boolean>(false);
+    const [showEditPopUp, setShowEditPopUp] = useState<boolean>(false);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null); 
+    const navigate = useNavigate();
+
+
     console.log("Requesting order with ID:", orderId);
-    const {error, data } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
+    const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
       });
-    
+
+    const [DeleteOrder] = useMutation(DELETE_ORDER);
+    const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
+      
+      
+      useEffect(() => {
+        refetch()
+        if (data && data.filterOrders.length > 0) {
+            const { fromDate, tillDate } = data.filterOrders[0];
+                setStartDate(fromDate ?? null);
+                setEndDate(tillDate ?? null);
+                if (physicalobjects.edges.length > 0) {
+                    setSelectedStatus(physicalobjects.edges[0].node.orderStatus);
+                }
+
+        }
+    }, [data]);
+
       if (error) return <p>Error: {error.message}</p>;
 
       if (!data || !data.filterOrders) return <p>No data found</p>;
 
-      const { physicalobjects, users } = data.filterOrders[0];
+
+
+      const {fromDate, tillDate, physicalobjects, users } = data.filterOrders[0];
 
       const physicalObjectsEdges = physicalobjects?.edges || [];
+      const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
 
       console.log(data.filterOrders[0].orderId);
+
 
       const handleRemoveObject = (id: string) => {
         console.log(`Remove object with ID: ${id}`);
     
     };
 
-    const handleEditRequest = () => {
-        console.log("Edit request");
+    const handleEditRequest = async () => {
+        if (!selectedStatus) {
+            console.error('No status selected');
+            return; 
+        }
+        
+        try {
+            let returnDate = null; 
+
+            if (selectedStatus == "RETURNED") {
+                returnDate = new Date().toISOString().split('T')[0]; 
+            }
+          
+            const physicalObjectsIds = physicalObjectsEdges.map(edge => edge.node.physId);
+
+          const { data } = await UpdateOrderStatus({
+            variables: {
+              orderId: orderId,
+              physicalObjects: physicalObjectsIds,
+              returnDate : returnDate,
+              status: selectedStatus.toLowerCase(),
+            },
+          });
+    
+         if (data.updateOrderStatus.ok) {
+           navigate('/requests'); 
+         } else {
+           console.log('Order confirmation failed:', data.updateOrderStatus.infoText);
+         }
+     } catch (error) {
+       console.error('Error confirming order:', error);
+     }
+    };
+
+    const openHandleChangeDate = () => {
+        setShowModal(true);
+        console.log("Change date");
         
     };
 
@@ -130,6 +235,38 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         
     };
 
+    
+    const handleGoBack = () => {
+        console.log("Change date");
+        
+    };
+
+    const handleDelete = async () => {
+        try {
+            const { data: deleteData } = await DeleteOrder({
+                 variables: {  orderId: orderId } 
+                });
+            if (deleteData.deleteOrder.ok) {
+                alert(deleteData.deleteOrder.infoText);
+                navigate('/requests'); 
+            } else {
+                alert("Failed to delete the order.");
+            }
+        } catch (error) {
+            console.error("Delete order failed:", error);
+            alert("An error occurred while deleting the order.");
+         }
+    };
+
+    const confirmDelete = () => {
+        setShowDeletePopUp(false);
+        handleDelete();
+    };
+
+    const confirmEdit = () => {
+        setShowEditPopUp(false);
+        handleEditRequest();
+    }
 
     return (
         <div style={{ padding: "20px" }}>
@@ -148,7 +285,18 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                         <div>
                             <h3>{node.physicalobject.name}</h3>
                             <p>{node.physicalobject.description}</p>
-                            <p>Status: {node.orderStatus}</p>
+                            <p>Status:</p>
+                            <select 
+                                value={selectedStatus || ''} 
+                                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                                style={{ marginLeft: "10px" }}
+                            >
+                                {Object.values(OrderStatus).map((status) => (
+                                    <option key={status} value={status}>
+                                        {status}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <button onClick={() => handleRemoveObject(node.physId)}>Aus Order entfernen</button>
                     </div>
@@ -157,9 +305,79 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <p>Keine Objekte gefunden</p>
             )}
             <div style={{ marginTop: "20px" }}>
-                <button onClick={handleEditRequest} style={{ marginRight: "10px" }}>Complete Edit</button>
-                <button onClick={handleChangeDate}>Ausleihzeit ändern</button>
+                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Complete Edit</button>
+                <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
+                <button onClick={() => setShowDeletePopUp(true)}> Delete Order</button>
+                <button onClick={() => {navigate('/requests');}}> Zurück</button>
             </div>
+
+            
+            {showModal && (
+                     <div style={modalOverlayStyle}>
+                     <div style={modalContentStyle}>
+                         <h2 
+                         >Objekt bearbeiten
+                         </h2>
+                    <Calendar_Querry_New setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+
+                    <div style={buttonContainerStyle}>
+                    <button onClick={handleChangeDate}>Ausleihzeit ändern</button>
+                    <button onClick={() => {
+                        setShowModal(false);
+                        setEndDate(tillDate);
+                        setStartDate(fromDate);
+                    }}> Cancel </button>
+                    </div>
+                    </div>
+                    </div>
+                )}
+
+            {showDeletePopUp && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <h2>Bestätigung</h2>
+                        <p>Möchstest du diese Order wirklich löschen?</p>
+                        <button onClick={confirmDelete}>Bestätigen</button>
+                        <button onClick={() => setShowDeletePopUp(false)}>Abbrechen</button>
+                    </div>
+                </div>
+            )}
+
+            {showEditPopUp && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <h2>Bestätigung</h2>
+                        <p>Möchstest du diese Order wirklich editeren?</p>
+                        <button onClick={confirmEdit}>Bestätigen</button>
+                        <button onClick={() => setShowEditPopUp(false)}>Abbrechen</button>
+                    </div>
+                </div>
+            )}
+
+
         </div>
     );
 }
+
+
+const modalOverlayStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    bottom: '0',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
+  
+  const modalContentStyle: React.CSSProperties = {
+    backgroundColor: '#fff',
+    padding: '20px',
+    borderRadius: '5px',
+  };
+
+  const buttonContainerStyle: React.CSSProperties = {
+    textAlign: 'right',
+  };
