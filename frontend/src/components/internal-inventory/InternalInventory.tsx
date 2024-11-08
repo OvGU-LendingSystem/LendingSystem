@@ -4,10 +4,9 @@ import { gql, isApolloError, useSuspenseQuery } from "@apollo/client";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-helpers";
-import { ActionProps, Alert, Button, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, InputGroup, Intent, LinkProps, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
-import { MdBugReport, MdRefresh, MdWifiOff } from 'react-icons/md';
-import { SubmitState } from '../../utils/submit-state';
-import { useToaster } from '../../context/ToasterContext';
+import { Button, Card, CardList, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { MdBugReport, MdWifiOff } from 'react-icons/md';
+import { ActionDialogWithRetryToast } from '../action-dialog/ActionDialog';
 
 const GET_INVENTORY = gql`
     query GetInventory($name: String) {
@@ -152,12 +151,24 @@ interface InventoryListQueryResult {
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
 
+const inventoryItemDeleteDialogText = {
+    cancelText: 'Abbrechen',
+    confirmText: 'Objekt löschen',
+    bodyText: 'Dieses Objekt löschen?',
+    toasterMessageSuccess: 'Objekt erfolgreich gelöscht',
+    toasterMessageError: 'Objekt konnte nicht gelöscht werden',
+    toasterMessageRetry: 'Erneut versuchen',
+    toasterMessageLoading: 'Objekt wird gelöscht...'
+};
+
 function InventoryList({ name }: { name?: string }) {
     const { data } = useSuspenseQuery<InventoryListQueryResult>(GET_INVENTORY, {
         variables: {
             name: name
         }
     });
+    const [ deleteItem ] = useDeleteGroupMutation();
+    const [ deleteId, setDeleteId ] = useState<string>();
 
     const items = data.filterPhysicalObjects.map(item => {
         const path = item.pictures.edges[0]?.node?.path;
@@ -167,7 +178,11 @@ function InventoryList({ name }: { name?: string }) {
     });
 
     return (
-        <BaseInventoryList items={items} menu={(id) => <InventoryOptionsOverlay id={id} />} />
+        <>
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteItem({ variables: { id: deleteId } })}
+                icon='trash' {...inventoryItemDeleteDialogText} />
+            <BaseInventoryList items={items} menu={(id) => <InventoryOptionsOverlay id={id} onDeleteClick={() => setDeleteId(id)} />} />
+        </>
     );
 }
 
@@ -209,71 +224,36 @@ function InventoryOptions({ id, menu }: { id: string, menu: (id: string) => Reac
     );
 }
 
-function InventoryOptionsOverlay({ id }: { id: string }) {
+function InventoryOptionsOverlay({ id, onDeleteClick }: { id: string, onDeleteClick: () => void }) {
     const navigate = useNavigate();
     return (
         <Menu>
-            <MenuItem text='Edit' onClick={() => navigate(`/inventory/edit/${id}`)} />
+            <MenuItem text='Bearbeiten' onClick={() => navigate(`/inventory/edit/${id}`)} />
             <MenuItem text='View history' />
+            <MenuItem text='Löschen' onClick={onDeleteClick} />
         </Menu>
     );
 }
 
+const groupDeleteDialogText = {
+    cancelText: 'Abbrechen',
+    confirmText: 'Gruppe löschen',
+    bodyText: 'Diese Gruppe löschen?',
+    toasterMessageSuccess: 'Gruppe erfolgreich gelöscht',
+    toasterMessageError: 'Gruppe konnte nicht gelöscht werden',
+    toasterMessageRetry: 'Erneut versuchen',
+    toasterMessageLoading: 'Gruppe wird gelöscht...'
+};
+
 function GroupList({ name }: { name?: string }) {
     const { data } = useGetGroupsQuery();
+    const [ deleteGroup ] = useDeleteGroupMutation();
     const [ deleteId, setDeleteId ] = useState<string>();
-    const toaster = useToaster();
 
     const formatter = new Intl.ListFormat(undefined, {
         style: 'short',
         type: 'conjunction'
     });
-
-    const onDeleteDialogClose = (state: SubmitState<Reason>) => {
-        setDeleteId(undefined);
-
-        if (state.type === 'success') {
-            toaster.show({
-                message: 'Gruppe erfolgreich gelöscht',
-                intent: Intent.SUCCESS
-            });
-            return;
-        }
-
-        if (state.data === 'cancel') {
-            return;
-        }
-
-        let action: (ActionProps & LinkProps) | undefined = undefined;
-        if (state.retry) {
-            const onRetryClick = async () => {
-                if (!state.retry) {
-                    return;
-                }
-
-                const loadingToastKey = toaster.show({
-                    message: 'Gruppe wird gelöscht...',
-                    timeout: 0,
-                    isCloseButtonShown: false
-                });
-                const submitState = await state.retry(state.data);
-                toaster.dismiss(loadingToastKey);
-                onDeleteDialogClose(submitState);
-            }
-
-            action = {
-                text: 'Erneut versuchen',
-                icon: <MdRefresh />,
-                onClick: onRetryClick
-            }
-        }
-
-        toaster.show({
-            message: 'Gruppe konnte nicht gelöscht werden',
-            intent: Intent.DANGER,
-            action: action
-        });
-    }
 
     const items = data.map(item => {
         const path = item.pictures[0]?.path;
@@ -288,7 +268,8 @@ function GroupList({ name }: { name?: string }) {
 
     return (
         <>
-            <DeleteGroupDialog id={deleteId} close={onDeleteDialogClose} />
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteGroup({ variables: { id: deleteId } })}
+                icon='trash' {...groupDeleteDialogText} />
             <BaseInventoryList items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
         </>
     );
@@ -301,38 +282,6 @@ function GroupListItemMenu({ id, onDeleteClick }: { id: string, onDeleteClick: (
             <MenuItem text='Bearbeiten' onClick={() => navigate(`/inventory/group/edit/${id}`)} />
             <MenuItem text='Löschen' onClick={onDeleteClick} />
         </Menu>
-    );
-}
-
-type Reason = 'cancel' | 'error';
-
-function DeleteGroupDialog({ id, close }: { id?: string, close: (state: SubmitState<Reason>) => void }) {
-    const [ deleteGroup ] = useDeleteGroupMutation();
-    const [ isDeleting, setIsDeleting ] = useState(false);
-
-    const onDelete = async (): Promise<SubmitState<Reason>> => {
-        const deleteRes = await deleteGroup({ variables: { id: id } });
-        if (!deleteRes.success) {
-            return new SubmitState.Error('error', onDelete);
-        }
-        return SubmitState.SUCCESS;
-    }
-
-    const onDeleteClick = async () => {
-        setIsDeleting(true);
-        const state = await onDelete();
-        setIsDeleting(false);
-        close(state);
-    }
-
-    return (
-        <Alert cancelButtonText='Abbrechen' confirmButtonText='Gruppe löschen'
-            intent='danger' icon='trash' isOpen={!!id} onCancel={() => close(new SubmitState.Error<Reason>('cancel'))}
-            onConfirm={onDeleteClick} canEscapeKeyCancel canOutsideClickCancel loading={isDeleting}>
-            <p>
-                Diese Gruppe löschen?
-            </p>
-        </Alert>
     );
 }
 
