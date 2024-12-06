@@ -4,6 +4,7 @@ import { useTitle } from "../../hooks/use-title";
 import { Suspense, useMemo, useState, useEffect } from "react";
 import Calendar_Querry_New from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
+import { start } from "repl";
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -82,6 +83,44 @@ mutation UpdateOrderStatus(
   }
 `;
 
+const UPDATE_ORDER_DATE = gql`
+mutation UpdateOrder(
+    $orderId: String!,
+    $physicalObjects: [String],
+    $fromDate: Date!,
+    $tillDate: Date!,
+    $users: [String]!
+  ) {
+    updateOrder(
+      orderId: $orderId,
+      physicalobjects: $physicalObjects,
+      fromDate: $fromDate,
+      tillDate: $tillDate,
+      users: $users
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+
+const REMOVE_PHYSICAL_OBJECT_FROM_ORDER = gql`
+mutation removePhysicalObjectFromOrder(
+    $orderId: String!,
+    $physicalObjects: [String],
+  ) {
+    removePhysicalObjectFromOrder(
+      orderId: $orderId,
+      physicalobjects: $physicalObjects,
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+
 export function EditRequest() {
     useTitle('Edit Request');
     const params = useParams<'orderId'>();
@@ -156,6 +195,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     const [DeleteOrder] = useMutation(DELETE_ORDER);
     const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
+    const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
+    const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
       
       
       useEffect(() => {
@@ -182,13 +223,12 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
       const physicalObjectsEdges = physicalobjects?.edges || [];
       const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
 
-      console.log(data.filterOrders[0].orderId);
-
 
       const handleRemoveObject = (id: string) => {
         console.log(`Remove object with ID: ${id}`);
     
     };
+
 
     const handleEditRequest = async () => {
         if (!selectedStatus) {
@@ -226,13 +266,46 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     const openHandleChangeDate = () => {
         setShowModal(true);
-        console.log("Change date");
         
     };
 
-    const handleChangeDate = () => {
-        console.log("Change date");
+    const handleChangeDate = async () => {
+
+        if (!startDate || !endDate) {
+            console.error('Start date or end date is missing');
+            return; // Verhindert die Weiterverarbeitung, wenn eines der Daten fehlt.
+        }
+
         
+        const startDateUtc = new Date(startDate); 
+        const endDateUtc = new Date(endDate);     
+
+        startDateUtc.setHours(startDateUtc.getHours()+1);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir eine stunde drauf
+        endDateUtc.setHours(endDateUtc.getHours()+1);
+
+
+        try {
+            const userIds = users.edges.map(edge => edge.node.id);
+
+          const { data } = await UpdateOrderDate({
+            variables: {
+              orderId: orderId,
+              physicalObjects: null,
+              fromDate: startDateUtc.toISOString().split('T')[0],
+              tillDate: endDateUtc.toISOString().split('T')[0],
+              users: userIds,
+            },
+          });
+    
+         if (data.updateOrder.ok) { 
+            refetch();
+            setShowModal(false);
+         } else {
+           console.log('Order confirmation failed:', data.updateOrder.infoText);
+         }
+     } catch (error) {
+       console.error('Error confirming order:', error);
+     }
     };
 
     
