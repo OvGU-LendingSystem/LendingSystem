@@ -1,10 +1,14 @@
-import { useNavigate, useSearchParams, useParams  } from "react-router-dom";
-import { useSuspenseQuery, useQuery, gql, ApolloClient, InMemoryCache, useMutation } from "@apollo/client";
+import './EditRequest.css';
+import { useNavigate, useParams  } from "react-router-dom";
+import { useSuspenseQuery, gql, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
 import { Suspense, useMemo, useState, useEffect } from "react";
 import Calendar_Querry_New from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
-import { start } from "repl";
+import { MdAdd } from "react-icons/md";
+import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
+import { BaseInventoryList } from '../internal-inventory/InternalInventory';
+import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -179,6 +183,10 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId }: EditRequestProps) {
+    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName();
+    const [showSelectOverlay, setShowSelectOverlay] = useState(false);
+    const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
+
     const [showModal, setShowModal] = useState<boolean>(false);
     const [showDeletePopUp, setShowDeletePopUp] = useState<boolean>(false);
     const [showEditPopUp, setShowEditPopUp] = useState<boolean>(false);
@@ -200,6 +208,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
       
       
       useEffect(() => {
+        setSelectedObjectIds(data?.filterOrders[0]?.physicalobjects?.edges?.map((item) => item.node.physId) ?? []);
         refetch()
         if (data && data.filterOrders.length > 0) {
             const { fromDate, tillDate } = data.filterOrders[0];
@@ -243,12 +252,10 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 returnDate = new Date().toISOString().split('T')[0]; 
             }
           
-            const physicalObjectsIds = physicalObjectsEdges.map(edge => edge.node.physId);
-
           const { data } = await UpdateOrderStatus({
             variables: {
               orderId: orderId,
-              physicalObjects: physicalObjectsIds,
+              physicalObjects: selectedObjectIds,
               returnDate : returnDate,
               status: selectedStatus.toLowerCase(),
             },
@@ -345,9 +352,13 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         <div style={{ padding: "20px" }}>
             <h1>Order Details</h1>
             <h2>Objects:</h2>
-            {physicalObjectsEdges.length > 0 ? (
-                physicalObjectsEdges.map(({ node }) => (
-                    <div key={node.physId} style={{
+            {selectedObjectIds.length > 0 ? (
+                selectedObjectIds.flatMap((id) => {
+                    const item = allPhysicalObjects.find((item) => item.id === id);
+                    return item ? item : []
+                })
+                .map((physicalObject) => (
+                    <div key={physicalObject.id} style={{
                         border: "1px solid #ccc",
                         padding: "10px",
                         margin: "10px 0",
@@ -356,8 +367,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                         justifyContent: "space-between"
                     }}>
                         <div>
-                            <h3>{node.physicalobject.name}</h3>
-                            <p>{node.physicalobject.description}</p>
+                            <h3>{physicalObject.name}</h3>
+                            <p>{physicalObject.description}</p>
                             <p>Status:</p>
                             <select 
                                 value={selectedStatus || ''} 
@@ -371,12 +382,24 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                                 ))}
                             </select>
                         </div>
-                        <button onClick={() => handleRemoveObject(node.physId)}>Aus Order entfernen</button>
+                        <button onClick={() => handleRemoveObject(physicalObject.id)}>Aus Order entfernen</button>
                     </div>
                 ))
             ) : (
                 <p>Keine Objekte gefunden</p>
             )}
+            <div style={{
+                    border: "1px solid #ccc",
+                    padding: "10px",
+                    margin: "10px 0",
+                    borderRadius: "5px",
+                    display: 'flex',
+                    placeContent: 'center',
+                    cursor: 'pointer'
+                }}
+                onClick={() => setShowSelectOverlay(true)}>
+                <MdAdd size={36} />
+            </div>
             <div style={{ marginTop: "20px" }}>
                 <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Complete Edit</button>
                 <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
@@ -384,7 +407,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <button onClick={() => {navigate('/requests');}}> Zurück</button>
             </div>
 
-            
+            <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
+                selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} />
+
             {showModal && (
                      <div style={modalOverlayStyle}>
                      <div style={modalContentStyle}>
@@ -432,6 +457,47 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     );
 }
 
+interface SelectObjectsOverlayProps {
+    showOverlay: boolean;
+    close: () => void;
+    selectedItemIds: string[];
+    setSelectedItemIds: (item: string[]) => void;
+}
+
+function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds }: SelectObjectsOverlayProps) {
+    const [filterName, setFilterName] = useState<string>();
+    const { data } = useFilterPhysicalObjectsByName(filterName);
+
+    const updateItems = (id: string, checked: boolean) => {
+        if (!checked) {
+            setSelectedItemIds([...selectedItemIds.filter((itemId) => itemId !== id)]);
+            return;
+        }
+
+        const itemId = data.find((item => item.id === id))?.id;
+        if (!itemId)
+            return;
+
+        setSelectedItemIds([...selectedItemIds, itemId]);
+    }
+
+    const isChecked = (id: string) => selectedItemIds.includes(id);
+    const changeCheckedState = (id: string) => { updateItems(id, !isChecked(id)); console.error('changed') }
+
+    return (
+        <Overlay2 isOpen={showOverlay} onClose={close}>
+            <div>
+                <p className='select-objects--text' onClick={close}>Fertig</p>
+                <div className="select-objects--list">
+                    <InputGroup type="text" large={true} placeholder='Suchen...' onChange={(e) => setFilterName(e.target.value)} />
+                    { data.length > 0 && <BaseInventoryList items={data} onItemClick={(id) => changeCheckedState(id)}
+                        after={(id) => <Checkbox checked={isChecked(id)} />} /> }
+                    { data.length === 0 && <NonIdealState title='keine Objekte gefunden' /> }
+                </div>
+            </div>
+        </Overlay2>
+    );
+}
 
 const modalOverlayStyle: React.CSSProperties = {
     position: 'fixed',
