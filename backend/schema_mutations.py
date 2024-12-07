@@ -25,7 +25,7 @@ def is_authorised(required_rights, executive_user_id, phys_id=None, organization
         phys_obj = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
         if not phys_obj:
             raise VerificationError("physikalisches Object nicht gefunden")
-        organization_id = phys_obj.organisation_id
+        organization_id = phys_obj.organization_id
 
     # wenn tags bearbeitet oder gelöscht werden sollen
     if tag_id:
@@ -81,7 +81,7 @@ def is_authorised(required_rights, executive_user_id, phys_id=None, organization
     else:
         # ist der User der Organisation zugeordnet
         if organization_id not in [org.organization_id for org in executive_user.organizations]:
-            raise VerificationError("Organisation nicht zugeordnet")
+            return False
 
     # userRights des Users in gegebener Organisation bestimmen
     for organization in executive_user.organizations:
