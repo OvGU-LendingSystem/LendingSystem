@@ -29,11 +29,12 @@ elif (hostname == "container"):
 else:
     config.read("backend-config.ini")
     db_host = "hades.fritz.box"
+    # db_host = "localhost"
 
 if not hostname == "container":
     # Read config from File
     db_database = config.get('DB', 'db_LendingSystem_Database')
-    db_port="3306"
+    db_port="3310"
     db_user = config.get('DB', 'db_LendingSystem_User')
     db_pw = config.get('DB', 'db_LendingSystem_Password')
     root_directory = config.get('PATHS', 'root_directory')
@@ -97,15 +98,6 @@ else:
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 server_session = Session(app)
-
-# create Mail Server
-if (int)(use_ssl):
-    context = ssl.create_default_context()
-    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port, context=context)
-else:
-    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port)
-
-mail_server.login(sender_email_address, sender_email_password)
 
 # Create scheduler for automated mail sending
 jobstores = {
