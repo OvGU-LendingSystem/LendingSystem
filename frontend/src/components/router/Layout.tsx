@@ -3,6 +3,7 @@ import "./Layout.css";
 import { MdOutlineShoppingBasket } from "react-icons/md";
 import { Link, Outlet } from "react-router-dom";
 import { Login } from "../login/Login";
+import { useLoginStatus } from "../../context/LoginStatusContext";
 
 interface ModalProps {
   children: ReactNode;
@@ -52,6 +53,7 @@ declare global {
 
 export function Layout() {
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+  const loginStatus = useLoginStatus();
 
   const handleLoginClick = () => {
     setLoginModalVisible(true);
@@ -73,6 +75,12 @@ export function Layout() {
           </li>
           <li>
             <Link to='/internal/inventory'>Internes Inventar</Link>
+          </li>
+          <li>
+            { loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : 'Nicht eingeloggt' }
+          </li>
+          <li>
+            { loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0 ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}` : 'keine Orga' }
           </li>
         </ul>
 
