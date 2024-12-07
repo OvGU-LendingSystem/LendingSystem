@@ -8,6 +8,7 @@ from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
 from config import db, picture_directory, pdf_directory
 from flask import session
+from scheduler import AddJob, CancelJob
 
 from models import User as UserModel, orderStatus, userRights
 from schema import *
@@ -562,6 +563,9 @@ class create_order(graphene.Mutation):
             db.add(order)
 
             db.commit()
+
+            # Add jobs for email reminders for this order
+            AddJob(order.order_id)
             return create_order(ok=True, info_text="Order erfolgreich erstellt.", order=order)
 
         except Exception as e:
@@ -600,6 +604,9 @@ class update_order(graphene.Mutation):
         if not is_authorised(userRights.customer, session_user_id):
                 return update_order(ok=False, info_text=reject)
         
+        # Remove all email reminders for this order
+        CancelJob(order_id)
+
         try:            
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             # Abort if object does not exist
@@ -625,9 +632,14 @@ class update_order(graphene.Mutation):
                 order.deposit = deposit
 
             db.commit()
+
+            # add new email reminders for modified job
+            AddJob(order_id)
+
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
 
         except Exception as e:
+            AddJob(order_id)
             print(e)
             return update_order(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
 
@@ -803,11 +815,15 @@ class delete_order(graphene.Mutation):
         order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
         if order:
             try:
+                # remove email reminders for deleted order
+                CancelJob(order_id)
+
                 order.removeAllPhysicalObjects()
                 db.delete(order)
                 db.commit()
                 return delete_order(ok=True, info_text="Order erfolgreich entfernt.")
             except Exception as e:
+                AddJob(order_id)
                 print(e)
                 tb = traceback.format_exc()
                 return delete_order(ok=False, info_text="Fehler beim Entfernen der Order. " + str(e) + "\n" + str(tb))
