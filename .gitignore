@@ -173,11 +173,11 @@ pdfs/*
 !pdfs/README.md
 
 # Ignore config file (sensible)
-config.ini
+backend-config.ini
 
 # backend/db_setup.py
 
-# Inore files and folders for venv
+# Ignore files and folders for venv
 Scripts/
 pyvenv.cfg
 
