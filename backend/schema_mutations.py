@@ -1145,8 +1145,15 @@ class create_organization(graphene.Mutation):
             if agb:
                 organization.agb = agb
 
-            db.add(organization)
+            # add executive User to Organization with highest rights
+            organization_user = Organization_UserModel(
+                user_id = session_user_id,
+                organization_id = organization.organization_id,
+                rights = userRights.organization_admin
+            )
 
+            db.add(organization)
+            db.add(organization_user)
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.",
                                        organization=organization)
