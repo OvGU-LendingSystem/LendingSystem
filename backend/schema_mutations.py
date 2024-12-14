@@ -2,10 +2,12 @@ import os
 import time
 import datetime
 import traceback
+import uuid
 
 import graphene
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
+from sendMail import sendMail
 from config import db, picture_directory, pdf_directory
 from flask import session
 from scheduler import AddJob, CancelJob
@@ -1706,6 +1708,30 @@ class logout(graphene.Mutation):
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
 
+class reset_password(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, email):
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not user:
+            return reset_password(ok=False, info_text="User not found")
+        
+        # generate random password
+        new_password = str(uuid.uuid4())
+        ph = PasswordHasher()
+        user.password_hash = ph.hash(new_password)
+        db.commit()
+
+        # send mail
+        sendMail(receiver=email, subject="Ihr Password wurde zurückgesetzt", body="Hier dein Password: " + new_password + " bitte schnell ändern!!!!!!!!!!!!!!!!!!!!!!!")
+
+        return reset_password(ok=True, info_text="New password was send by mail")
+
 class Mutations(graphene.ObjectType):
     login = login.Field()
     logout = logout.Field()
@@ -1741,6 +1767,7 @@ class Mutations(graphene.ObjectType):
     remove_user_from_organization = remove_user_from_organization.Field()
     update_user_rights = update_user_rights.Field()
 
-    create_user = create_user.Field()
-    update_user = update_user.Field()
-    delete_user = delete_user.Field()
+    create_user     = create_user.Field()
+    update_user     = update_user.Field()
+    delete_user     = delete_user.Field()
+    reset_password  = reset_password.Field()
