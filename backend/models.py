@@ -149,7 +149,7 @@ class PhysicalObject(Base):
     pictures            = relationship("File",          foreign_keys='File.picture_id',             back_populates = "physicalobject_picture")
     manual              = relationship("File",          foreign_keys='File.manual_id',              back_populates = "physicalobject_manual")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
-    orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject")
+    orders              = relationship("PhysicalObject_Order",                                      back_populates = "physicalobject", cascade="all, delete-orphan")
     groups              = relationship("Group",         secondary = group_physicalobject,           back_populates = "physicalobjects")
 
     def __repr__(self):
@@ -194,7 +194,7 @@ class Order(Base):
     till_date           = Column(DateTime,          unique = False, nullable = False)
     deposit             = Column(Float,             unique = False, nullable = True)
 
-    physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order")
+    physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order", cascade="all, delete-orphan")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
 
     def addPhysicalObject(self, physicalobject, order_status = orderStatus.pending):
@@ -244,7 +244,7 @@ class User(Base):
     phone_number        = Column(Integer, unique = True, nullable = True)
     matricle_number     = Column(Integer, unique = True, nullable = True)
 
-    organizations       = relationship("Organization_User",                                back_populates = "user")
+    organizations       = relationship("Organization_User",                                back_populates = "user", cascade="all, delete-orphan")
     orders              = relationship("Order",             secondary = user_order,        back_populates = "users")
 
     def __repr__(self):
@@ -272,10 +272,10 @@ class Organization(Base):
     name                = Column(String(60),    unique = True,  nullable = False)
     location            = Column(String(60),    unique = False, nullable = False)
     # String name for the agb file location
-    agb                 = relationship("File",                                                          back_populates = "organization", cascade="all, delete-orphan")
+    agb                 = relationship("File",              back_populates = "organization", cascade="all, delete-orphan")
 
-    users               = relationship("Organization_User",                                             back_populates = "organization", cascade="all, delete-orphan")
-    physicalobjects     = relationship("PhysicalObject", back_populates="organization")
+    users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
+    physicalobjects     = relationship("PhysicalObject",    back_populates="organization")
 
     def addUser(self, user, rights = userRights.member):
         """
