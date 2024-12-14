@@ -1,4 +1,4 @@
-import { ApolloCache, DefaultContext, MutationFunctionOptions, OperationVariables, SuspenseQueryHookOptions, useMutation, useSuspenseQuery } from "@apollo/client";
+import { ApolloCache, DefaultContext, MutationFunctionOptions, OperationVariables, QueryResult, SuspenseQueryHookOptions, useLazyQuery, useMutation, useSuspenseQuery } from "@apollo/client";
 import { DocumentNode } from "graphql";
 import { useMemo } from "react";
 
@@ -7,7 +7,7 @@ export interface GQLResponse {
     infoText: string;
 }
 
-export type SuccessResponse<T extends GQLResponse = GQLResponse> = Omit<T, 'ok' | 'infoText'> & { success: true };
+export type SuccessResponse<T extends GQLResponse = GQLResponse> = Omit<Extract<T, { ok: true }>, 'ok' | 'infoText'> & { success: true };
 
 export interface ErrorResponse {
     success: false;
@@ -92,4 +92,43 @@ export function useSuspenseQueryWithResponseMapped<T, U = T>(query: DocumentNode
 
 export function useSuspenseQueryWithResponse<T>(query: DocumentNode, queryName: string, options: SuspenseQueryHookOptions<{ [queryName: string]: T }, OperationVariables>) {
     return useSuspenseQueryWithResponseMapped<T, T>(query, queryName, options, (val) => val);
+}
+
+
+export function useLazyQueryWithResponseMapped<T, U = T, TVariables extends OperationVariables = OperationVariables>(query: DocumentNode, queryName: string, map: (val: T) => U) {
+    const [ queryFn ] = useLazyQuery<{ [queryName: string]: T }, TVariables>(query);
+    
+    const transform = (queryResult: Awaited<ReturnType<typeof queryFn>>) => {
+        if (queryResult.error) {
+            const result: ErrorResponse = {
+                success: false,
+                info: queryResult.error.toString()
+            }
+            return result;
+        }
+
+        if (queryResult.data) {
+            return {
+                success: true,
+                data: map(queryResult.data[queryName])
+            };
+        }
+
+        const result: ErrorResponse = {
+            success: false,
+            info: 'No data'
+        };
+        return result;
+    }
+
+    const queryMapped = async (...options: Parameters<typeof queryFn>) => {
+        const result = await queryFn(...options);
+        return transform(result);
+    };
+
+    return queryMapped;
+}
+
+export function useLazyQueryWithResponse<T>(query: DocumentNode, queryName: string) {
+    return useLazyQueryWithResponseMapped<T, T>(query, queryName, (val) => val);
 }

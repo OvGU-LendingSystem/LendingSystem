@@ -1,0 +1,24 @@
+.select-objects--list {
+    height: 80%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    padding: 24px;
+    padding-top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: #ffffff;
+}
+
+.select-objects--text {
+    position: fixed;
+    bottom: 80%;
+    right: 0;
+    margin: 16px;
+    color: white;
+    font-size: large;
+    cursor: pointer;
+}

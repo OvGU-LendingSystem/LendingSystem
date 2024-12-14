@@ -11,6 +11,7 @@ import { InternalInventory } from "../internal-inventory/InternalInventory";
 import { AddGroup } from "../add-group/AddGroup";
 import { EditGroup } from "../edit-group/EditGroup";
 import { EditRequest } from "../../components/requests/EditRequest";
+import { Calendar } from "../calendar/Calendar";
 
 export function Router() {
     return (
@@ -32,6 +33,7 @@ export function Router() {
 
             <Route path='internal'>
               <Route path='inventory' element={<InternalInventory />} />
+              <Route path='calendar' element={<Calendar />} />
             </Route>
 
             <Route path='login' element={<Login />}/>
