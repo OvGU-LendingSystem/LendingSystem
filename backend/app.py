@@ -54,7 +54,6 @@ if (root_user_in_organization is None):
     db.add(root_user_in_organization)
     db.commit()
 
-print(root_user_in_organization.rights)
 if (root_user_in_organization.rights != userRights.system_admin):
     root_user_in_organization.rights = userRights.system_admin
     db.commit()
