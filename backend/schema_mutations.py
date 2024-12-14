@@ -2,12 +2,15 @@ import os
 import time
 import datetime
 import traceback
+import uuid
 
 import graphene
 from sqlalchemy.orm import *
 from graphene_file_upload.scalars import Upload
+from sendMail import sendMail
 from config import db, picture_directory, pdf_directory
 from flask import session
+from scheduler import AddJob, CancelJob
 
 from models import User as UserModel, orderStatus, userRights
 from schema import *
@@ -542,6 +545,9 @@ class create_order(graphene.Mutation):
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
+            else:
+                executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).all()
+                order.users = executive_user
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
@@ -562,6 +568,9 @@ class create_order(graphene.Mutation):
             db.add(order)
 
             db.commit()
+
+            # Add jobs for email reminders for this order
+            AddJob(order.order_id)
             return create_order(ok=True, info_text="Order erfolgreich erstellt.", order=order)
 
         except Exception as e:
@@ -600,6 +609,9 @@ class update_order(graphene.Mutation):
         if not is_authorised(userRights.customer, session_user_id):
                 return update_order(ok=False, info_text=reject)
         
+        # Remove all email reminders for this order
+        CancelJob(order_id)
+
         try:            
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             # Abort if object does not exist
@@ -625,9 +637,14 @@ class update_order(graphene.Mutation):
                 order.deposit = deposit
 
             db.commit()
+
+            # add new email reminders for modified job
+            AddJob(order_id)
+
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order)
 
         except Exception as e:
+            AddJob(order_id)
             print(e)
             return update_order(ok=False, info_text="Fehler beim Aktualisieren der Orders. " + str(e))
 
@@ -803,11 +820,15 @@ class delete_order(graphene.Mutation):
         order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
         if order:
             try:
+                # remove email reminders for deleted order
+                CancelJob(order_id)
+
                 order.removeAllPhysicalObjects()
                 db.delete(order)
                 db.commit()
                 return delete_order(ok=True, info_text="Order erfolgreich entfernt.")
             except Exception as e:
+                AddJob(order_id)
                 print(e)
                 tb = traceback.format_exc()
                 return delete_order(ok=False, info_text="Fehler beim Entfernen der Order. " + str(e) + "\n" + str(tb))
@@ -1115,6 +1136,7 @@ class create_organization(graphene.Mutation):
                 name=name,
                 location=location,
             )
+            
             if agb:
                 db_agb = FileModel.query.filter(FileModel.file_id == agb).first()
                 organization.agb = db_agb
@@ -1130,7 +1152,16 @@ class create_organization(graphene.Mutation):
                 organization.agb = agb
 
             db.add(organization)
+            db.commit()
 
+            # add executive User to Organization with highest rights
+            organization_user = Organization_UserModel(
+                user_id = session_user_id,
+                organization_id = organization.organization_id,
+                rights = userRights.organization_admin
+            )
+
+            db.add(organization_user)
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.",
                                        organization=organization)
@@ -1436,7 +1467,7 @@ class delete_organization(graphene.Mutation):
             return delete_organization(ok=False, info_text=reject)
         
         organization = OrganizationModel.query.filter(
-            OrganizationModel.organization_id.order_id == organization_id).first()
+            OrganizationModel.organization_id == organization_id).first()
 
         if organization:
             db.delete(organization)
@@ -1677,6 +1708,30 @@ class logout(graphene.Mutation):
         else:
             return logout(ok=False, info_text='User nicht angemeldet.')
 
+class reset_password(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+
+    @staticmethod
+    def mutate(self, info, email):
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not user:
+            return reset_password(ok=False, info_text="User not found")
+        
+        # generate random password
+        new_password = str(uuid.uuid4())
+        ph = PasswordHasher()
+        user.password_hash = ph.hash(new_password)
+        db.commit()
+
+        # send mail
+        sendMail(receiver=email, subject="Ihr Password wurde zurückgesetzt", body="Hier dein Password: " + new_password + " bitte schnell ändern!!!!!!!!!!!!!!!!!!!!!!!")
+
+        return reset_password(ok=True, info_text="New password was send by mail")
+
 class Mutations(graphene.ObjectType):
     login = login.Field()
     logout = logout.Field()
@@ -1712,6 +1767,7 @@ class Mutations(graphene.ObjectType):
     remove_user_from_organization = remove_user_from_organization.Field()
     update_user_rights = update_user_rights.Field()
 
-    create_user = create_user.Field()
-    update_user = update_user.Field()
-    delete_user = delete_user.Field()
+    create_user     = create_user.Field()
+    update_user     = update_user.Field()
+    delete_user     = delete_user.Field()
+    reset_password  = reset_password.Field()

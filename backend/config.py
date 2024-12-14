@@ -29,11 +29,12 @@ elif (hostname == "container"):
 else:
     config.read("backend-config.ini")
     db_host = "hades.fritz.box"
+    # db_host = "localhost"
 
 if not hostname == "container":
     # Read config from File
     db_database = config.get('DB', 'db_LendingSystem_Database')
-    db_port="3306"
+    db_port="3310"
     db_user = config.get('DB', 'db_LendingSystem_User')
     db_pw = config.get('DB', 'db_LendingSystem_Password')
     root_directory = config.get('PATHS', 'root_directory')
@@ -50,6 +51,9 @@ if not hostname == "container":
 
     secret_key = config.get('SECRET_KEY', 'secret_key')
     testing_on = config.get('TESTING', 'testing')
+
+    application_root_user_name = config.get('ROOT_USER', 'root_user_name')
+    application_root_user_password = config.get('ROOT_USER', 'root_user_password')
 else:
     # Read docker env variables
     db_database = os.getenv('db_LendingSystem_Database')
@@ -87,7 +91,10 @@ app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
-app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
+if (hostname == "container"):
+    app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
+else:
+    app.config['SESSION_REDIS'] = redis.from_url('redis://hades.fritz.box:6379')
 
 if not (int)(testing_on):
     app.config[
@@ -97,15 +104,6 @@ else:
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 server_session = Session(app)
-
-# create Mail Server
-if (int)(use_ssl):
-    context = ssl.create_default_context()
-    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port, context=context)
-else:
-    mail_server = smtplib.SMTP_SSL(mail_server_address, mail_server_port)
-
-mail_server.login(sender_email_address, sender_email_password)
 
 # Create scheduler for automated mail sending
 jobstores = {
