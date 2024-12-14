@@ -1131,6 +1131,7 @@ class create_organization(graphene.Mutation):
                 name=name,
                 location=location,
             )
+            
             if agb:
                 db_agb = FileModel.query.filter(FileModel.file_id == agb).first()
                 organization.agb = db_agb
@@ -1145,6 +1146,9 @@ class create_organization(graphene.Mutation):
             if agb:
                 organization.agb = agb
 
+            db.add(organization)
+            db.commit()
+
             # add executive User to Organization with highest rights
             organization_user = Organization_UserModel(
                 user_id = session_user_id,
@@ -1152,7 +1156,6 @@ class create_organization(graphene.Mutation):
                 rights = userRights.organization_admin
             )
 
-            db.add(organization)
             db.add(organization_user)
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.",
@@ -1459,7 +1462,7 @@ class delete_organization(graphene.Mutation):
             return delete_organization(ok=False, info_text=reject)
         
         organization = OrganizationModel.query.filter(
-            OrganizationModel.organization_id.order_id == organization_id).first()
+            OrganizationModel.organization_id == organization_id).first()
 
         if organization:
             db.delete(organization)
