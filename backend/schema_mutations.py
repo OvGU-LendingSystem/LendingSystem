@@ -543,6 +543,9 @@ class create_order(graphene.Mutation):
             if users:
                 db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
                 order.users = db_users
+            else:
+                executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).all()
+                order.users = executive_user
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
