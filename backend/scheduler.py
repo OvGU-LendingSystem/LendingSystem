@@ -12,7 +12,7 @@ def AddJob(order_id):
 def CancelJob(order_id):
     for job in scheduler.get_jobs():
         if job.name == order_id:
-            scheduler.remove_job(job)
+            scheduler.remove_job(job.id)
 
 ###################
 # Reminder pickup #
