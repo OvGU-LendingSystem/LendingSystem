@@ -51,6 +51,9 @@ if not hostname == "container":
 
     secret_key = config.get('SECRET_KEY', 'secret_key')
     testing_on = config.get('TESTING', 'testing')
+
+    application_root_user_name = config.get('ROOT_USER', 'root_user_name')
+    application_root_user_password = config.get('ROOT_USER', 'root_user_password')
 else:
     # Read docker env variables
     db_database = os.getenv('db_LendingSystem_Database')
@@ -88,7 +91,10 @@ app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
-app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
+if (hostname == "container"):
+    app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
+else:
+    app.config['SESSION_REDIS'] = redis.from_url('redis://hades.fritz.box:6379')
 
 if not (int)(testing_on):
     app.config[
