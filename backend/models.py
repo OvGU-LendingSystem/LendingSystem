@@ -274,7 +274,7 @@ class Organization(Base):
     # String name for the agb file location
     agb                 = relationship("File",                                                          back_populates = "organization", cascade="all, delete-orphan")
 
-    users               = relationship("Organization_User",                                             back_populates = "organization")
+    users               = relationship("Organization_User",                                             back_populates = "organization", cascade="all, delete-orphan")
     physicalobjects     = relationship("PhysicalObject", back_populates="organization")
 
     def addUser(self, user, rights = userRights.member):
