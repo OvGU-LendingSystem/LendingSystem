@@ -3,6 +3,7 @@ import time
 import datetime
 import traceback
 import uuid
+from string import Template
 
 import graphene
 from sqlalchemy.orm import *
@@ -1727,8 +1728,12 @@ class reset_password(graphene.Mutation):
         user.password_hash = ph.hash(new_password)
         db.commit()
 
+        # read template text
+        with open("../email_templates/password_reset_template.html", encoding="utf-8") as file:
+            template_password = Template(file.read())
+
         # send mail
-        sendMail(receiver=email, subject="Ihr Password wurde zurückgesetzt", body="Hier dein Password: " + new_password + " bitte schnell ändern!!!!!!!!!!!!!!!!!!!!!!!")
+        sendMail(receiver=email, subject="Ihr Password wurde zurückgesetzt", body=template_password.substitute(password=new_password))
 
         return reset_password(ok=True, info_text="New password was send by mail")
 
