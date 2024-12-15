@@ -76,6 +76,9 @@ else:
     secret_key = os.getenv("secret_key")
     testing_on = 0
 
+    application_root_user_name = os.getenv('root_user_name')
+    application_root_user_password = os.getenv('root_user_password')
+
 # Create engine depending on test mode
 if not (int)(testing_on):
     engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
