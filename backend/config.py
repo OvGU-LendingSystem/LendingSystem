@@ -76,8 +76,8 @@ else:
     secret_key = os.getenv("secret_key")
     testing_on = 0
 
-    application_root_user_name = config.get('root_user_name')
-    application_root_user_password = config.get('root_user_password')
+    application_root_user_name = os.getenv('root_user_name')
+    application_root_user_password = os.getenv('root_user_password')
 
 # Create engine depending on test mode
 if not (int)(testing_on):
