@@ -187,3 +187,5 @@ alembic.ini
 # Docker
 *.env
 db-password.txt
+
+*.sql
