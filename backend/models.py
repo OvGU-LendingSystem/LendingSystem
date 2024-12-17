@@ -277,7 +277,7 @@ class Organization(Base):
     users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
     physicalobjects     = relationship("PhysicalObject",    back_populates="organization")
 
-    def addUser(self, user, rights = userRights.member):
+    def addUser(self, user, rights = userRights.customer):
         """
         adds a user to the organization
         """
