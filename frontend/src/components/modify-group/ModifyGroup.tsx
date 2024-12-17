@@ -6,8 +6,10 @@ import { FormikInput } from "../../core/input/Input";
 import { InventoryItem } from '../../models/InventoryItem.model';
 import { Button, Card, CardList, Checkbox, Collapse, H3 } from '@blueprintjs/core';
 import { Suspense, useMemo, useState } from 'react';
-import { useGetPhysicalObjects } from "../../hooks/pysical-object-helpers";
+import { PreviewPhysicalObject, useFilterPhysicalObjectsByName, useGetPhysicalObjects } from "../../hooks/pysical-object-helpers";
 import { MdArrowDropDown, MdArrowRight } from "react-icons/md";
+import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
+import { OrganizationRights } from '../../models/user.model';
 
 export function ModifyGroup({ initialValue, onSubmit }: { initialValue: AddGroupItem, onSubmit: (value: AddGroupItem) => Promise<void> }) {
     const submit = async (values: AddGroupItem, _: FormikHelpers<AddGroupItem>) => {
@@ -43,9 +45,12 @@ function FormikSelectPhysicalObjects({ name }: { name: string }) {
 }
 
 function SelectPhysicalObjects({ selection, setSelection }: { selection: string[], setSelection: (val: string[]) => void}) {
-    const { data } = useGetPhysicalObjects();
+    const orgs = useFilterUserOrganizationInfo(OrganizationRights.INVENTORY_ADMIN);
+    const orgIds = useMemo(() => orgs.map(org => org.id), [orgs]); // TODO only objects for group org
+
+    const { data } = useFilterPhysicalObjectsByName(orgIds);
     const items = useMemo(() => {
-        return data.map((entry) => { return { ...entry, selected: -1 !== selection.findIndex(id => entry.physId === id) } });
+        return data.map((entry) => { return { ...entry, selected: -1 !== selection.findIndex(id => entry.id === id) } });
     }, [data, selection]);
 
     const checkedItems = useMemo(() => {
@@ -56,9 +61,9 @@ function SelectPhysicalObjects({ selection, setSelection }: { selection: string[
         return items.filter((item) => !item.selected)
     }, [items]);
 
-    const update = (physicalObject: InventoryItem, selected: boolean) => {
+    const update = (physicalObject: PreviewPhysicalObject, selected: boolean) => {
         setSelection(
-            selected ? [ ...selection, physicalObject.physId ] : selection.filter((id) => physicalObject.physId !== id)
+            selected ? [ ...selection, physicalObject.id ] : selection.filter((id) => physicalObject.id !== id)
         );
     }
 
@@ -70,7 +75,7 @@ function SelectPhysicalObjects({ selection, setSelection }: { selection: string[
     );
 }
 
-function CollapsablePhysicalObjectListWithTitle({ title, items, update }: { title: string, items: (InventoryItem & { selected: boolean })[], update: (obj: InventoryItem, selected: boolean) => void }) {
+function CollapsablePhysicalObjectListWithTitle({ title, items, update }: { title: string, items: (PreviewPhysicalObject & { selected: boolean })[], update: (obj: PreviewPhysicalObject, selected: boolean) => void }) {
     const [ isOpen, setIsOpen ] = useState(true);
     
     return (
@@ -84,7 +89,7 @@ function CollapsablePhysicalObjectListWithTitle({ title, items, update }: { titl
                 <CardList>
                     {
                         items.map((physObj) => {
-                            return <PhysicalObjectEntry physicalObject={physObj} selected={physObj.selected} onSelect={(val) => update(physObj, val)} key={physObj.physId} />
+                            return <PhysicalObjectEntry physicalObject={physObj} selected={physObj.selected} onSelect={(val) => update(physObj, val)} key={physObj.id} />
                         })
                     }
                 </CardList>
@@ -93,7 +98,7 @@ function CollapsablePhysicalObjectListWithTitle({ title, items, update }: { titl
     );
 }
 
-function PhysicalObjectEntry({ physicalObject, selected, onSelect }: { physicalObject: InventoryItem, selected: boolean, onSelect: (value: boolean) => void }) {
+function PhysicalObjectEntry({ physicalObject, selected, onSelect }: { physicalObject: PreviewPhysicalObject, selected: boolean, onSelect: (value: boolean) => void }) {
     return (
         <Card interactive={true} onClick={() => onSelect(!selected)} className='physical-object--entry'>
             <Checkbox checked={selected} onChange={(event) => onSelect(event.target.checked)} />
