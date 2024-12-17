@@ -62,6 +62,15 @@ export function useLoginStatus() {
     return useContext(LoginStatusContext);
 }
 
+export function useUserInfo() {
+    const status = useLoginStatus();
+    if (!status.loggedIn) {
+        throw new Error("Expected logged in user!");
+    }
+
+    return status.user;
+}
+
 export function useLoginStatusDispatcher() {
     return useContext(LoginStatusDispatcherContext);
 }
