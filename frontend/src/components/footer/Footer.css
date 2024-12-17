@@ -1,0 +1,10 @@
+.footer {
+    background-color: darkcyan;
+    padding: 16px;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.footer .nav-link {
+    color: white;
+}
