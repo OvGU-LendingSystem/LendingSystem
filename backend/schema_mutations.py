@@ -18,318 +18,10 @@ from schema import *
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
 
-def is_authorised(required_rights, executive_user_id, phys_id=None, organization_id=None, tag_id=None, group_id=None):
-    user_rights = 5
-    executive_user = UserModel.query.filter(UserModel.user_id == executive_user_id).first()
-    if not executive_user:
-        raise VerificationError("Executive User nicht gefunden")
-
-    # wenn phys_objects bearbeitet oder gelöscht werden sollen
-    if phys_id:
-        phys_obj = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
-        if not phys_obj:
-            raise VerificationError("physikalisches Object nicht gefunden")
-        organization_id = phys_obj.organization_id
-
-    # wenn tags bearbeitet oder gelöscht werden sollen
-    if tag_id:
-        # ein tag soll nur vom user bearbeitet oder gelöscht werden können,
-        # wenn er in allen Orgas, zu denen die Objekte gehören, die dem Tag angehören, mindestens ein inventory_admin ist
-        tag = TagModel.query.filter(TagModel.tag_id == tag_id).first()
-        if not tag:
-            raise VerificationError("Tag nicht gefunden")
-
-        # alle organization_ids die mit den phys_objs des tags verknüpft sind
-        tag_phys_organizations = []
-        for phys_obj in tag.physicalobjects:
-            tag_phys_organizations.append(phys_obj.organization_id)
-
-        # alle organization_ids zu denen der User verknüpft ist
-        executive_user_organizations = []
-        for organization in executive_user.organizations:
-            executive_user_organizations.append(organization.organization_id)
-
-        # wenn der User nicht mindestens zu allen Organisationen, zu denen die Objekte des Tags gehören, gehört → False
-        if not set(tag_phys_organizations).issubset(set(executive_user_organizations)):
-            return False
-
-        # Schnitt aus Organisationen des Users und des Tags
-        organization_ids = list(set(tag_phys_organizations) & set(executive_user_organizations))
-
-        # nur wenn der User in allen organisationen mindestens inventory_admin ist, darf er den Tag bearbeiten
-        # für alle orga_ids aus dem schnitt von user und tag
-        for organization_id in organization_ids:
-            # für jede organisation die mit dem user verbunden ist
-            for organization in executive_user.organizations:
-                # wenn die orga des user eine aus der liste ist, dann werden die user_rights demnach gesetzt
-                if organization.organization_id == organization_id:
-                    user_rights = organization.rights.value
-                    # wenn die user_rights nicht den required rights entsprechen wird der Zugriff verweigert
-                    if user_rights > required_rights.value:
-                        return False
-            return True
-
-    # wenn groups bearbeitet oder gelöscht werden sollen
-    if group_id:
-        group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
-        if not group:
-            raise VerificationError("Group nicht gefunden")
-        organization_id = group.physicalobjects[0].organization_id
-
-    # falls noch keine Organisation gefunden wurde
-    if organization_id is None:
-        for user_organization in executive_user.organizations:
-            if user_organization.rights.value < user_rights:
-                user_rights = user_organization.rights.value
-                organization_id = user_organization.organization_id
-    else:
-        # ist der User der Organisation zugeordnet
-        if organization_id not in [org.organization_id for org in executive_user.organizations]:
-            return False
-
-    # userRights des Users in gegebener Organisation bestimmen
-    for organization in executive_user.organizations:
-        if organization.organization_id == organization_id:
-            user_rights = organization.rights.value
-            break
-
-    # Berechtigungen prüfen
-    if user_rights <= required_rights.value:
-        return True
-    else:
-        return False
-
-reject = "Sie sind nicht autorisiert diese Aktion auszuführen"
-
-
-##################################
-# Mutations for Physical Objects #
-##################################
-
-class create_physical_object(graphene.Mutation):
-    """
-    Creates a new physical object with the given parameters.
-    For Connections to tags, orders, groups and organizations use array of their String uuid
-    """
-
-    class Arguments:
-        inv_num_internal = graphene.Int(required=True)
-        inv_num_external = graphene.Int(required=True)
-        deposit = graphene.Int(required=True)
-        storage_location = graphene.String(required=True)
-        storage_location2 = graphene.String(required=True)
-        faults = graphene.String()
-        name = graphene.String(required=True)
-        description = graphene.String()
-        borrowable = graphene.Boolean(required=True)
-        lending_comment = graphene.String()
-        return_comment = graphene.String()
-        organization_id = graphene.String(required=True)  # ein Objekt ist immer genau einer Organisation zugeordnet
-
-        pictures = graphene.List(graphene.String)
-        manual = graphene.List(graphene.String)
-        tags = graphene.List(graphene.String)
-        orders = graphene.List(graphene.String)
-        groups = graphene.List(graphene.String)
-
-    physical_object = graphene.Field(lambda: PhysicalObject)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, inv_num_internal, inv_num_external, borrowable, storage_location,
-               storage_location2, name, organization_id,
-               tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
-               deposit=None):
-        
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return create_physical_object(ok=False, info_text="Keine valide session vorhanden")
-
-        if not is_authorised(userRights.inventory_admin, session_user_id, organization_id=organization_id):
-            return create_physical_object(ok=False, info_text=reject)
-
-
-
-        try:
-            physical_object = PhysicalObjectModel(
-                inv_num_internal=inv_num_internal,
-                inv_num_external=inv_num_external,
-                borrowable=borrowable,
-                storage_location=storage_location,
-                storage_location2=storage_location2,
-                name=name,
-                organization_id=organization_id,
-            )
-            if pictures:
-                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
-                physical_object.pictures = db_pictures
-            if manual:
-                db_manual = db.query(FileModel).filter(FileModel.file_id.in_(manual)).all()
-                physical_object.manual = db_manual
-            if orders:
-                db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
-                physical_object.orders = db_orders
-            if groups:
-                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
-                physical_object.groups = db_groups
-            if faults:
-                physical_object.faults = faults
-            if description:
-                physical_object.description = description
-            if deposit:
-                physical_object.deposit = deposit
-            if tags:
-                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
-                physical_object.tags = db_tags
-
-            db.add(physical_object)
-            db.commit()
-            return create_physical_object(ok=True, info_text="Objekt erfolgreich erstellt.",
-                                          physical_object=physical_object)
-
-        except Exception as e:
-            print(e)
-            tb = traceback.format_exc()
-            return create_physical_object(ok=False,
-                                          info_text="Fehler beim Erstellen des Objekts. " + str(e) + "\n" + tb)
-
-
-class update_physical_object(graphene.Mutation):
-    """
-    Updates content of the physical object with the given phys_id.
-    For Connections to tags, orders, groups and organizations use array of their String uuid
-    """
-
-    class Arguments:
-        phys_id = graphene.String(required=True)
-        inv_num_internal = graphene.Int()
-        inv_num_external = graphene.Int()
-        deposit = graphene.Int()
-        borrowable = graphene.Boolean()
-        storage_location = graphene.String()
-        storage_location2 = graphene.String()
-        faults = graphene.String()
-        name = graphene.String()
-        description = graphene.String()
-        organization_id = graphene.String()
-
-        pictures = graphene.List(graphene.String, description="List of picture file ids; Override existing pictures")
-        manual = graphene.List(graphene.String, description="List of manual file ids; Override existing manual")
-        tags = graphene.List(graphene.String, description="List of tag ids; Override existing tags")
-        orders = graphene.List(graphene.String, description="List of order ids; Override existing orders")
-        groups = graphene.List(graphene.String, description="List of group ids; Override existing groups")
-
-    physical_object = graphene.Field(lambda: PhysicalObject)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, phys_id, inv_num_internal=None, inv_num_external=None, borrowable=None,
-               storage_location=None, storage_location2=None, name=None,
-               pictures=None, manual=None,
-               tags=None, orders=None, groups=None, faults=None, description=None, deposit=None):
-        
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return update_physical_object(ok=False, info_text="Keine valide session vorhanden")
-
-        if not is_authorised(userRights.inventory_admin, session_user_id, phys_id=phys_id):
-            return update_physical_object(ok=False, info_text=reject)
-        
-
-
-        try:
-            physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
-
-            # Abort if object does not exist
-            if not physical_object:
-                return update_physical_object(ok=False, info_text="Objekt nicht gefunden.")
-
-            if inv_num_internal:
-                physical_object.inv_num_internal = inv_num_internal
-            if inv_num_external:
-                physical_object.inv_num_external = inv_num_external
-            if deposit:
-                physical_object.deposit = deposit
-            if borrowable:
-                physical_object.borrowable = borrowable
-            if storage_location:
-                physical_object.storage_location = storage_location
-            if storage_location2:
-                physical_object.storage_location2 = storage_location2
-            if faults:
-                physical_object.faults = faults
-            if name:
-                physical_object.name = name
-            if description:
-                physical_object.description = description
-
-            if pictures:
-                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
-                physical_object.pictures = db_pictures
-            if manual:
-                db_manual = db.query(FileModel).filter(FileModel.file_id.in_(manual)).all()
-                physical_object.manual = db_manual
-            if tags:
-                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
-                physical_object.tags = db_tags
-            if orders:
-                db_orders = db.query(OrderModel).filter(OrderModel.order_id.in_(orders)).all()
-                physical_object.orders = db_orders
-            if groups:
-                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
-                physical_object.groups = db_groups
-
-            db.commit()
-            return update_physical_object(ok=True, info_text="Objekt erfolgreich aktualisiert.",
-                                          physical_object=physical_object)
-
-        except Exception as e:
-            print(e)
-            tb = traceback.format_exc()
-            return update_physical_object(ok=False,
-                                          info_text="Fehler beim Aktualisieren des Objekts. " + str(e) + "\n" + tb)
-
-
-class delete_physical_object(graphene.Mutation):
-    """
-    Deletes the physical object with the given phys_id.
-    """
-
-    class Arguments:
-        phys_id = graphene.String(required=True)
-
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, executive_user_id, phys_id):
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return delete_physical_object(ok=False, info_text="Keine valide session vorhanden")
-
-        if not is_authorised(userRights.inventory_admin, session_user_id, phys_id=phys_id):
-            return delete_physical_object(ok=False, info_text=reject)
-
-
-
-
-        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
-
-        if physical_object:
-            db.delete(physical_object)
-            db.commit()
-            return delete_physical_object(ok=True, info_text="Objekt erfolgreich entfernt.")
-        else:
-            return delete_physical_object(ok=False, info_text="Objekt konnte nicht gefunden werden.")
-
+import sys
+sys.path.append("./mutations")
+from authorization_check import is_authorised, reject_message
+from mutation_physical_objects import create_physical_object, update_physical_object, delete_physical_object
 
 ##################################
 # Upload for Files               #
@@ -361,7 +53,7 @@ class upload_file(graphene.Mutation):
             return create_physical_object(ok=False, info_text="Keine valide session vorhanden")
 
         if not is_authorised(userRights.inventory_admin, session_user_id):
-            return upload_file(ok=False, info_text=reject)
+            return upload_file(ok=False, info_text=reject_message)
 
 
 
@@ -446,7 +138,7 @@ class update_file(graphene.Mutation):
             return update_file(ok=False, info_text="Keine valide session vorhanden")
 
         if not is_authorised(userRights.inventory_admin, session_user_id):
-            return update_file(ok=False, info_text=reject)
+            return update_file(ok=False, info_text=reject_message)
 
 
 
@@ -488,7 +180,7 @@ class delete_file(graphene.Mutation):
             return delete_file(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id):
-            return delete_file(ok=False, info_text=reject)
+            return delete_file(ok=False, info_text=reject_message)
 
 
 
@@ -533,7 +225,7 @@ class create_order(graphene.Mutation):
             return create_order(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.customer, session_user_id):
-            return create_order(ok=False, info_text=reject)
+            return create_order(ok=False, info_text=reject_message)
         
         try:
             order = OrderModel()
@@ -608,7 +300,7 @@ class update_order(graphene.Mutation):
             return update_order(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.customer, session_user_id):
-                return update_order(ok=False, info_text=reject)
+                return update_order(ok=False, info_text=reject_message)
         
         # Remove all email reminders for this order
         CancelJob(order_id)
@@ -675,7 +367,7 @@ class update_order_status(graphene.Mutation):
             return update_order_status(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.member, session_user_id):
-            return update_order_status(ok=False, info_text=reject)
+            return update_order_status(ok=False, info_text=reject_message)
 
 
 
@@ -724,7 +416,7 @@ class add_physical_object_to_order(graphene.Mutation):
             return add_physical_object_to_order(ok=False, info_text="Keine valide session vorhanden")
     
         if not is_authorised(userRights.customer, session_user_id):
-            return add_physical_object_to_order(ok=False, info_text=reject)
+            return add_physical_object_to_order(ok=False, info_text=reject_message)
         
         
         
@@ -770,7 +462,7 @@ class remove_physical_object_from_order(graphene.Mutation):
             return remove_physical_object_from_order(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.customer, session_user_id):
-            return remove_physical_object_from_order(ok=False, info_text=reject)
+            return remove_physical_object_from_order(ok=False, info_text=reject_message)
 
 
 
@@ -814,7 +506,7 @@ class delete_order(graphene.Mutation):
             return delete_order(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.customer, session_user_id):
-            return delete_order(ok=False, info_text=reject)
+            return delete_order(ok=False, info_text=reject_message)
 
 
 
@@ -863,7 +555,7 @@ class create_tag(graphene.Mutation):
             return create_tag(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id):
-            return create_tag(ok=False, info_text=reject)
+            return create_tag(ok=False, info_text=reject_message)
 
 
 
@@ -910,7 +602,7 @@ class update_tag(graphene.Mutation):
             return update_tag(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id, tag_id=tag_id):
-            return update_tag(ok=False, info_text=reject)
+            return update_tag(ok=False, info_text=reject_message)
 
 
 
@@ -954,7 +646,7 @@ class delete_tag(graphene.Mutation):
             return delete_tag(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id, tag_id=tag_id):
-            return delete_tag(ok=False, info_text=reject)
+            return delete_tag(ok=False, info_text=reject_message)
 
 
 
@@ -994,7 +686,7 @@ class create_group(graphene.Mutation):
             return create_group(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id):
-            return create_group(ok=False, info_text=reject)
+            return create_group(ok=False, info_text=reject_message)
 
 
 
@@ -1040,7 +732,7 @@ class update_group(graphene.Mutation):
             return update_group(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id, group_id=group_id):
-            return update_group(ok=False, info_text=reject)
+            return update_group(ok=False, info_text=reject_message)
         
 
         
@@ -1084,7 +776,7 @@ class delete_group(graphene.Mutation):
             return delete_group(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.inventory_admin, session_user_id, group_id=group_id):
-            return delete_group(ok=False, info_text=reject)
+            return delete_group(ok=False, info_text=reject_message)
         
 
 
@@ -1128,7 +820,7 @@ class create_organization(graphene.Mutation):
             return create_organization(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.system_admin, session_user_id):
-            return create_organization(ok=False, info_text=reject)
+            return create_organization(ok=False, info_text=reject_message)
 
 
 
@@ -1204,7 +896,7 @@ class update_organization(graphene.Mutation):
             return update_organization(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
-            return update_organization(ok=False, info_text=reject)
+            return update_organization(ok=False, info_text=reject_message)
 
 
         
@@ -1262,7 +954,7 @@ class update_organization_user_status(graphene.Mutation):
             return update_organization_user_status(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.customer, session_user_id, organization_id=organization_id):
-            return update_organization_user_status(ok=False, info_text=reject)
+            return update_organization_user_status(ok=False, info_text=reject_message)
 
 
 
@@ -1310,7 +1002,7 @@ class add_user_to_organization(graphene.Mutation):
             return add_user_to_organization(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
-            return add_user_to_organization(ok=False, info_text=reject)
+            return add_user_to_organization(ok=False, info_text=reject_message)
 
 
 
@@ -1363,7 +1055,7 @@ class remove_user_from_organization(graphene.Mutation):
             return update_file(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
-            return remove_user_from_organization(ok=False, info_text=reject)
+            return remove_user_from_organization(ok=False, info_text=reject_message)
         
 
 
@@ -1414,7 +1106,7 @@ class update_user_rights(graphene.Mutation):
             return update_user_rights(ok=False, info_text="Keine valide session vorhanden")
 
         if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
-            return update_user_rights(ok=False, info_text=reject)
+            return update_user_rights(ok=False, info_text=reject_message)
             
 
 
@@ -1465,7 +1157,7 @@ class delete_organization(graphene.Mutation):
             return delete_organization(ok=False, info_text="Keine valide session vorhanden")
         
         if not is_authorised(userRights.system_admin, session_user_id, organization_id=organization_id):
-            return delete_organization(ok=False, info_text=reject)
+            return delete_organization(ok=False, info_text=reject_message)
         
         organization = OrganizationModel.query.filter(
             OrganizationModel.organization_id == organization_id).first()
@@ -1576,7 +1268,7 @@ class update_user(graphene.Mutation):
             return update_file(ok=False, info_text="Keine valide session vorhanden")
         
         if not (session_user_id == user_id):
-            return update_user(ok=False, info_text=reject)
+            return update_user(ok=False, info_text=reject_message)
         
         try:
             user = UserModel.query.filter(UserModel.user_id == user_id).first()
@@ -1638,7 +1330,7 @@ class delete_user(graphene.Mutation):
             return delete_user(ok=False, info_text="Keine valide session vorhanden")
         
         if not (session_user_id == user_id):
-            return delete_user(ok=False, info_text=reject)
+            return delete_user(ok=False, info_text=reject_message)
         
 
 
