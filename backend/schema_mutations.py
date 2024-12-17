@@ -1,5 +1,3 @@
-import os
-import time
 import datetime
 import traceback
 import uuid
@@ -7,7 +5,6 @@ from string import Template
 
 import graphene
 from sqlalchemy.orm import *
-from graphene_file_upload.scalars import Upload
 from sendMail import sendMail
 from config import db, picture_directory, pdf_directory
 from flask import session
@@ -21,179 +18,8 @@ from argon2.exceptions import VerificationError, InvalidHashError
 import sys
 sys.path.append("./mutations")
 from authorization_check import is_authorised, reject_message
+from mutation_files import upload_file, update_file, delete_file
 from mutation_physical_objects import create_physical_object, update_physical_object, delete_physical_object
-
-##################################
-# Upload for Files               #
-##################################
-class upload_file(graphene.Mutation):
-    """
-    Uploads a file to the server and creates a new File object in the database.
-    """
-
-    class Arguments:
-        phys_picture_id = graphene.String()
-        phys_manual_id = graphene.String()
-        organization_id = graphene.String()
-        group_id = graphene.String()
-        show_index = graphene.Int()
-        file = Upload(required=True)
-
-    file = graphene.Field(lambda: File)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, file, phys_picture_id=None, phys_manual_id=None, organization_id=None,
-               group_id=None, show_index=None):
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return create_physical_object(ok=False, info_text="Keine valide session vorhanden")
-
-        if not is_authorised(userRights.inventory_admin, session_user_id):
-            return upload_file(ok=False, info_text=reject_message)
-
-
-
-        try:
-            physical_object = None
-            organization = None
-            group = None
-
-            if (phys_picture_id):   physical_object = PhysicalObjectModel.query.filter(
-                PhysicalObjectModel.phys_id == phys_picture_id).first()
-            if (phys_manual_id):    physical_object = PhysicalObjectModel.query.filter(
-                PhysicalObjectModel.phys_id == phys_manual_id).first()
-            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
-            group = GroupModel.query.filter(GroupModel.group_id == group_id).first()
-
-            type = None
-            pictureFileExtensions = ['jpg', 'jpeg', 'png', 'svg']
-            pdfFileExtensions = ['pdf']
-            if file.filename.split('.')[-1] in pictureFileExtensions:
-                type = 'picture'
-            elif file.filename.split('.')[-1] in pdfFileExtensions:
-                type = 'pdf'
-
-            if type == None:
-                return upload_file(ok=False, info_text="File type not supported.")
-
-            file_name = file.filename
-            file_name = file_name.replace(" ", "_")
-            time_stamp = str(time.time())
-            file_name = time_stamp + "_" + file_name
-            if type == 'picture':
-                file.save(os.path.join(picture_directory, file_name))
-            elif type == 'pdf':
-                file.save(os.path.join(pdf_directory, file_name))
-
-            file = FileModel(path=file_name,
-                             organization=organization,
-                             group=group,
-                             file_type=type)
-
-            if physical_object and phys_picture_id:
-                physical_object.pictures.append(file)
-            if physical_object and phys_manual_id:
-                physical_object.manual.append(file)
-            if organization:
-                organization.agb = file
-            if group:
-                group.pictures.append(file)
-            if show_index:
-                file.show_index = show_index
-
-            db.add(file)
-            db.commit()
-
-            return upload_file(ok=True, info_text="File uploaded successfully.", file=file)
-        except Exception as e:
-            print(e)
-            tb = traceback.format_exc()
-            return upload_file(ok=False, info_text="Error uploading file. " + str(e) + "\n" + tb)
-
-
-class update_file(graphene.Mutation):
-    """
-    Updates the file with the given file_id.
-    """
-
-    class Arguments:
-        file_id = graphene.String(required=True)
-
-        show_index = graphene.Int()
-
-    file = graphene.Field(lambda: File)
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, file_id, show_index=None):
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return update_file(ok=False, info_text="Keine valide session vorhanden")
-
-        if not is_authorised(userRights.inventory_admin, session_user_id):
-            return update_file(ok=False, info_text=reject_message)
-
-
-
-        try:
-            file = FileModel.query.filter(FileModel.file_id == file_id).first()
-
-            if not file:
-                return update_file(ok=False, info_text="File not found.")
-
-            if show_index:
-                file.show_index = show_index
-
-            db.commit()
-            return update_file(ok=True, info_text="File updated successfully.", file=file)
-
-        except Exception as e:
-            print(e)
-            return update_file(ok=False, info_text="Error updating file. " + str(e))
-
-
-class delete_file(graphene.Mutation):
-    """
-    Deletes the file with the given file_id from the server and the database.
-    """
-
-    class Arguments:
-        file_id = graphene.String(required=True)
-        executive_user_id = graphene.String(required=True)
-
-    ok = graphene.Boolean()
-    info_text = graphene.String()
-
-    @staticmethod
-    def mutate(self, info, file_id):
-        # Check if user is authorised
-        try:
-            session_user_id = session['user_id']
-        except:
-            return delete_file(ok=False, info_text="Keine valide session vorhanden")
-        
-        if not is_authorised(userRights.inventory_admin, session_user_id):
-            return delete_file(ok=False, info_text=reject_message)
-
-
-
-        file = FileModel.query.filter(FileModel.file_id == file_id).first()
-        if file:
-            os.remove(os.path.join(picture_directory, file.path))
-
-            db.delete(file)
-            db.commit()
-            return delete_file(ok=True, info_text="File successfully removed.")
-        else:
-            return delete_file(ok=False, info_text="File not found.")
-
 
 ##################################
 # Mutations for orders           #
