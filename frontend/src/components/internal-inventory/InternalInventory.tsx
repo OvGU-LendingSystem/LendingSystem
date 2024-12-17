@@ -124,11 +124,26 @@ function PhysicalObjectAndGroupList({
 
 function AddPopoverList() {
     const navigate = useNavigate();
+    const orgs = useFilterUserOrganizationInfo(OrganizationRights.INVENTORY_ADMIN);
+
     return (
         <Menu>
-            <MenuItem text='Neues Objekt hinzufügen' onClick={() => navigate('/inventory/add')} />
+            <MenuItem text='Neues Objekt hinzufügen für '>
+            {
+                orgs.map((orgInfo) => (<AddObjectForOrganizationMenuItem orgId={orgInfo.id} />))
+            }
+            </MenuItem>
             <MenuItem text='Neue Gruppe hinzufügen' onClick={() => navigate('/inventory/group/add')} />
         </Menu>
+    );
+}
+
+function AddObjectForOrganizationMenuItem({ orgId }: { orgId: string }) {
+    const navigate = useNavigate();
+    const { data: org } = useGetOrganizationByIdQuery(orgId);
+
+    return (
+        <MenuItem text={org.name} onClick={() => navigate(`/inventory/add/${org.id}`)} />
     );
 }
 

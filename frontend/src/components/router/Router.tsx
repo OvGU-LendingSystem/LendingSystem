@@ -33,7 +33,7 @@ export function Router() {
                 <Route path="add" element={<AddGroup />} />
                 <Route path="edit/:groupId" element={<EditGroup />} />
               </Route>
-              <Route path="add" element={<AddInventory />} />
+              <Route path="add/:orgId" element={<AddInventory />} />
               <Route path="edit/:itemId" element={<EditInventory />} />
             </Route>
 

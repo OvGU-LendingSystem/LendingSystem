@@ -2,7 +2,7 @@ import '../../styles/style.css';
 import { AddInventoryItem } from '../../models/InventoryItem.model';
 import { ModifyInventory } from '../modify-inventory/ModifyInventory';
 import { useUpdateFiles } from '../../hooks/image-helpers';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AddPhysicalObjectResponse, useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
 import { ErrorResponse, SuccessResponse } from '../../hooks/response-helper';
 import { Button, NonIdealState } from '@blueprintjs/core';
@@ -52,7 +52,12 @@ const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInvent
 
 export function AddInventory() {
     const navigate = useNavigate();
+    const { orgId } = useParams();
     const toaster = useToaster();
+
+    if (!orgId) {
+        throw Error("No organization provided!");
+    }
 
     const updateFiles = useUpdateFiles();
     const [ addPhysicalObject ] = useAddPhysicalObject();
@@ -75,7 +80,7 @@ export function AddInventory() {
                     pictures: images,
                     manuals: manuals,
                     borrowable: values.borrowable,
-                    organizationId: "123",
+                    organizationId: values.organizationId,
                     storageLocation2: values.storageLocation2
                 }
             });
@@ -108,7 +113,7 @@ export function AddInventory() {
     }
 
     return (
-        <ModifyInventory initialValue={{ name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
+        <ModifyInventory initialValue={{ organizationId: orgId, name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
             ErrorScreen={AddInventoryErrorView} onClick={submit} label='Add Item' onSuccess={onSuccess} />
     );
 }
