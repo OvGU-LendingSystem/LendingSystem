@@ -1,12 +1,14 @@
 from argon2 import PasswordHasher
 from flask import session
 import graphene
+from string import Template
 import traceback
+import uuid
 
-from authorization_check import is_authorised, reject_message
+from authorization_check import reject_message
 from config import db
-from models import userRights
 from schema import User, UserModel
+from sendMail import sendMail
 
 ##################################
 # Mutations for Users            #
@@ -149,6 +151,36 @@ class update_user(graphene.Mutation):
             print(e)
             tb = traceback.format_exc()
             return update_user(ok=False, info_text="Error updating user: " + str(e) + "\n" + str(tb), status_code=500)
+
+
+class reset_password(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+    status_code = graphene.Int()
+
+    @staticmethod
+    def mutate(self, info, email):
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not user:
+            return reset_password(ok=False, info_text="User not found", status_code=404)
+        
+        # generate random password
+        new_password = str(uuid.uuid4())
+        ph = PasswordHasher()
+        user.password_hash = ph.hash(new_password)
+        db.commit()
+
+        # read template text
+        with open("../email_templates/password_reset_template.html", encoding="utf-8") as file:
+            template_password = Template(file.read())
+
+        # send mail
+        sendMail(receiver=email, subject="Ihr Password wurde zurückgesetzt", body=template_password.substitute(password=new_password))
+
+        return reset_password(ok=True, info_text="New password was send by mail", status_code=200)
 
 
 class delete_user(graphene.Mutation):
