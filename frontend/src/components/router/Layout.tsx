@@ -96,10 +96,12 @@ export function Layout() {
           </li>
         </ul>
       </nav>
-      <main className="content">
-        <Outlet />
-      </main>
-      <Footer />
+      <div className="main-scroller">
+        <main className="content">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
       <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
         <Login />
       </Modal>
