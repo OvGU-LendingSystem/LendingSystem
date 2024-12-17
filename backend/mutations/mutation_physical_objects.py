@@ -157,7 +157,7 @@ class update_physical_object(graphene.Mutation):
 
             # Abort if object does not exist
             if not physical_object:
-                return update_physical_object(ok=False, info_text="Objekt nicht gefunden.")
+                return update_physical_object(ok=False, info_text="Objekt nicht gefunden.", status_code=404)
 
             if inv_num_internal:
                 physical_object.inv_num_internal = inv_num_internal
@@ -218,7 +218,7 @@ class delete_physical_object(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, executive_user_id, phys_id):
+    def mutate(self, info, phys_id):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
