@@ -273,6 +273,16 @@ class Organization(Base):
     location            = Column(String(60),    unique = False, nullable = False)
     # String name for the agb file location
     agb                 = relationship("File",              back_populates = "organization", cascade="all, delete-orphan")
+    # List for the max deposit for each user right
+    max_deposit         = Column(String(120),    unique = False, nullable = False, 
+                                 default = json.dumps(
+                                     {
+                                         userRights.customer.name: 0, 
+                                         userRights.member.name: 0, 
+                                         userRights.inventory_admin.name: 0, 
+                                         userRights.organization_admin.name: 0, 
+                                         userRights.system_admin.name: 0
+                                    }))
 
     users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
     physicalobjects     = relationship("PhysicalObject",    back_populates="organization")
@@ -298,6 +308,23 @@ class Organization(Base):
         """
         for user in self.users:
             user.agb_dont_show = False
+
+    def getMaxDeposit(self, right):
+        """
+        returns the max deposit for a specific right
+        """
+        return json.loads(self.max_deposit).get(right, 0)
+    
+    def setMaxDeposit(self, right, deposit):
+        """
+        sets the max deposit for a specific right
+        """
+        tmp = json.loads(self.max_deposit)
+        if right in tmp:
+            tmp[right] = deposit
+        else:
+            raise KeyError(f"Invalid right: {right}")
+        self.max_deposit = json.dumps(tmp)
 
     def __repr__(self):
         return "Organization ID: " + str(self.organization_id) + "; Name: " + self.name

@@ -2,12 +2,11 @@ import graphene
 
 import sys
 sys.path.append("./mutations")
-from authorization_check import is_authorised, reject_message
 from mutation_files import upload_file, update_file, delete_file
 from mutation_group import create_group, update_group, delete_group
 from mutation_login import login, logout, check_session
 from mutation_orders import create_order, update_order, update_order_status, add_physical_object_to_order, remove_physical_object_from_order, delete_order
-from mutation_organizations import create_organization, update_organization, delete_organization, add_user_to_organization, remove_user_from_organization, update_user_rights
+from mutation_organizations import create_organization, update_organization, delete_organization, add_user_to_organization, remove_user_from_organization, get_max_deposit, set_max_deposit, update_user_rights
 from mutation_physical_objects import create_physical_object, update_physical_object, delete_physical_object
 from mutation_tags import create_tag, update_tag, delete_tag
 from mutation_users import create_user, update_user, reset_password, delete_user
@@ -47,6 +46,8 @@ class Mutations(graphene.ObjectType):
     delete_organization             = delete_organization.Field()
     add_user_to_organization        = add_user_to_organization.Field()
     remove_user_from_organization   = remove_user_from_organization.Field()
+    get_max_deposit                 = get_max_deposit.Field()
+    set_max_deposit                 = set_max_deposit.Field()
     update_user_rights              = update_user_rights.Field()
 
     create_user     = create_user.Field()

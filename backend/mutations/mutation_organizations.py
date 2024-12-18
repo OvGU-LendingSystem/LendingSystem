@@ -350,6 +350,77 @@ class update_user_rights(graphene.Mutation):
             return update_user_rights(ok=False, info_text="Etwas ist schiefgelaufen. " + str(e), status_code=500)
 
 
+class get_max_deposit(graphene.Mutation):
+    """
+    gets the max deposit for the given organization and user right
+    """
+
+    class Arguments:
+        organization_id = graphene.String(required=True)
+        user_right      = graphene.String(required=True)
+
+    max_deposit = graphene.Int()
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+    status_code = graphene.Int()
+
+    @staticmethod
+    def mutate(self, info, organization_id, user_right):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return get_max_deposit(ok=False, info_text="Keine valide session vorhanden", status_code=419)
+        
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return get_max_deposit(ok=False, info_text=reject_message, status_code=403)
+        
+        try:
+            max_deposit = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first().getMaxDeposit(user_right)
+            return get_max_deposit(ok=True, info_text="Max Deposit erfolgreich abgefragt.", max_deposit=max_deposit, status_code=200)
+        except Exception as e:
+            print(e)
+            tb = traceback.format_exc()
+            return get_max_deposit(ok=False, info_text="Etwas ist schiefgelaufen. " + str(e), status_code=500)
+        
+
+class set_max_deposit(graphene.Mutation):
+    """
+    sets the max deposit for the given organization and user right
+    """
+
+    class Arguments:
+        organization_id = graphene.String(required=True)
+        user_right      = graphene.String(required=True)
+        max_deposit     = graphene.Int(required=True)
+
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+    status_code = graphene.Int()
+
+    @staticmethod
+    def mutate(self, info, organization_id, user_right, max_deposit):
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return set_max_deposit(ok=False, info_text="Keine valide session vorhanden", status_code=419)
+        
+        if not is_authorised(userRights.organization_admin, session_user_id, organization_id=organization_id):
+            return set_max_deposit(ok=False, info_text=reject_message, status_code=403)
+        
+        try:
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            organization.setMaxDeposit(user_right, max_deposit)
+            
+            db.commit()
+            return set_max_deposit(ok=True, info_text="Max Deposit erfolgreich gesetzt.", status_code=200)
+        except Exception as e:
+            print(e)
+            tb = traceback.format_exc()
+            return set_max_deposit(ok=False, info_text="Etwas ist schiefgelaufen. " + str(e), status_code=500)
+
+
 class delete_organization(graphene.Mutation):
     """
     Deletes the organization with the given organization_id.
