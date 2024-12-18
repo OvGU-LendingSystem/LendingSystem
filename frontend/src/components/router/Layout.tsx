@@ -4,6 +4,7 @@ import { MdOutlineShoppingBasket } from "react-icons/md";
 import { Link, Outlet } from "react-router-dom";
 import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
+import { Footer } from "../footer/Footer";
 
 interface ModalProps {
   children: ReactNode;
@@ -95,9 +96,12 @@ export function Layout() {
           </li>
         </ul>
       </nav>
-      <main className="content">
-        <Outlet />
-      </main>
+      <div className="main-scroller">
+        <main className="content">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
       <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
         <Login />
       </Modal>

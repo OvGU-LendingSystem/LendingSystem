@@ -14,9 +14,9 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const getUserInfo = useGetUserLazy();
     const [ loginStatus, setLoginStatus ] = useState<LoginStatus.Status>({ loggedIn: false });
     const [ shouldCheck, setShouldCheck ] = useState(0);
+    const [ visible, setVisible ] = useState<boolean>(!document.hidden);
     
     useEffect(() => {
-        // TODO optimize: only when window in foreground
         let id: number;
 
         const updateSessionData = async () => {
@@ -40,10 +40,27 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
             await updateSessionData();
             id = checkStatus(1000 * 60);
         }, timeoutMs);
-        id = checkStatus(0);
+
+        if (visible) {
+            id = checkStatus(0);
+        } else {
+            updateSessionData();
+        }
 
         return () => { id && window.clearTimeout(id) };
-    }, [shouldCheck]);
+    }, [shouldCheck, visible]);
+
+    useEffect(() => {
+        const visibilityChangeListener = () => {
+            setVisible(!document.hidden);
+        };
+
+        document.addEventListener('visibilitychange', visibilityChangeListener);
+
+        return () => {
+            document.removeEventListener('visibilitychange', visibilityChangeListener);
+        };
+    }, []);
 
     const handleLoginStatusAction = (action: LoginStatusDispatcherAction) => {
         setShouldCheck(shouldCheck + 1);
@@ -60,6 +77,15 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
 
 export function useLoginStatus() {
     return useContext(LoginStatusContext);
+}
+
+export function useUserInfo() {
+    const status = useLoginStatus();
+    if (!status.loggedIn) {
+        throw new Error("Expected logged in user!");
+    }
+
+    return status.user;
 }
 
 export function useLoginStatusDispatcher() {

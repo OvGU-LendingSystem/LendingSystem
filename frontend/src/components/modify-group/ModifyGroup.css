@@ -1,15 +1,10 @@
-.container {
-    width: 100%;
-    height: 100%;
-}
-
 .inner-container {
     width: 100%;
     display: flex;
     justify-content: space-around;
     flex-direction: row;
     flex-wrap: wrap;
-    margin-top: 16px;
+    margin-block: 16px;
 }
 
 .object-selection--wrapper {

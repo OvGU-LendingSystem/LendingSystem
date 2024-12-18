@@ -4,10 +4,13 @@ import { isApolloError, useSuspenseQuery } from "@apollo/client";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-helpers";
-import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H2, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
 import { MdBugReport, MdWifiOff } from 'react-icons/md';
 import { ActionDialogWithRetryToast } from '../action-dialog/ActionDialog';
 import { PreviewPhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
+import { OrganizationRights } from '../../models/user.model';
+import { useGetOrganizationByIdQuery } from '../../hooks/organization-helper';
 
 type SearchTypeOptions = 'group' | 'object' | 'both' | 'none';
 interface InternalInventorySearchParams {
@@ -58,6 +61,8 @@ export function InternalInventory() {
         updateSearchParams({ type: { ...validSearchParams.type, ...value} });
     });
 
+    const orgs = useFilterUserOrganizationInfo(OrganizationRights.INVENTORY_ADMIN);
+
     const [ filterOptionsOpen, setFilterOptionsOpen ] = useState(false);
 
     return (
@@ -79,35 +84,66 @@ export function InternalInventory() {
             </Collapse>
 
             <ErrorBoundary FallbackComponent={ErrorScreen}>
-                { validSearchParams.type.object &&
-                    <div className="internal-inventory-list">
-                        <H3>Objekte</H3>
-                        <Suspense fallback={<LoadingScreen />}>
-                            <InventoryList name={validSearchParams.name ?? undefined} />
-                        </Suspense>
-                    </div>
-                }
-                
-                { validSearchParams.type.group &&
-                    <div className="internal-inventory-list">
-                        <H3>Gruppen</H3>
-                        <Suspense fallback={<LoadingScreen />}>
-                            <GroupList name={validSearchParams.name ?? undefined} />
-                        </Suspense>
-                    </div>
-                }
+                { orgs.map((org) => <PhysicalObjectAndGroupList orgId={org.id} searchParams={validSearchParams} />) }
             </ErrorBoundary>
         </div>
     );
 }
 
+function PhysicalObjectAndGroupList({
+    orgId,
+    searchParams
+}: {
+        orgId: string,
+        searchParams: { name: string | null, type: { object: boolean, group: boolean } }    
+}) {
+    const { data: org } = useGetOrganizationByIdQuery(orgId);
+
+    return (
+        <>
+        <H2>{org.name}</H2>
+        { searchParams.type.object &&
+            <div className="internal-inventory-list">
+                <H3>Objekte</H3>
+                <Suspense fallback={<LoadingScreen />}>
+                    <InventoryList name={searchParams.name ?? undefined} orgId={orgId} />
+                </Suspense>
+            </div>
+        }
+        { searchParams.type.group &&
+            <div className="internal-inventory-list">
+                <H3>Gruppen</H3>
+                <Suspense fallback={<LoadingScreen />}>
+                    <GroupList name={searchParams.name ?? undefined} orgId={orgId} />
+                </Suspense>
+            </div>
+        }
+        </>
+    );
+}
+
 function AddPopoverList() {
     const navigate = useNavigate();
+    const orgs = useFilterUserOrganizationInfo(OrganizationRights.INVENTORY_ADMIN);
+
     return (
         <Menu>
-            <MenuItem text='Neues Objekt hinzufügen' onClick={() => navigate('/inventory/add')} />
+            <MenuItem text='Neues Objekt hinzufügen für '>
+            {
+                orgs.map((orgInfo) => (<AddObjectForOrganizationMenuItem orgId={orgInfo.id} />))
+            }
+            </MenuItem>
             <MenuItem text='Neue Gruppe hinzufügen' onClick={() => navigate('/inventory/group/add')} />
         </Menu>
+    );
+}
+
+function AddObjectForOrganizationMenuItem({ orgId }: { orgId: string }) {
+    const navigate = useNavigate();
+    const { data: org } = useGetOrganizationByIdQuery(orgId);
+
+    return (
+        <MenuItem text={org.name} onClick={() => navigate(`/inventory/add/${org.id}`)} />
     );
 }
 
@@ -131,8 +167,8 @@ const inventoryItemDeleteDialogText = {
     toasterMessageLoading: 'Objekt wird gelöscht...'
 };
 
-function InventoryList({ name }: { name?: string }) {
-    const { data: items } = useFilterPhysicalObjectsByName(name);
+function InventoryList({ name, orgId }: { name?: string, orgId: string }) {
+    const { data: items } = useFilterPhysicalObjectsByName([orgId], name);
     const [ deleteItem ] = useDeleteGroupMutation();
     const [ deleteId, setDeleteId ] = useState<string>();
 
@@ -240,8 +276,8 @@ const groupDeleteDialogText = {
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
 
-function GroupList({ name }: { name?: string }) {
-    const { data } = useGetGroupsQuery();
+function GroupList({ name, orgId }: { name?: string, orgId: string }) {
+    const { data } = useGetGroupsQuery([orgId], name);
     const [ deleteGroup ] = useDeleteGroupMutation();
     const [ deleteId, setDeleteId ] = useState<string>();
 
