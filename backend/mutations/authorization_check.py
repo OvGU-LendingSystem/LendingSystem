@@ -4,12 +4,36 @@ from models import userRights
 from schema import UserModel, PhysicalObjectModel, TagModel, GroupModel, OrganizationModel, OrderModel
 
 def is_authorised(required_rights, executive_user_id, phys_id=None, organization_id=None, tag_id=None, group_id=None, order_id=None):
+    """
+    check the authorization of a user to execute a certain action
+    required_rights: the rights required to execute the action
+    executive_user_id: the user who wants to execute the action
+    phys_id: the physical object to which the action is related
+    organization_id: the organization to which the action is related
+    tag_id: the tag to which the action is related
+    group_id: the group to which the action is related
+    order_id: the order to which the action is related
+
+    only one of the last 4 parameters can be set at once
+    """
     executive_user = UserModel.query.filter(UserModel.user_id == executive_user_id).first()
     
     # if user is system admin, he is always authorized
     for user_org in executive_user.organizations:
         if user_org.rights == userRights.system_admin:
             return True
+
+    # Check if multiple parameters are set -> undefined behavior
+    if phys_id and (organization_id or tag_id or group_id or order_id):
+        raise VerificationError("Nur ein Parameter von phys_id, organization_id, tag_id, group_id oder order_id kann gesetzt werden")
+    if organization_id and (phys_id or tag_id or group_id or order_id):
+        raise VerificationError("Nur ein Parameter von phys_id, organization_id, tag_id, group_id oder order_id kann gesetzt werden")
+    if tag_id and (phys_id or organization_id or group_id or order_id):
+        raise VerificationError("Nur ein Parameter von phys_id, organization_id, tag_id, group_id oder order_id kann gesetzt werden")
+    if group_id and (phys_id or organization_id or tag_id or order_id):
+        raise VerificationError("Nur ein Parameter von phys_id, organization_id, tag_id, group_id oder order_id kann gesetzt werden")
+    if order_id and (phys_id or organization_id or tag_id or group_id):
+        raise VerificationError("Nur ein Parameter von phys_id, organization_id, tag_id, group_id oder order_id kann gesetzt werden")
 
     # check rights for given physical object
     if phys_id:
@@ -22,6 +46,14 @@ def is_authorised(required_rights, executive_user_id, phys_id=None, organization
     # check rights for given group
     if group_id:
         return check_for_group(executive_user, required_rights, group_id)
+    
+    # check rights for given order
+    if order_id:
+        return check_for_order(executive_user, required_rights, order_id)
+    
+    # check rights for given organization
+    if organization_id:
+        return check_for_organization(executive_user, required_rights, organization_id)
 
     return False
 
@@ -92,6 +124,13 @@ def check_for_order(executive_user, required_rights, order_id):
     user_relation = order.users.filter(UserModel.user_id == executive_user.user_id).first()
     return user_relation.user_rights > required_rights
 
+def check_for_organization(executive_user, required_rights, organization_id):
+    """
+    organization can only be edited or deleted by user if the user has the required rights in the organization
+    """
+    organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+    user_relation = organization.users.filter(UserModel.user_id == executive_user.user_id).first()
+    return user_relation.user_rights > required_rights
 
 
 
