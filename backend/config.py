@@ -9,7 +9,6 @@ import socket
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import redis
-import smtplib, ssl
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -29,7 +28,6 @@ elif (hostname == "container"):
 else:
     config.read("backend-config.ini")
     db_host = "hades.fritz.box"
-    # db_host = "localhost"
 
 if not hostname == "container":
     # Read config from File
