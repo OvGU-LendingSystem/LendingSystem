@@ -24,6 +24,11 @@ def reminder_pickup(order, order_id):
     if (datetime.now() < schedule_date):
         organization_name = order.physicalobjects[0].physicalobject.organization.name
         receiver_mail = order.users[0].email
+
+        # read template text
+        with open("../email_templates/reminder_pickup_template.html", encoding="utf-8") as file:
+            template_pickup = Template(file.read())
+
         scheduler.add_job(
                         name=order_id,
                         func=sendMail, 
@@ -31,17 +36,6 @@ def reminder_pickup(order, order_id):
                                 template_pickup.substitute(time=str(schedule_date.time())[:5], organization_name=organization_name)), 
                         trigger='date', 
                         run_date=schedule_date)
-
-template_pickup=Template("""
-<html lang="en"><head>
-<H1>Your loan is ready</H1>
-<p>Please come tomorrow at $time to pick up your borrowed items from $organization_name.</p>
-</html>
-<html lang="de"><head>
-<H1>Ihre Ausleihe ist bereit</H1>
-<p>Kommen Sie bitte morgen um $time um Ihre ausgeliehenen Gegenstände beim $organization_name abzuholen.</p>
-</html>
-""")
 
 ###################
 # Reminder return #
@@ -53,6 +47,11 @@ def reminder_return(order, order_id):
     if (datetime.now() < schedule_date):
         organization_name = order.physicalobjects[0].physicalobject.organization.name
         receiver_mail = order.users[0].email
+
+        # read template text
+        with open("../email_templates/reminder_return_template.html", encoding="utf-8") as file:
+            template_return = Template(file.read())
+
         scheduler.add_job(
                         name=order_id,
                         func=sendMail, 
@@ -60,10 +59,3 @@ def reminder_return(order, order_id):
                                 template_return.substitute(time=str(schedule_date.time())[:5], organization_name=organization_name)), 
                         trigger='date', 
                         run_date=schedule_date)
-        
-template_return = Template("""
-    <html lang="de"><head>
-    <H1>Gib unser Zeug zurück!</H1>
-    <p>Kommen Sie bitte morgen um $time um Ihre ausgeliehenen Gegenstände an $organization_name zurückzugeben.</p>
-    </html>
-""")

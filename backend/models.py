@@ -209,8 +209,9 @@ class Order(Base):
         """
         removes a physicalObject from the order
         """
-        self.physicalobjects.remove(physicalobject)
-        physicalobject.orders.remove(physicalobject)
+        for physicalobject_order in self.physicalobjects:
+            if physicalobject_order.physicalobject == physicalobject:
+                db.delete(physicalobject_order)
 
     def removeAllPhysicalObjects(self):
         """
@@ -273,11 +274,21 @@ class Organization(Base):
     location            = Column(String(60),    unique = False, nullable = False)
     # String name for the agb file location
     agb                 = relationship("File",              back_populates = "organization", cascade="all, delete-orphan")
+    # List for the max deposit for each user right
+    max_deposit         = Column(String(120),    unique = False, nullable = False, 
+                                 default = json.dumps(
+                                     {
+                                         userRights.customer.name: 0, 
+                                         userRights.member.name: 0, 
+                                         userRights.inventory_admin.name: 0, 
+                                         userRights.organization_admin.name: 0, 
+                                         userRights.system_admin.name: 0
+                                    }))
 
     users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
     physicalobjects     = relationship("PhysicalObject",    back_populates="organization")
 
-    def addUser(self, user, rights = userRights.member):
+    def add_user(self, user, rights = userRights.customer):
         """
         adds a user to the organization
         """
@@ -285,19 +296,46 @@ class Organization(Base):
         self.users.append(tmp)
         user.organizations.append(tmp)
 
-    def removeUser(self, user):
+    def remove_user(self, user):
         """
         removes a user from the organization
         """
         self.users.remove(user)
         user.organizations.remove(user)
 
-    def resetUserAgreement(self):
+    def reset_user_agreement(self):
         """
         resets the agb agreement for all users in the organization
         """
         for user in self.users:
             user.agb_dont_show = False
+
+    def get_max_deposit(self, right):
+        """
+        returns the max deposit for a specific right
+        """
+        print(json.loads(self.max_deposit))
+        return json.loads(self.max_deposit).get(right.name, 0)
+    
+    def set_max_deposit(self, right, deposit):
+        """
+        sets the max deposit for a specific right
+        """
+        tmp = json.loads(self.max_deposit)
+        if right in tmp:
+            tmp[right] = deposit
+        else:
+            raise KeyError(f"Invalid right: {right}")
+        self.max_deposit = json.dumps(tmp)
+
+    def get_user_right(self, user_id):
+        """
+        returns the right of a user in the organization
+        """
+        for user in self.users:
+            if user.user_id == user_id:
+                return user.rights
+        return None
 
     def __repr__(self):
         return "Organization ID: " + str(self.organization_id) + "; Name: " + self.name

@@ -112,7 +112,7 @@ def testDB_base(db):
     db.add(person1)
     db.add(person2)
     db.add(person3)
-    Organization1.addUser(person2)
+    Organization1.add_user(person2)
 
     music_system = Group(   group_id = "00000000-0000-0000-0000-000000000019",
                             name = "Music System")
