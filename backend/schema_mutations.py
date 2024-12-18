@@ -391,7 +391,16 @@ class upload_file(graphene.Mutation):
             file_name = file_name.replace(" ", "_")
             time_stamp = str(time.time())
             file_name = time_stamp + "_" + file_name
+            
             if type == 'picture':
+                # Prüfe Dateigröße
+                file.seek(0, os.SEEK_END)
+                file_size = file.tell()
+                file.seek(0)
+
+                if file_size > (100 * 1024 * 1024): #100MB
+                    return upload_file(ok=False, info_text="Die Datei ist zu groß. Maximal erlaubt sind 100 MB.")
+            
                 file.save(os.path.join(picture_directory, file_name))
             elif type == 'pdf':
                 file.save(os.path.join(pdf_directory, file_name))
