@@ -7,7 +7,7 @@ from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights, orderStatus
 from scheduler import AddJob, CancelJob
-from schema import Order, OrderModel, OrganizationModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
+from schema import Order, OrderModel, OrganizationModel, Organization_UserModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
 
 ##################################
 # Mutations for orders           #
@@ -49,14 +49,15 @@ class create_order(graphene.Mutation):
             executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).first()
             organization_id = physicalobjects[0].organization_id
             is_in_organization = False
-            for organization in executive_user.organizations:
-                if organization.organization_id == organization_id:
+            for organization_user in executive_user.organizations:
+                if organization_user.organization_id == organization_id:
                     is_in_organization = True
                     break
             
+            organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
+
             # add User to organization if not present
             if not is_in_organization:
-                organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
                 organization.addUser(executive_user)
                 db.commit()
 
@@ -74,9 +75,12 @@ class create_order(graphene.Mutation):
             if deposit:
                 order.deposit = deposit
             else:
-                # if no deposit is given the deposit is the sum of the deposits of the physical objects
+                # if no deposit is given the deposit is the sum of the deposits of the physical objects, clamped by the max deposit for the user
                 if physicalobjects:
-                    order.deposit = sum([phys.deposit for phys in physicalobjects])
+                    phys_deposit = sum([phys.deposit for phys in physicalobjects])
+                    max_deposit = organization.get_max_deposit(organization.get_user_right(session_user_id))
+
+                    order.deposit = min(phys_deposit, max_deposit)
                 else:
                     order.deposit = 0
 
@@ -243,10 +247,18 @@ class add_physical_object_to_order(graphene.Mutation):
             if not order:
                 return add_physical_object_to_order(ok=False, info_text="Order nicht gefunden.", status_code=404)
 
-            db_physicalobjects = db.query(PhysicalObjectModel).filter(
-                PhysicalObjectModel.phys_id.in_(physicalObjects)).all()
+            db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalObjects)).all()
             for physObj in db_physicalobjects:
                 order.addPhysicalObject(physObj)
+
+            organization_id = db_physicalobjects[0].organization_id
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            
+            # update the deposit of the order
+            phys_deposit = sum([phys_order.physicalobject.deposit for phys_order in order.physicalobjects])
+            max_deposit = organization.get_max_deposit(organization.get_user_right(session_user_id))
+
+            order.deposit = min(phys_deposit, max_deposit)
 
             db.commit()
             return add_physical_object_to_order(ok=True, info_text="Physical Objects added to Order.", phys_order=order.physicalobjects, status_code=200)
@@ -295,6 +307,16 @@ class remove_physical_object_from_order(graphene.Mutation):
             for physObj in db_physicalobjects:
                 order.removePhysicalObject(physObj)
 
+            executive_user = UserModel.query.filter(UserModel.user_id == session_user_id).first()
+            organization_id = db_physicalobjects[0].organization_id
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+            
+            # update the deposit of the order
+            phys_deposit = sum([phys_order.physicalobject.deposit for phys_order in order.physicalobjects])
+            max_deposit = organization.get_max_deposit(organization.get_user_right(session_user_id))
+
+            order.deposit = min(phys_deposit, max_deposit)
+
             db.commit()
             return remove_physical_object_from_order(ok=True, info_text="Physical Objects removed from Order.",
                                                      phys_order=order.physicalobjects, status_code=200)
@@ -302,6 +324,7 @@ class remove_physical_object_from_order(graphene.Mutation):
         except Exception as e:
             print(e)
             tb = traceback.format_exc()
+            print(tb)
             return remove_physical_object_from_order(ok=False, info_text="Error removing Physical Objects from Order. " + str(e) + "traceback: " + str(tb), status_code=500)
 
 

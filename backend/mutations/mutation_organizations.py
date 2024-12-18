@@ -289,7 +289,7 @@ class remove_user_from_organization(graphene.Mutation):
                     if organization.rights.value <= userRights.organization_admin:
                         return remove_user_from_organization(ok=False, info_text="User hat zu hohe Rechte um entfernt zu werden", status_code=403)
 
-            organization.removeUser(user)
+            organization.remove_user(user)
             db.commit()
             return remove_user_from_organization(ok=True, info_text="User erfolgreich aus der Organisation entfernt.", organization=organization, status_code=200)
         except Exception as e:
@@ -376,7 +376,7 @@ class get_max_deposit(graphene.Mutation):
             return get_max_deposit(ok=False, info_text=reject_message, status_code=403)
         
         try:
-            max_deposit = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first().getMaxDeposit(user_right)
+            max_deposit = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first().get_max_deposit(user_right)
             return get_max_deposit(ok=True, info_text="Max Deposit erfolgreich abgefragt.", max_deposit=max_deposit, status_code=200)
         except Exception as e:
             print(e)
@@ -411,7 +411,7 @@ class set_max_deposit(graphene.Mutation):
         
         try:
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
-            organization.setMaxDeposit(user_right, max_deposit)
+            organization.set_max_deposit(user_right, max_deposit)
             
             db.commit()
             return set_max_deposit(ok=True, info_text="Max Deposit erfolgreich gesetzt.", status_code=200)
