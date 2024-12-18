@@ -7,7 +7,7 @@ from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights, orderStatus
 from scheduler import AddJob, CancelJob
-from schema import Order, OrderModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
+from schema import Order, OrderModel, OrganizationModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
 
 ##################################
 # Mutations for orders           #
@@ -20,13 +20,12 @@ class create_order(graphene.Mutation):
 
     class Arguments:
         # order arguments
-        from_date       = graphene.DateTime()
-        till_date       = graphene.DateTime()
+        from_date       = graphene.DateTime(required=True)
+        till_date       = graphene.DateTime(required=True)
         deposit         = graphene.Int()
 
         # order connections
-        physicalobjects = graphene.List(graphene.String)
-        users           = graphene.List(graphene.String)
+        physicalobjects = graphene.List(graphene.String, required=True)
 
     order       = graphene.Field(lambda: Order)
     ok          = graphene.Boolean()
@@ -34,49 +33,54 @@ class create_order(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, from_date=None, till_date=None, users=None, physicalobjects=None, deposit=None):
+    def mutate(self, info, from_date, till_date, physicalobjects, deposit=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
         except:
             return create_order(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.customer, session_user_id):
-            return create_order(ok=False, info_text=reject_message, status_code=403)
-        
         try:
-            order = OrderModel()
+            physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+            if not physicalobjects:
+                return create_order(ok=False, info_text="Physical Objects not found.", status_code=404)
+            
+            # Check if User is part of the organization
+            executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).first()
+            organization_id = physicalobjects[0].organization_id
+            is_in_organization = False
+            for organization in executive_user.organizations:
+                if organization.organization_id == organization_id:
+                    is_in_organization = True
+                    break
+            
+            # add User to organization if not present
+            if not is_in_organization:
+                organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
+                organization.addUser(executive_user)
+                db.commit()
 
-            if from_date:
-                order.from_date = from_date
-            if till_date:
-                order.till_date = till_date
+            # Create order
+            order = OrderModel(
+                creation_date=datetime.datetime.now(),
+                from_date=from_date,
+                till_date=till_date,
+                users=[executive_user]
+            )
 
-            if users:
-                db_users = db.query(UserModel).filter(UserModel.user_id.in_(users)).all()
-                order.users = db_users
-            else:
-                executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).all()
-                order.users = executive_user
-            if physicalobjects:
-                db_physicalobjects = db.query(PhysicalObjectModel).filter(
-                    PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
-                for physObj in db_physicalobjects:
-                    order.addPhysicalObject(physObj)
+            for physicalobject in physicalobjects:
+                order.addPhysicalObject(physicalobject)
 
             if deposit:
                 order.deposit = deposit
             else:
                 # if no deposit is given the deposit is the sum of the deposits of the physical objects
                 if physicalobjects:
-                    order.deposit = sum([phys.deposit for phys in db_physicalobjects])
+                    order.deposit = sum([phys.deposit for phys in physicalobjects])
                 else:
                     order.deposit = 0
 
-            order.creation_date = datetime.datetime.now()
-
             db.add(order)
-
             db.commit()
 
             # Add jobs for email reminders for this order
@@ -117,7 +121,7 @@ class update_order(graphene.Mutation):
         except:
             return update_order(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.customer, session_user_id):
+        if not is_authorised(userRights.customer, session_user_id, order_id=order_id):
                 return update_order(ok=False, info_text=reject_message, status_code=403)
         
         # Remove all email reminders for this order
@@ -179,7 +183,7 @@ class update_order_status(graphene.Mutation):
         except:
             return update_order_status(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.member, session_user_id):
+        if not is_authorised(userRights.member, session_user_id, order_id=order_id):
             return update_order_status(ok=False, info_text=reject_message, status_code=403)
 
 
