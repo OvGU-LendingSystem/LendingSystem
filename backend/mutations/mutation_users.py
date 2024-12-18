@@ -41,6 +41,12 @@ class create_user(graphene.Mutation):
 
     @staticmethod
     def mutate(self, info, email, last_name, first_name, password, country=None, city=None, postcode=None, street=None, house_number=None, phone_number=None, matricle_number=None):
+        # Check if email is a valid University email address
+        # TODO: remove prhn.dynpv.net for production: only for development needed
+        allowed_email_domains = ["ovgu.de", "prhn.dynpc.net"]
+        if not any([email.endswith(domain) for domain in allowed_email_domains]):
+            return create_user(ok=False, info_text="Nur E-Mail Adressen mit der Endung 'ovgu.de' sind erlaubt.", status_code=403)
+        
         try:
             user_exists = UserModel.query.filter_by(email=email).first()
             if user_exists:
