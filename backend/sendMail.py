@@ -25,8 +25,8 @@ def sendMail(receiver, subject, body):
         message.attach(body_text)
 
         mail_server.sendmail(sender_email_address, receiver, message.as_string())
-    except:
-        print("Was not able to send mail")
+    except Exception as e:
+        print("Was not able to send mail: " + str(e))
 
         # Resend the mail again in 5 Minutes
         # Attention: this schedule will not be cancelled using the CancelJob function from the scheduler file
@@ -35,5 +35,5 @@ def sendMail(receiver, subject, body):
             func=sendMail,
             args=(receiver, subject + " RETRY", body),
             trigger='date',
-            run_date=datetime.now() + datetime.timedelta(minutes=5)
+            run_date=datetime.now() + timedelta(minutes=5)
         )
