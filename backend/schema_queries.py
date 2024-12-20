@@ -1,7 +1,10 @@
 import graphene
-from schema import *
+import os
+from typing import Union, List
+
+from config import template_directory
 from models import orderStatus
-from typing import Union, List, Dict
+from schema import *
 
 # Api Queries go here
 class Query(graphene.ObjectType):
@@ -123,6 +126,14 @@ class Query(graphene.ObjectType):
         groups             = graphene.Argument(type=graphene.List(graphene.String), required=False),
         organizations      = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all files with the given parameters, List arguments get OR-ed together",
+    )
+
+    get_imprint = graphene.String(
+        description = "Returns the imprint of the LendingSystem"
+    )
+
+    get_privacy_policy = graphene.String(
+        description = "Returns the privacy policy of the LendingSystem"
     )
 
     @staticmethod
@@ -381,3 +392,20 @@ class Query(graphene.ObjectType):
         
         files = query.all()
         return files
+    
+
+    @staticmethod
+    def resolve_get_imprint(
+        args,
+        info,
+    ):
+        with open(os.path.join(template_directory, "imprint.html"), encoding="utf-8") as file:
+            return file.read()
+        
+    @staticmethod
+    def resolve_get_privacy_policy(
+        args,
+        info,
+    ):
+        with open(os.path.join(template_directory, "privacy_policy.html"), encoding="utf-8") as file:
+            return file.read()
