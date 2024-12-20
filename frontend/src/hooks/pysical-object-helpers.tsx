@@ -153,8 +153,8 @@ export function useGetPhysicalObjects() {
 // -----------------------------------------------------------------------------
 
 const FILTER_INVENTORY_BY_NAME = gql`
-    query FilterInventoryByName($name: String) {
-        filterPhysicalObjects(name: $name) {
+    query FilterInventoryByName($name: String, $orgIds: [String!]) {
+        filterPhysicalObjects(name: $name, organizations: $orgIds) {
             physId,
             name,
             description,
@@ -191,7 +191,7 @@ export interface PreviewPhysicalObject {
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
 
-export function useFilterPhysicalObjectsByName(name?: string) {
+export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string) {
     const mapResponseToItem = (response: FilterPhysicalObjectsByNameResponse[]) => {
         return response.map(val => {
             const flattenedVal = flattenEdges<{ path: string }, 'pictures', FilterPhysicalObjectsByNameResponse>(val, 'pictures');
@@ -209,7 +209,7 @@ export function useFilterPhysicalObjectsByName(name?: string) {
     return useSuspenseQueryWithResponseMapped<FilterPhysicalObjectsByNameResponse[], PreviewPhysicalObject[]>(
         FILTER_INVENTORY_BY_NAME,
         'filterPhysicalObjects',
-        { variables: { name: name } },
+        { variables: { name: name, orgIds: orgIds } },
         mapResponseToItem
     );
 }

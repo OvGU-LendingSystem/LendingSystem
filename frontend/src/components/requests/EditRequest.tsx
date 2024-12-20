@@ -183,7 +183,7 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId }: EditRequestProps) {
-    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName();
+    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(); // TODO: org?
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -483,7 +483,7 @@ interface SelectObjectsOverlayProps {
 
 function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds }: SelectObjectsOverlayProps) {
     const [filterName, setFilterName] = useState<string>();
-    const { data } = useFilterPhysicalObjectsByName(filterName);
+    const { data } = useFilterPhysicalObjectsByName(undefined, filterName); // TODO org
 
     const updateItems = (id: string, checked: boolean) => {
         if (!checked) {

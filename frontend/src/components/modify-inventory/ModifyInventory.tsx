@@ -65,9 +65,6 @@ export function ModifyInventory<T>(props: ModifyInventoryProps<T>) {
 
 export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorScreen, onSuccess }: ModifyInventoryProps<T>) {
     const { data } = useStorageLocationHelper();
-    //const storagePlaces = ["Keller", "1. Etage", "2. Etage"];
-    //const storagePlaces2 = ["Regal 1", "Regal 2"];
-
     const [ submitState, setSubmitState ] = useState<SubmitErrorState<T>>();
 
     const updateDeposit = (e: React.ChangeEvent<HTMLInputElement>) => {
