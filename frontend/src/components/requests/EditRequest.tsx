@@ -238,6 +238,21 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     
     };
 
+    const handleAllRequests = async () => {
+      try {
+        if (!(new Date(tillDate).getTime()==new Date(endDate!).getTime()) || !(new Date(startDate!).getTime()==new Date(fromDate).getTime())){
+          await handleChangeDate();
+        }
+
+        if (selectedStatus) {
+          await handleEditRequest();
+        }
+
+        console.log('All requests completed successfully');
+      } catch(error) {
+        console.error('Error while handling requests:', error);
+      }
+    }
 
     const handleEditRequest = async () => {
         if (!selectedStatus) {
@@ -287,8 +302,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         const startDateUtc = new Date(startDate); 
         const endDateUtc = new Date(endDate);     
 
-        startDateUtc.setHours(startDateUtc.getHours()+1);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir eine stunde drauf
-        endDateUtc.setHours(endDateUtc.getHours()+1);
+        startDateUtc.setHours(startDateUtc.getHours()+2);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir zwei stunde drauf
+        endDateUtc.setHours(endDateUtc.getHours()+2);
 
 
         try {
@@ -315,9 +330,11 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
      }
     };
 
+    console.log("PHYSICAL OBJECTS!!!!!!!!: " + physicalObjectIds);
     
     const handleGoBack = () => {
         console.log("Change date");
+        navigate('/requests');
         
     };
 
@@ -419,7 +436,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     <Calendar_Querry_New setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
 
                     <div style={buttonContainerStyle}>
-                    <button onClick={handleChangeDate}>Ausleihzeit ändern</button>
+                    <button onClick={() => {setShowModal(false);}}>Ausleihzeit ändern</button>
                     <button onClick={() => {
                         setShowModal(false);
                         setEndDate(tillDate);
@@ -446,7 +463,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     <div style={modalContentStyle}>
                         <h2>Bestätigung</h2>
                         <p>Möchstest du diese Order wirklich editeren?</p>
-                        <button onClick={confirmEdit}>Bestätigen</button>
+                        <button onClick={handleAllRequests}>Bestätigen</button>
                         <button onClick={() => setShowEditPopUp(false)}>Abbrechen</button>
                     </div>
                 </div>
