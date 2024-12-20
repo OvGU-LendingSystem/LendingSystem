@@ -136,6 +136,10 @@ class Query(graphene.ObjectType):
         description = "Returns the privacy policy of the LendingSystem"
     )
 
+    get_contact_information = graphene.String(
+        description = "Returns the contact information of the LendingSystem"
+    )
+
     @staticmethod
     def resolve_filter_tags(
         args,
@@ -408,4 +412,12 @@ class Query(graphene.ObjectType):
         info,
     ):
         with open(os.path.join(template_directory, "privacy_policy.html"), encoding="utf-8") as file:
+            return file.read()
+        
+    @staticmethod
+    def resolve_get_contact_information(
+        args,
+        info,
+    ):
+        with open(os.path.join(template_directory, "contact_information.html"), encoding="utf-8") as file:
             return file.read()
