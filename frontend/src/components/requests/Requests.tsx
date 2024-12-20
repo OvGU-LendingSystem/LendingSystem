@@ -183,99 +183,6 @@ useEffect(() => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  // test data for local requests
-  {/*
-  const localRequests: Quest[] = [  {
-    id: 1,
-    name: 'Hello Test',
-    email: 'hello@test.de',
-    products: [
-      {
-          id: 1,
-          name: 'Maus',
-          description: 'Beschreibung für Objekt 1',
-          price: 'Kaution: 10€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Elektronik',
-          amount: 1,
-          startDate: new Date(),
-          endDate: new Date(),
-      },
-      {
-          id: 2,
-          name: 'Maus2',
-          description: 'Beschreibung für Objekt 2',
-          price: 'Kaution: 20€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Elektronik',
-          amount: 1,
-          startDate: new Date(),
-          endDate: new Date(),
-      },
-    ],
-    status: "rejected",
-  },
-  {
-      id: 2,
-      name: 'Testi Test',
-      email: 'Testi@test.de',
-      products: [
-        {
-            id: 1,
-            name: 'Maus',
-            description: 'Beschreibung für Objekt 1',
-            price: 'Kaution: 10€',
-            imageUrl: 'https://via.placeholder.com/300',
-            category: 'Elektronik',
-            amount: 2,
-            startDate: new Date(),
-            endDate: new Date(),
-        },
-        {
-          id: 3,
-          name: 'Tastatur',
-          description: 'Beschreibung für Objekt 3',
-          price: 'Kaution: 30€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Office',
-          amount: 3,
-          startDate: new Date(),
-          endDate: new Date(),
-        },
-      ],
-      status: "confirmed",
-  },
-  {
-      id: 3,
-      name: 'Testi Test',
-      email: 'Testi@test.de',
-      products: [
-        {
-            id: 1,
-            name: 'Maus',
-            description: 'Beschreibung für Objekt 1',
-            price: 'Kaution: 10€',
-            imageUrl: 'https://via.placeholder.com/300',
-            category: 'Elektronik',
-            amount: 2,
-            startDate: new Date(),
-            endDate: new Date(),
-        },
-        {
-          id: 3,
-          name: 'Tastatur',
-          description: 'Beschreibung für Objekt 3',
-          price: 'Kaution: 30€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Office',
-          amount: 3,
-          startDate: new Date(),
-          endDate: new Date(),
-        },
-      ],
-      status: "lended",
-  },
-];*/}
   const fetchedRequests = data.filterOrders.map((order: any) => {
     const orderStatus = order.physicalobjects.edges.length > 0
         ? order.physicalobjects.edges[0].node.orderStatus
@@ -286,7 +193,6 @@ useEffect(() => {
     const username = `${user.firstName} ${user.lastName}`;
     const useremail = user.email;
 
-    {/*Price (deposit), Category und amount (selber berechnen) fehlen in der Datenbank glaub ich, Fakultät maybe noch abfragen*/}
     return {
       id: order.orderId,
       name: username, 
@@ -306,7 +212,6 @@ useEffect(() => {
   };
 });
 
-    { /*const requests = [...fetchedRequests, ...localRequests]; */}
     const requests = [...fetchedRequests];
     const filteredRequests = requests 
       .filter((request) => selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
@@ -314,8 +219,8 @@ useEffect(() => {
         const now = new Date().getTime();
     
     if (a.status === 'requested' && b.status === 'requested' && b.products.length > 0) {
-      const aTimeDifference = a.products[0].startDate.getTime() - now;
-      const bTimeDifference = b.products[0].startDate.getTime() - now;
+      const aTimeDifference = a.products[0]?.startDate ? a.products[0].startDate.getTime() - now : new Date().getTime();
+      const bTimeDifference = b.products[0]?.startDate ? b.products[0].startDate.getTime() - now : new Date().getTime();
       
       return aTimeDifference - bTimeDifference;
     }
@@ -571,9 +476,6 @@ useEffect(() => {
                                 <div>{product.amount}</div>
                                 <div>{formatDate(product.startDate)}</div>
                                 <div>{formatDate(product.endDate)}</div>
-                               {/* <button style={editButtonStyle} onClick={() => edit(product)}>
-                                   Bearbeiten
-                               </button>*/}
                                 <hr />
                             </div>
                             
