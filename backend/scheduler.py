@@ -1,7 +1,9 @@
-from config import scheduler
-from sendMail import sendMail
-from schema import *
+import os
+
+from config import scheduler, template_directory
 from datetime import datetime, timedelta
+from schema import *
+from sendMail import sendMail
 from string import Template
 
 def AddJob(order_id):
@@ -26,7 +28,7 @@ def reminder_pickup(order, order_id):
         receiver_mail = order.users[0].email
 
         # read template text
-        with open("../email_templates/reminder_pickup_template.html", encoding="utf-8") as file:
+        with open(os.path.join(template_directory, "reminder_pickup_template.html"), encoding="utf-8") as file:
             template_pickup = Template(file.read())
 
         scheduler.add_job(
@@ -49,7 +51,7 @@ def reminder_return(order, order_id):
         receiver_mail = order.users[0].email
 
         # read template text
-        with open("../email_templates/reminder_return_template.html", encoding="utf-8") as file:
+        with open(os.path.join(template_directory, "reminder_return_template.html"), encoding="utf-8") as file:
             template_return = Template(file.read())
 
         scheduler.add_job(

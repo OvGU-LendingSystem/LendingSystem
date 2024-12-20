@@ -27,11 +27,12 @@ else:
     load_dotenv("../backend.env")
     db_host = "hades.fritz.box"
 
-# Read docker env variables
+# Read env variables
+# Database
 # db_host = os.getenv("database_host") # TODO: user for production later
 db_database = os.getenv('database_name')
-db_port = os.getenv('database_port')
-db_user = os.getenv('database_user')
+db_port     = os.getenv('database_port')
+db_user     = os.getenv('database_user')
 
 # Read database password from file or env variable
 db_pw = os.getenv('database_password')
@@ -39,23 +40,31 @@ if db_pw is None or db_pw == "":
     with open(os.getenv('database_password_location'), 'r') as f:
         db_pw = f.read().strip()
 
-root_directory = os.getenv('root_directory')
-tmp_picture_directory = os.getenv('picture_directory')
-tmp_pdf_directory = os.getenv('pdf_directory')
-picture_directory = os.path.join(root_directory, tmp_picture_directory)
-pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
+# Paths
+root_directory          = os.getenv('root_directory')
+tmp_picture_directory   = os.getenv('picture_directory')
+tmp_pdf_directory       = os.getenv('pdf_directory')
+tmp_template_directory  = os.getenv('template_directory')
+picture_directory       = os.path.join(root_directory, tmp_picture_directory)
+pdf_directory           = os.path.join(root_directory, tmp_pdf_directory)
+template_directory      = os.path.join(root_directory, tmp_template_directory)
 
-mail_server_address = os.getenv('mail_server_address')
-mail_server_port = os.getenv('mail_server_port')
-use_ssl = os.getenv('use_ssl')
-sender_email_address = os.getenv('sender_email_address')
-sender_email_password = os.getenv('sender_email_password')
+# Mail
+mail_server_address     = os.getenv('mail_server_address')
+mail_server_port        = os.getenv('mail_server_port')
+use_ssl                 = os.getenv('use_ssl')
+sender_email_address    = os.getenv('sender_email_address')
+sender_email_password   = os.getenv('sender_email_password')
 
+# Secret key
 secret_key = os.getenv("secret_key")
+
+# Testing
 testing_on = 0
 
-application_root_user_name = os.getenv('root_user_name')
-application_root_user_password = os.getenv('root_user_password')
+# Root user
+application_root_user_name      = os.getenv('root_user_name')
+application_root_user_password  = os.getenv('root_user_password')
 
 # Create engine depending on test mode
 if not (int)(testing_on):
