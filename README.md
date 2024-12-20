@@ -33,6 +33,7 @@ root_directory=../
 
 picture_directory=pictures
 pdf_directory=pdfs
+template_directory=templates
 
 ################################
 # flask session secret key     #
