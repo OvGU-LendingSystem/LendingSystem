@@ -58,7 +58,7 @@ class create_order(graphene.Mutation):
 
             # add User to organization if not present
             if not is_in_organization:
-                organization.addUser(executive_user)
+                organization.add_user(executive_user)
                 db.commit()
 
             # Create order
