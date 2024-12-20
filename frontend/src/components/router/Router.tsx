@@ -11,12 +11,19 @@ import { InternalInventory } from "../internal-inventory/InternalInventory";
 import { AddGroup } from "../add-group/AddGroup";
 import { EditGroup } from "../edit-group/EditGroup";
 import { EditRequest } from "../../components/requests/EditRequest";
+import { Calendar } from "../calendar/Calendar";
+import { ContactScreen } from "../contact/Contact";
+import { ImpressumScreen } from "../impressum/Impressum";
+import { PrivacyScreen } from "../privacy/Privacy";
 
 export function Router() {
     return (
         <Routes>
           <Route path='/' element={<Layout />}>
             <Route index element={<Inventory />}/>
+            <Route path='contact' element={<ContactScreen />}/>
+            <Route path='impressum' element={<ImpressumScreen />}/>
+            <Route path='privacy' element={<PrivacyScreen />}/>
             <Route path='cart' element={<Cart />}/>
             <Route path='*' element={<NotFound />} />
     
@@ -26,12 +33,13 @@ export function Router() {
                 <Route path="add" element={<AddGroup />} />
                 <Route path="edit/:groupId" element={<EditGroup />} />
               </Route>
-              <Route path="add" element={<AddInventory />} />
+              <Route path="add/:orgId" element={<AddInventory />} />
               <Route path="edit/:itemId" element={<EditInventory />} />
             </Route>
 
             <Route path='internal'>
               <Route path='inventory' element={<InternalInventory />} />
+              <Route path='calendar' element={<Calendar />} />
             </Route>
 
             <Route path='login' element={<Login />}/>

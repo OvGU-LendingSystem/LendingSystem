@@ -11,6 +11,7 @@ enum OrderStatus {
   PICKED = 'PICKED',
   REJECTED = 'REJECTED',
   RETURNED = 'RETURNED',
+  UNKNOWN = 'UNKNOWN'
 }
 
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
@@ -22,7 +23,7 @@ function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
       case OrderStatus.PICKED:
           return 'lended';
       case OrderStatus.REJECTED:
-          return 'rejected'; // Add handling for this if needed
+          return 'rejected'; 
       case OrderStatus.RETURNED:
           return 'returned';
       default:
@@ -97,25 +98,6 @@ mutation UpdateOrderStatus(
   }
 `;
 
-function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_ORDERS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  return data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users, orderStatus }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any, orderStatus : OrderStatus }) => (
-    <div key={orderId}>
-      <p>
-        {orderId}: {new Date(fromDate)?.toLocaleDateString() ?? 'N/A'} - {new Date(tillDate)?.toLocaleDateString() ?? 'N/A'}
-        {physicalobjects.edges.map((edge: any) => (
-          <span key={edge.node.id}>
-            {' - Status: '}{edge.node.orderStatus} 
-          </span>
-        ))}
-      </p>
-    </div>
-  ));
-}
 
 export function Requests() {
   const { loading, error, data, refetch } = useQuery(GET_ORDERS);
@@ -123,11 +105,68 @@ export function Requests() {
 
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [popupText, setPopupText] = useState("");
+  const [currentRequest, setCurrentRequest] = useState<Quest | null>(null);
+  const [currentStatus, setCurrentStatus] = useState("");
+  const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
+  const showConfirmationPopup = (request: Quest, status: string) => {
+    setCurrentRequest(request);
+    switch (status) {
+      case "requested":
+        setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
+        setCurrentStatus("requested");
+        break;
+      case "confirmed":
+        setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
+        setCurrentStatus("confirmed");
+        break;
+      case "lended":
+        setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
+        setCurrentStatus("lended");
+        break;
+        case "rejectOrder":
+          setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
+          setCurrentStatus("reject");
+          break;
+      default:
+        setPopupText("");
+    }
+    setShowModal(true);
+  };
+
+  const handleConfirm = async () => {
+    if (!currentRequest) return;
+
+    switch (currentStatus) {
+      case "requested":
+        await confirmed(currentRequest);
+        break;
+      case "confirmed":
+        await lended(currentRequest);
+        break;
+      case "lended":
+        await returned(currentRequest);
+        break;
+      case "reject":
+        await rejected(currentRequest);
+        break;
+      default:
+        break;
+    }
+    setShowModal(false);
+    setCheckBoxChecked(false);
+  };
+
+
+
 useEffect(() => {
+  refetch();
   function handleClickOutside(event: MouseEvent) {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
     buttonRef.current && !buttonRef.current.contains(event.target as Node))  {
@@ -366,7 +405,7 @@ useEffect(() => {
 
     const returned = async (request : Quest) => {
       try {
-        const returnDate = new Date().toISOString().split('T')[0];;
+        const returnDate = new Date().toISOString().split('T')[0];
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -417,7 +456,6 @@ useEffect(() => {
 
     const edit = (orderID: string, product: Product) => {
       navigate(`/requests/edit/${orderID}`);
-      //TODO was genau bearbeiten? Datum,Anzahl was genau?
   };
 
     return (
@@ -542,24 +580,28 @@ useEffect(() => {
                         ))}
                     </div>
                     
+
+                    
+                    {
                     <div>
+                    
                     {request.status=="requested" && (
-                        <button style={buttonStyle} onClick={() => confirmed(request)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Anfrage bestätigen
                         </button>
                     )}
                     {request.status=="requested" && (
-                        <button style={buttonStyle} onClick={() => rejected(request)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder")}>
                             Anfrage ablehnen
                         </button>
                     )}
                     {request.status=="confirmed" && (
-                        <button style={buttonStyle} onClick={() => lended(request)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Verleihen
                         </button>
                     )}
                     {request.status=="lended" && (
-                        <button style={buttonStyle} onClick={() => returned(request)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Zurück gegeben
                         </button>
                     )}
@@ -573,6 +615,7 @@ useEffect(() => {
                             reset
                         </button>
                     </div>
+                    }
 
                 </div>
             
@@ -581,6 +624,42 @@ useEffect(() => {
           
          ))}
         
+        {showModal && (
+                    <div style={modalOverlayStyle}>
+                     <div style={modalContentStyle}>
+                     <h3>Bestätigung</h3>
+                     <p>{popupText}</p>
+                     <div>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={checkBoxChecked}
+                          onChange={() => setCheckBoxChecked(!checkBoxChecked)}
+                        />
+                      Ich bestätige die Aktion
+                      </label>
+                    </div>
+                     <div>
+                        <button 
+                        style={buttonStyle} 
+                        onClick={handleConfirm}
+                        disabled={!checkBoxChecked}
+                        >
+                            Bestätigen
+                        </button>
+                        <button 
+                        style={buttonStyle} 
+                        onClick={() => {
+                          if (checkBoxChecked) setCheckBoxChecked(false);
+                          setShowModal(false);
+                          }}
+                        >
+                            Abbrechen
+                        </button>
+                        </div>
+                      </div>
+                    </div>
+                    )}
         
         </div>
     );
@@ -655,4 +734,22 @@ const dropdownContentStyle: React.CSSProperties = {
 const checkboxLabelStyle: React.CSSProperties = {
     display: 'block',
     marginBottom: '10px',
+  };
+
+  const modalOverlayStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    right: '0',
+    bottom: '0',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
+  
+  const modalContentStyle: React.CSSProperties = {
+    backgroundColor: '#fff',
+    padding: '20px',
+    borderRadius: '5px',
   };

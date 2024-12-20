@@ -26,6 +26,7 @@ const GET_ITEM = gql`
             description,
             borrowable,
             storageLocation2,
+            organizationId,
             manual {
                 edges {
                     node {
@@ -74,6 +75,7 @@ interface GetItemResponse {
         invNumInternal: number,
         invNumExternal: number,
         storageLocation2: string,
+        organizationId: string,
         manual: {
             edges: {
                 node: {

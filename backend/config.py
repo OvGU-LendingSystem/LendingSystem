@@ -1,4 +1,4 @@
-import configparser
+from dotenv import load_dotenv
 from datetime import timedelta
 
 from flask import Flask
@@ -17,65 +17,45 @@ import pytz
 hostname = socket.gethostname()
 print("Hostname: ", hostname)
 
-config = configparser.ConfigParser()
 # Read config file on host
 if hostname == "hades":
-    config.read("/var/www/LendingSystem/config.ini")
+    load_dotenv("/var/www/LendingSystem/backend.env")
     db_host = "localhost"
 elif (hostname == "container"):
-    config.read("./backend/backend-config.ini")
     db_host = "database"
 else:
-    config.read("backend-config.ini")
+    load_dotenv("../backend.env")
     db_host = "hades.fritz.box"
 
-if not hostname == "container":
-    # Read config from File
-    db_database = config.get('DB', 'db_LendingSystem_Database')
-    db_port="3310"
-    db_user = config.get('DB', 'db_LendingSystem_User')
-    db_pw = config.get('DB', 'db_LendingSystem_Password')
-    root_directory = config.get('PATHS', 'root_directory')
-    tmp_picture_directory = config.get('PATHS', 'picture_directory')
-    tmp_pdf_directory = config.get('PATHS', 'pdf_directory')
-    picture_directory = os.path.join(root_directory, tmp_picture_directory)
-    pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
+# Read docker env variables
+# db_host = os.getenv("database_host") # TODO: user for production later
+db_database = os.getenv('database_name')
+db_port = os.getenv('database_port')
+db_user = os.getenv('database_user')
 
-    mail_server_address = config.get('MAIL', 'mail_server_address')
-    mail_server_port = config.get('MAIL', 'mail_server_port')
-    use_ssl = config.get('MAIL', 'use_ssl')
-    sender_email_address = config.get('MAIL', 'sender_email_address')
-    sender_email_password = config.get('MAIL', 'sender_email_password')
-
-    secret_key = config.get('SECRET_KEY', 'secret_key')
-    testing_on = config.get('TESTING', 'testing')
-
-    application_root_user_name = config.get('ROOT_USER', 'root_user_name')
-    application_root_user_password = config.get('ROOT_USER', 'root_user_password')
-else:
-    # Read docker env variables
-    db_database = os.getenv('db_LendingSystem_Database')
-    db_port = os.getenv('db_LendingSystem_Port')
-    db_user = os.getenv('db_LendingSystem_User')
-    with open(os.getenv('db_LendingSystem_Password'), 'r') as f:
+# Read database password from file or env variable
+db_pw = os.getenv('database_password')
+if db_pw is None or db_pw == "":
+    with open(os.getenv('database_password_location'), 'r') as f:
         db_pw = f.read().strip()
-    root_directory = os.getenv('root_directory')
-    tmp_picture_directory = os.getenv('picture_directory')
-    tmp_pdf_directory = os.getenv('pdf_directory')
-    picture_directory = os.path.join(root_directory, tmp_picture_directory)
-    pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
 
-    mail_server_address = os.getenv('mail_server_address')
-    mail_server_port = os.getenv('mail_server_port')
-    use_ssl = os.getenv('use_ssl')
-    sender_email_address = os.getenv('sender_email_address')
-    sender_email_password = os.getenv('sender_email_password')
+root_directory = os.getenv('root_directory')
+tmp_picture_directory = os.getenv('picture_directory')
+tmp_pdf_directory = os.getenv('pdf_directory')
+picture_directory = os.path.join(root_directory, tmp_picture_directory)
+pdf_directory = os.path.join(root_directory, tmp_pdf_directory)
 
-    secret_key = os.getenv("secret_key")
-    testing_on = 0
+mail_server_address = os.getenv('mail_server_address')
+mail_server_port = os.getenv('mail_server_port')
+use_ssl = os.getenv('use_ssl')
+sender_email_address = os.getenv('sender_email_address')
+sender_email_password = os.getenv('sender_email_password')
 
-    application_root_user_name = os.getenv('root_user_name')
-    application_root_user_password = os.getenv('root_user_password')
+secret_key = os.getenv("secret_key")
+testing_on = 0
+
+application_root_user_name = os.getenv('root_user_name')
+application_root_user_password = os.getenv('root_user_password')
 
 # Create engine depending on test mode
 if not (int)(testing_on):

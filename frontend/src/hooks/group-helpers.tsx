@@ -50,8 +50,8 @@ export function useDeleteGroupMutation() {
 // -------------------------------------------------------------------------------------------------
 
 const GET_GROUPS_QUERY = gql`
-query GetGroups {
-  filterGroups {
+query GetGroups($name: String, $orgIds: [String!]!) {
+  filterGroups(name: $name) {
     groupId,
     name,
     physicalobjects {
@@ -95,7 +95,8 @@ interface GetGroupsResponse {
 
 export type PreviewGroup = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
 
-export function useGetGroupsQuery() {
+export function useGetGroupsQuery(orgIds: string[], name?: string) {
+    // TODOOO: use orgIds
     const mapToGroup = (val: GetGroupsResponse[]) => {
         return val.map((groupResponse) => {
             const flattenedPhysicalObjects = flattenEdges<{ name: string }, 'physicalobjects', GetGroupsResponse>(groupResponse, 'physicalobjects');
@@ -110,7 +111,12 @@ export function useGetGroupsQuery() {
         });
     };
 
-    return useSuspenseQueryWithResponseMapped<GetGroupsResponse[], PreviewGroup[]>(GET_GROUPS_QUERY, 'filterGroups', {}, mapToGroup);
+    return useSuspenseQueryWithResponseMapped<GetGroupsResponse[], PreviewGroup[]>(GET_GROUPS_QUERY, 'filterGroups', {
+        variables: {
+            orgIds: orgIds,
+            name: name
+        }
+    }, mapToGroup);
 }
 
 // -----------------------------------------------------------------

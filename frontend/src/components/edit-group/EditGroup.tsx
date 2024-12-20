@@ -6,7 +6,8 @@ import { useTitle } from "../../hooks/use-title";
 import { Suspense } from "react";
 
 export function EditGroup() {
-    useTitle('Edit group');
+    useTitle('Gruppe bearbeiten');
+    
     const params = useParams<'groupId'>();
     const navigate = useNavigate();
 
@@ -30,7 +31,7 @@ function EditGroupScreen({ groupId }: { groupId: string }) {
     const submit = async (value: AddGroupItem) => {
         const result = await editGroup({ variables: { groupId: groupId, name: value.name, physicalObjects: value.physicalObjectIds } });
         if (result.success) {
-            navigate('/');
+            navigate('/internal/inventory');
         }
     }
     

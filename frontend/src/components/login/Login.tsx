@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
 import { gql, useMutation } from "@apollo/client";
+import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 
 interface LoginProps {}
 
@@ -15,6 +16,7 @@ mutation Login($email: String!, $password: String!) {
 `;
 
 export function Login(props: LoginProps) {
+  const setLoginAction = useLoginStatusDispatcher();
   const [isLogin, setIsLogin] = useState(true);
   const [first_name, setFirstName] = useState('');
   const [name, setName] = useState('');
@@ -24,16 +26,17 @@ export function Login(props: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = (event: React.FormEvent) => {
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     console.log('Login email:', email);
     console.log('Login Password:', password);
-    login({
+    await login({
       variables: {
         email: email,
         password: password
       }
     });
+    setLoginAction({ type: 'login' });
   };
 
   const handleRegister = (event: React.FormEvent) => {

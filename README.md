@@ -1,46 +1,60 @@
 # LendingSystem
 ## Config file
-- Create a backend-config.ini file in the backend directory of the project
-  ```ini
-  [DB]
-  db_LendingSystem_Database = <Database for the application (LendingSystem)>
-  db_LendingSystem_User     = <User for Database application>
-  db_LendingSystem_Password = <Password for given User>
-
-  [PATHS]
-  root_directory    = <directory to project location inclusive LendingSystem directory>
-  picture_directory = pictures
-  pdf_directory     = pdfs
-
-  [SECRET_KEY]
-  secret_key = <secret key for session management>
-
-  [TESTING]
-  testing = <0 for production / 1 for testing>
-
-  [MAIL]
-  mail_server_address = mail.prhn.dynpc.net
-  mail_server_port = 465
-  use_ssl = 0
-  sender_email_address = noreply@prhn.dynpc.net
-  sender_email_password = <Password for noreply>
-  ```
-
-- For docker create a backend.env file in the LendingSystem directory
+- create a backend.env file in the LendingSystem directory
 ```env
-db_LendingSystem_Database=
-db_LendingSystem_Port=
-db_LendingSystem_User=
-db_LendingSystem_Password=
-root_directory=
-picture_directory=
-pdf_directory=
+# Config file for the LendingSystem 
+
+################################
+# Config of the mysql database #
+################################
+database_host=
+database_name=
+database_port=
+
+# mysql user needs rights to create tables and add, edit and deletes entries
+database_user=
+
+# define either the location for a database password file (for docker usage)
+# or directly the password, leave the unused option empty
+
+# location of the db password file -> simple text file with only the password in it
+# database_password_location=/run/secrets/db-password # for the docker container 
+database_password_location=../db-password.txt
+
+# database password
+database_password=
+
+################################
+# define paths for the storage #
+# of files                     #
+################################
+# root_directory=/backend/ # for container usage
+root_directory=../
+
+picture_directory=pictures
+pdf_directory=pdfs
+
+################################
+# flask session secret key     #
+################################
 secret_key=
+
+################################
+# config for the mail to send  #
+# reminder and password reset  #
+# mails                        #
+################################
 mail_server_address=
 mail_server_port=
-use_ssl=
+use_ssl= # 0 for no; 1 for yes
 sender_email_address=
 sender_email_password=
+
+################################
+# application settings         #
+################################
+root_user_name=root
+root_user_password=Passw0rd!
 ```
 ## For Backend
 ### Install requirements

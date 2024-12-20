@@ -149,3 +149,67 @@ export function useGetPhysicalObjects() {
 
     return useSuspenseQueryWithResponseMapped<GetPhysicalObjectsResponse[], InventoryItem[]>(GET_PHYSICAL_OBJECTS, 'filterPhysicalObjects', {}, mapResponseToItem);
 }
+
+// -----------------------------------------------------------------------------
+
+const FILTER_INVENTORY_BY_NAME = gql`
+    query FilterInventoryByName($name: String, $orgIds: [String!]) {
+        filterPhysicalObjects(name: $name, organizations: $orgIds) {
+            physId,
+            name,
+            description,
+            pictures {
+                edges {
+                    node {
+                        path
+                    }
+                }
+            }
+        }
+    }
+`;
+
+interface FilterPhysicalObjectsByNameResponse {
+    physId: string;
+    name: string;
+    description: string;
+    pictures: {
+        edges: {
+            node: {
+                path: string;
+            }
+        }[]
+    }
+}
+
+export interface PreviewPhysicalObject {
+    id: string;
+    name: string;
+    description: string;
+    imageSrc?: string;
+}
+
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+
+export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string) {
+    const mapResponseToItem = (response: FilterPhysicalObjectsByNameResponse[]) => {
+        return response.map(val => {
+            const flattenedVal = flattenEdges<{ path: string }, 'pictures', FilterPhysicalObjectsByNameResponse>(val, 'pictures');
+            const imageSrc = flattenedVal.pictures[0]?.path ? BASE_IMAGE_PATH + flattenedVal.pictures[0]?.path : undefined;
+            const res: PreviewPhysicalObject = {
+                id: flattenedVal.physId,
+                name: flattenedVal.name,
+                description: flattenedVal.description,
+                imageSrc: imageSrc
+            }
+            return res;
+        });
+    }
+
+    return useSuspenseQueryWithResponseMapped<FilterPhysicalObjectsByNameResponse[], PreviewPhysicalObject[]>(
+        FILTER_INVENTORY_BY_NAME,
+        'filterPhysicalObjects',
+        { variables: { name: name, orgIds: orgIds } },
+        mapResponseToItem
+    );
+}

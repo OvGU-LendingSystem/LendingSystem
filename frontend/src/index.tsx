@@ -10,6 +10,7 @@ import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { CartProvider } from './context/CartContext';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { ToasterProvider } from './context/ToasterContext';
+import { LoginStatusProvider } from './context/LoginStatusContext';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
@@ -27,7 +28,9 @@ root.render(
       <ApolloProvider client={client}>
         <CartProvider>
           <ToasterProvider>
-            <App />
+            <LoginStatusProvider>
+              <App />
+            </LoginStatusProvider>
           </ToasterProvider>
         </CartProvider>
       </ApolloProvider>

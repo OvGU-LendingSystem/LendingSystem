@@ -6,11 +6,14 @@
     display: grid;
     grid-template-rows: auto 1fr;
     grid-template-columns: 100%;
-  }
+}
   
-  main {
+.main-scroller {
     overflow: scroll;
-  }
+    display: grid;
+    grid-template-rows: 1fr auto;
+    grid-template-columns: 100%;
+}
   
   .nav-bar ul {
     list-style-type: none;
