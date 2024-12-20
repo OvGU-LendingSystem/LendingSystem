@@ -52,6 +52,7 @@ services:
     volumes:
       - pdf-files:/backend/pdfs
       - image-files:/backend/pictures
+      - template-files:/backend/templates
     env_file:
       - backend.env
     secrets:
@@ -87,6 +88,7 @@ volumes:
   database-data:
   pdf-files:
   image-files:
+  template-files:
 
 networks:
   database:
