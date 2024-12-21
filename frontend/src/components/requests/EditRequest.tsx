@@ -114,7 +114,7 @@ mutation removePhysicalObjectFromOrder(
   ) {
     removePhysicalObjectFromOrder(
       orderId: $orderId,
-      physicalobjects: $physicalObjects,
+      physicalObjects: $physicalObjects,
     ) {
       ok
       infoText
@@ -129,7 +129,7 @@ mutation addPhysicalObjectToOrder(
   ) {
     addPhysicalObjectToOrder(
       orderId: $orderId,
-      physicalobjects: $physicalObjects,
+      physicalObjects: $physicalObjects,
     ) {
       ok
       infoText
