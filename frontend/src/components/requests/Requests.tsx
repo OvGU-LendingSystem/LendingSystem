@@ -465,12 +465,12 @@ useEffect(() => {
                         <div>{request.name}</div>
                         <div>{request.email}</div>
                         <div>{request.phone}</div>
-                        <hr />
+                        <hr/>
                     </div>
 
                     <div>
                         {request.products.map((product : Product) => (
-                            <div style={productInfoStyle}>
+                            <div key={product.id} style={productInfoStyle}>
                                 <div>{product.name}</div>
                                 <div>{product.description}</div>
                                 <div>{product.amount}</div>
