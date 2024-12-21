@@ -1,9 +1,7 @@
-import { MdKeyboardArrowRight } from "react-icons/md";
-import { MdKeyboardArrowDown } from "react-icons/md";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 
-import { useQuery, gql, ApolloClient, InMemoryCache, useMutation,} from '@apollo/client';
+import { useQuery, gql, useMutation,} from '@apollo/client';
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -424,35 +422,35 @@ useEffect(() => {
           </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
-                {request.status=="requested" && (
+                {request.status === "requested" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         angefragt
                     </div>
                 </div>
                 )}
-                {request.status=="confirmed" && (
+                {request.status === "confirmed" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         bestätigt
                     </div>
                 </div>
                 )}
-                {request.status=="lended" && (
+                {request.status === "lended" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         verliehen
                     </div>
                 </div>
                 )}
-                {request.status=="returned" && (
+                {request.status === "returned" && (
                 <div style={{backgroundColor: '#ffa500', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         zurückgegeben
                     </div>
                 </div>
                 )}
-                {request.status=="rejected" && (
+                {request.status === "rejected" && (
                 <div style={{backgroundColor: '#ff0000', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         abgelehnt
@@ -487,22 +485,22 @@ useEffect(() => {
                     {
                     <div>
                     
-                    {request.status=="requested" && (
+                    {request.status === "requested" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Anfrage bestätigen
                         </button>
                     )}
-                    {request.status=="requested" && (
+                    {request.status === "requested" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder")}>
                             Anfrage ablehnen
                         </button>
                     )}
-                    {request.status=="confirmed" && (
+                    {request.status === "confirmed" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Verleihen
                         </button>
                     )}
-                    {request.status=="lended" && (
+                    {request.status === "lended" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Zurück gegeben
                         </button>
