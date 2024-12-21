@@ -90,17 +90,15 @@ mutation UpdateOrderStatus(
 const UPDATE_ORDER_DATE = gql`
 mutation UpdateOrder(
     $orderId: String!,
-    $physicalObjects: [String],
     $fromDate: Date!,
     $tillDate: Date!,
-    $users: [String]!
+    $deposit: Int,
   ) {
     updateOrder(
       orderId: $orderId,
-      physicalobjects: $physicalObjects,
       fromDate: $fromDate,
       tillDate: $tillDate,
-      users: $users
+      deposit: $deposit
     ) {
       ok
       infoText
@@ -112,9 +110,24 @@ mutation UpdateOrder(
 const REMOVE_PHYSICAL_OBJECT_FROM_ORDER = gql`
 mutation removePhysicalObjectFromOrder(
     $orderId: String!,
-    $physicalObjects: [String],
+    $physicalObjects: [String]!,
   ) {
     removePhysicalObjectFromOrder(
+      orderId: $orderId,
+      physicalobjects: $physicalObjects,
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const ADD_PHYSICAL_OBJECT_TO_ORDER = gql`
+mutation addPhysicalObjectToOrder(
+    $orderId: String!,
+    $physicalObjects: [String]!,
+  ) {
+    addPhysicalObjectToOrder(
       orderId: $orderId,
       physicalobjects: $physicalObjects,
     ) {
@@ -196,7 +209,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const navigate = useNavigate();
 
 
-    console.log("Requesting order with ID:", orderId);
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
       });
@@ -205,6 +217,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
     const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
+    const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
       
       
       useEffect(() => {
@@ -221,38 +234,87 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         }
     }, [data]);
 
-      if (error) return <p>Error: {error.message}</p>;
+    if (error) return <p>Error: {error.message}</p>;
 
-      if (!data || !data.filterOrders) return <p>No data found</p>;
-
-
-
-      const {fromDate, tillDate, physicalobjects, users } = data.filterOrders[0];
-
-      const physicalObjectsEdges = physicalobjects?.edges || [];
-      const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
+    if (!data || !data.filterOrders) return <p>No data found</p>;
 
 
-      const handleRemoveObject = (id: string) => {
-        console.log(`Remove object with ID: ${id}`);
-    
+
+    const {fromDate, tillDate, physicalobjects, users } = data.filterOrders[0];
+
+    const physicalObjectsEdges = physicalobjects?.edges || [];
+    const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
+
+
+    const handleRemoveObject = async () => {
+      
+      try {
+      
+        const { data } = await removePhysicalObjectFromOrder({
+        variables: {
+          orderId: orderId,
+          physicalObjects: physicalObjectIds,
+        },
+        });
+
+        if (data.updateOrderStatus.ok) {
+        } else {
+          console.log('Order confirmation failed:', data.updateOrderStatus.infoText);
+        }
+        } catch (error) {
+          console.error('Error confirming order:', error);
+        }
+
+
     };
+
+
+    const handleAddObject = async () => {
+    
+      try {
+      
+        const { data } = await addPhysicalObjectToOrder({
+        variables: {
+          orderId: orderId,
+          physicalObjects: selectedObjectIds,
+        },
+        });
+
+        if (data.updateOrderStatus.ok) {
+        } else {
+          console.log('Order confirmation failed:', data.updateOrderStatus.infoText);
+        }
+        } catch (error) {
+          console.error('Error confirming order:', error);
+        }
+      
+    }
+    
 
     const handleAllRequests = async () => {
       try {
-        if (!(new Date(tillDate).getTime()==new Date(endDate!).getTime()) || !(new Date(startDate!).getTime()==new Date(fromDate).getTime())){
+
+        if (selectedObjectIds.length == 0) {
+          await handleDelete();
+        }
+
+
+        await handleRemoveObject();
+
+        await handleAddObject();
+
+        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
           await handleChangeDate();
         }
 
         if (selectedStatus) {
           await handleEditRequest();
         }
-
-        console.log('All requests completed successfully');
       } catch(error) {
         console.error('Error while handling requests:', error);
       }
     }
+
 
     const handleEditRequest = async () => {
         if (!selectedStatus) {
@@ -297,14 +359,12 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
             console.error('Start date or end date is missing');
             return; // Verhindert die Weiterverarbeitung, wenn eines der Daten fehlt.
         }
-
         
         const startDateUtc = new Date(startDate); 
         const endDateUtc = new Date(endDate);     
 
         startDateUtc.setHours(startDateUtc.getHours()+2);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir zwei stunde drauf
         endDateUtc.setHours(endDateUtc.getHours()+2);
-
 
         try {
             const userIds = users.edges.map(edge => edge.node.id);
@@ -330,10 +390,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
      }
     };
 
-    console.log("PHYSICAL OBJECTS!!!!!!!!: " + physicalObjectIds);
     
     const handleGoBack = () => {
-        console.log("Change date");
         navigate('/requests');
         
     };
@@ -399,7 +457,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                                 ))}
                             </select>
                         </div>
-                        <button onClick={() => handleRemoveObject(physicalObject.id)}>Aus Order entfernen</button>
                     </div>
                 ))
             ) : (
