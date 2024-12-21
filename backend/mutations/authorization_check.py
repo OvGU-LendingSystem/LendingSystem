@@ -119,10 +119,20 @@ def check_for_order(executive_user, required_rights, order_id):
     """
     order can only be edited or deleted by user if the user is part of  the order users
     """
+    print("check order")
     order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
     
-    user_relation = order.users.filter(UserModel.user_id == executive_user.user_id).first()
-    return user_relation.user_rights > required_rights
+    organization = order.physicalobjects[0].physicalobject.organization
+    user_right = organization.get_user_right(executive_user.user_id)
+    if not (user_right is None):
+        return True
+    
+    # check if user has requiered rights in the organization
+    user_right = organization.get_user_right(executive_user.user_id)
+    if (user_right is None):
+        return False
+    
+    return user_right > required_rights
 
 def check_for_organization(executive_user, required_rights, organization_id):
     """
