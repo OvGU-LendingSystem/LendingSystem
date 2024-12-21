@@ -18,18 +18,12 @@ hostname = socket.gethostname()
 print("Hostname: ", hostname)
 
 # Read config file on host
-if hostname == "hades":
-    load_dotenv("/var/www/LendingSystem/backend.env")
-    db_host = "localhost"
-elif (hostname == "container"):
-    db_host = "database"
-else:
+if not (hostname == "container"):
     load_dotenv("../backend.env")
-    db_host = "hades.fritz.box"
 
 # Read env variables
 # Database
-# db_host = os.getenv("database_host") # TODO: user for production later
+db_host     = os.getenv("database_host")
 db_database = os.getenv('database_name')
 db_port     = os.getenv('database_port')
 db_user     = os.getenv('database_user')
@@ -68,6 +62,7 @@ application_root_user_password  = os.getenv('root_user_password')
 
 # Create engine depending on test mode
 if not (int)(testing_on):
+    print("mysql://" + db_user + ":" + db_pw + "@" + db_host + ":" + db_port + "/" + db_database)
     engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
 else:
     engine = create_engine('sqlite:///:memory:')
