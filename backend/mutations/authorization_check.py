@@ -122,7 +122,7 @@ def check_for_order(executive_user, required_rights, order_id):
     print("check order")
     order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
     
-    organization = order.physicalobjects[0].physicalobject.organization
+    organization = order.organization
     user_right = organization.get_user_right(executive_user.user_id)
     if not (user_right is None):
         return True
