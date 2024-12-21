@@ -193,9 +193,11 @@ class Order(Base):
     from_date           = Column(DateTime,          unique = False, nullable = False)
     till_date           = Column(DateTime,          unique = False, nullable = False)
     deposit             = Column(Float,             unique = False, nullable = True)
+    organization_id     = Column(String(36),        ForeignKey('organization.organization_id'), nullable=False)
 
     physicalobjects     = relationship("PhysicalObject_Order",                                  back_populates = "order", cascade="all, delete-orphan")
     users               = relationship("User",              secondary = user_order,             back_populates = "orders")
+    organization        = relationship("Organization",                                          back_populates = "orders")
 
     def addPhysicalObject(self, physicalobject, order_status = orderStatus.pending):
         """
@@ -290,6 +292,7 @@ class Organization(Base):
     users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
     physicalobjects     = relationship("PhysicalObject",    back_populates = "organization")
     groups              = relationship("Group",             back_populates = "organization")
+    orders              = relationship("Order",             back_populates = "organization")
 
     def add_user(self, user, rights = userRights.customer):
         """

@@ -45,16 +45,20 @@ class create_order(graphene.Mutation):
             if not physicalobjects:
                 return create_order(ok=False, info_text="Physical Objects not found.", status_code=404)
             
+            # Check if all physical objects are from the same organization
+            organization_id = physicalobjects[0].organization_id
+            organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
+            if len(set([phys_obj.organization_id for phys_obj in physicalobjects])) > 1:
+                return create_order(ok=False, info_text="Alle Objekte müssen der selben Organisation angehören.", status_code=400)
+            
             # Check if User is part of the organization
             executive_user = db.query(UserModel).filter(UserModel.user_id == session_user_id).first()
-            organization_id = physicalobjects[0].organization_id
             is_in_organization = False
             for organization_user in executive_user.organizations:
                 if organization_user.organization_id == organization_id:
                     is_in_organization = True
                     break
             
-            organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
 
             # add User to organization if not present
             if not is_in_organization:
@@ -66,7 +70,8 @@ class create_order(graphene.Mutation):
                 creation_date=datetime.datetime.now(),
                 from_date=from_date,
                 till_date=till_date,
-                users=[executive_user]
+                users=[executive_user],
+                organization=organization
             )
 
             for physicalobject in physicalobjects:
@@ -248,8 +253,16 @@ class add_physical_object_to_order(graphene.Mutation):
             order = OrderModel.query.filter(OrderModel.order_id == order_id).first()
             if not order:
                 return add_physical_object_to_order(ok=False, info_text="Order nicht gefunden.", status_code=404)
-
+            
             db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalObjects)).all()
+
+            # check if all physical objects are in the same organization
+            organization = order.organization
+            for phys_obj in db_physicalobjects:
+                if phys_obj.organization_id != organization.organization_id:
+                    return add_physical_object_to_order(ok=False, info_text="Physical Objects not in the same organization as the order.", status_code=400)
+
+
             for physObj in db_physicalobjects:
                 order.addPhysicalObject(physObj)
 

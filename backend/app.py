@@ -14,6 +14,7 @@ from schema import UserModel, OrganizationModel, Organization_UserModel
 # Create tables if they don't exist
 inspector = inspect(engine)
 if not inspector.has_table('users'):
+    print("Creating tables")
     Base.metadata.create_all(engine)
 
 # check if root organization exists
