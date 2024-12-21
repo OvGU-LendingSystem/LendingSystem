@@ -145,7 +145,7 @@ class PhysicalObject(Base):
     return_comment      = Column(String(600),           unique = False, nullable = True)
     organization_id     = Column(String(36), ForeignKey('organization.organization_id'), nullable=False)
 
-    organization        = relationship("Organization", back_populates="physicalobjects")
+    organization        = relationship("Organization",                                              back_populates="physicalobjects")
     pictures            = relationship("File",          foreign_keys='File.picture_id',             back_populates = "physicalobject_picture")
     manual              = relationship("File",          foreign_keys='File.manual_id',              back_populates = "physicalobject_manual")
     tags                = relationship("Tag",           secondary = physicalobject_tag,             back_populates = "physicalobjects")
@@ -259,9 +259,11 @@ class Group(Base):
     __tablename__       = "group"
     group_id            = Column(String(36),    primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True, nullable = False)
+    organization_id     = Column(String(36),    ForeignKey('organization.organization_id'), nullable=False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = group_physicalobject, back_populates = "groups")
     pictures            = relationship("File",                                             back_populates = "group")
+    organization        = relationship("Organization",                                     back_populates = "groups")
 
 class Organization(Base):
     """
@@ -286,7 +288,8 @@ class Organization(Base):
                                     }))
 
     users               = relationship("Organization_User", back_populates = "organization", cascade="all, delete-orphan")
-    physicalobjects     = relationship("PhysicalObject",    back_populates="organization")
+    physicalobjects     = relationship("PhysicalObject",    back_populates = "organization")
+    groups              = relationship("Group",             back_populates = "organization")
 
     def add_user(self, user, rights = userRights.customer):
         """

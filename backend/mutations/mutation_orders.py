@@ -237,7 +237,7 @@ class add_physical_object_to_order(graphene.Mutation):
         except:
             return add_physical_object_to_order(ok=False, info_text="Keine valide session vorhanden", status_code=419)
     
-        if not is_authorised(userRights.customer, session_user_id):
+        if not is_authorised(userRights.customer, session_user_id, order_id=order_id):
             return add_physical_object_to_order(ok=False, info_text=reject_message, status_code=403)
         
         
@@ -292,7 +292,7 @@ class remove_physical_object_from_order(graphene.Mutation):
         except:
             return remove_physical_object_from_order(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.customer, session_user_id):
+        if not is_authorised(userRights.customer, session_user_id, order_id=order_id):
             return remove_physical_object_from_order(ok=False, info_text=reject_message, status_code=403)
 
 
@@ -348,7 +348,7 @@ class delete_order(graphene.Mutation):
         except:
             return delete_order(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.customer, session_user_id):
+        if not is_authorised(userRights.customer, session_user_id, order_id=order_id):
             return delete_order(ok=False, info_text=reject_message, status_code=403)
 
 
