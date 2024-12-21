@@ -193,7 +193,7 @@ class update_order_status(graphene.Mutation):
 
 
         try:
-            phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id, PhysicalObject_OrderModel.phys_id == physicalObjects).all()
+            phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id, PhysicalObject_OrderModel.phys_id.in_(physicalObjects)).all()
             # Abort if object does not exist
             if len(phys_order) == 0:
                 return update_order_status(ok=False, info_text="Order nicht gefunden.", status_code=404)
@@ -204,6 +204,8 @@ class update_order_status(graphene.Mutation):
                     order.return_date = return_date
                 if status:
                     order.order_status = orderStatus[status]
+                else:
+                    return update_order_status(ok=False, info_text="Invalid status provided.", status_code=400)
 
             db.commit()
             return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", phys_order=phys_order, status_code=200)
@@ -364,6 +366,7 @@ class delete_order(graphene.Mutation):
                 db.commit()
                 return delete_order(ok=True, info_text="Order erfolgreich entfernt.", status_code=200)
             except Exception as e:
+                # Re-add the job for email reminders because the deletion failed
                 AddJob(order_id)
                 print(e)
                 tb = traceback.format_exc()
