@@ -258,9 +258,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         },
         });
 
-        if (data.updateOrderStatus.ok) {
+        if (data.removePhysicalObjectFromOrder.ok) {
         } else {
-          console.log('Order confirmation failed:', data.updateOrderStatus.infoText);
+          console.log('Order confirmation failed:', data.removePhysicalObjectFromOrder.infoText);
         }
         } catch (error) {
           console.error('Error confirming order:', error);
@@ -281,9 +281,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         },
         });
 
-        if (data.updateOrderStatus.ok) {
+        if (data.addPhysicalObjectToOrder.ok) {
         } else {
-          console.log('Order confirmation failed:', data.updateOrderStatus.infoText);
+          console.log('Order confirmation failed:', data.addPhysicalObjectToOrder.infoText);
         }
         } catch (error) {
           console.error('Error confirming order:', error);
@@ -300,9 +300,13 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
           return;
         }
 
+        if(notInBoth_Add.length !== 0){
         await handleAddObject();
+        }
 
+        if(notInBoth_Remove.length !== 0){
         await handleRemoveObject();
+        }
 
         if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
           await handleChangeDate();
