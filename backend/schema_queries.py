@@ -61,6 +61,7 @@ class Query(graphene.ObjectType):
         order_status        = graphene.Argument(type=graphene.List(graphene.String), required=False),
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         users               = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all orders with the given parameters, List arguments get OR-ed together",
     )
 
@@ -98,6 +99,7 @@ class Query(graphene.ObjectType):
         #list params for the relationships
         physicalobjects     = graphene.Argument(type=graphene.List(graphene.String), required=False),
         pictures            = graphene.Argument(type=graphene.List(graphene.String), required=False),
+        organizations       = graphene.Argument(type=graphene.List(graphene.String), required=False),
         description         = "Returns all groups with the given parameters, List arguments get OR-ed together",
     )  
 
@@ -238,6 +240,7 @@ class Query(graphene.ObjectType):
         order_status: Union[List[str], None] = None,
         physicalobjects: Union[List[str], None] = None,
         users: Union[List[str], None] = None,
+        organizations: Union[List[str], None] = None,
     ):
         query = Order.get_query(info=info)
 
@@ -263,6 +266,8 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.phys_id.in_(physicalobjects)))
         if users:
             query = query.filter(OrderModel.users.any(UserModel.user_id.in_(users)))
+        if organizations:
+            query = query.filter(OrderModel.organization.has(OrganizationModel.organization_id.in_(organizations)))
         
         orders = query.all()
         return orders
@@ -333,6 +338,7 @@ class Query(graphene.ObjectType):
         # list params for the relationships
         physicalobjects: Union[List[str], None] = None,
         pictures: Union[List[str], None] = None,
+        organizations: Union[List[str], None] = None,
     ):
         query = Group.get_query(info=info)
 
@@ -345,6 +351,8 @@ class Query(graphene.ObjectType):
             query = query.filter(GroupModel.physicalobjects.any(PhysicalObjectModel.phys_id.in_(physicalobjects)))
         if pictures:
             query = query.filter(GroupModel.pictures.any(FileModel.file_id.in_(pictures)))
+        if organizations:
+            query = query.filter(GroupModel.organization.has(OrganizationModel.organization_id.in_(organizations)))
 
         groups = query.all()
         return groups
