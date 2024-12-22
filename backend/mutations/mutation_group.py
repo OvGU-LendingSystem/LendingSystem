@@ -5,7 +5,7 @@ import traceback
 from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights
-from schema import Group, GroupModel, PhysicalObjectModel
+from schema import Group, GroupModel, OrganizationModel, PhysicalObjectModel
 
 ##################################
 # Mutations for Groups           #
@@ -18,6 +18,7 @@ class create_group(graphene.Mutation):
 
     class Arguments:
         name            = graphene.String(required=True)
+        organization_id = graphene.String(required=True)
         physicalobjects = graphene.List(graphene.String)
 
     group       = graphene.Field(lambda: Group)
@@ -26,24 +27,34 @@ class create_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, name, physicalobjects=None):
+    def mutate(self, info, name, organization_id, physicalobjects=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
         except:
             return create_group(ok=False, info_text="Keine valide session vorhanden", status_code=419)
         
-        if not is_authorised(userRights.inventory_admin, session_user_id):
+        if not is_authorised(userRights.inventory_admin, session_user_id, organization_id=organization_id):
             return create_group(ok=False, info_text=reject_message, status_code=403)
 
 
 
         try:
-            group = GroupModel(name=name)
+            organization = db.query(OrganizationModel).filter(OrganizationModel.organization_id == organization_id).first()
+            group = GroupModel(
+                name = name,
+                organization=organization
+            )
 
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                
+                # Check if all physical objects are from the organization
+                for phys_obj in db_physicalobjects:
+                    if phys_obj.organization_id != organization_id:
+                        return create_group(ok=False, info_text="Nicht alle Physical Objects sind in der Organisation.", status_code=403)
+                
                 group.physicalobjects = db_physicalobjects
 
             db.add(group)
@@ -62,7 +73,7 @@ class update_group(graphene.Mutation):
     Updates content of the group with the given group_id.
     For Connections to physical objects use array of their String uuid
     """
-
+    # TODO: remove physicalobjects as argument, and create two new mutations for adding and removing physical objects from a group, like order
     class Arguments:
         group_id        = graphene.String(required=True)
         name            = graphene.String()
@@ -92,8 +103,14 @@ class update_group(graphene.Mutation):
             if not group:
                 return update_group(ok=False, info_text="Gruppe \"" + name + "\" nicht gefunden.", status_code=404)
             if physicalobjects:
-                db_physicalobjects = db.query(PhysicalObjectModel).filter(
-                    PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                organization = group.organization
+                db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
+                
+                # Check if all physical objects are from the organization
+                for phys_obj in db_physicalobjects:
+                    if phys_obj.organization_id != organization.organization_id:
+                        return update_group(ok=False, info_text="Nicht alle Physical Objects sind in der Organisation.", status_code=403)
+
                 group.physicalobjects = db_physicalobjects
             if name:
                 group.name = name
