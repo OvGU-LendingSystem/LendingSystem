@@ -126,6 +126,30 @@ export function useEditPhysicalObject() {
 
 // -----------------------------------------------------------------------------
 
+const DELETE_PHYSICAL_OBJECT = gql`
+mutation DeletePhysicalObject($id: String!) {
+  deletePhysicalObject(physId: $id) {
+    ok
+    infoText
+    statusCode
+  }
+}`;
+
+
+export interface DeletePhysicalObjectVars {
+    id: string
+}
+
+export function useDeletePhysicalObject() {
+    return useMutationWithResponse<GQLResponse, DeletePhysicalObjectVars>(
+        DELETE_PHYSICAL_OBJECT,
+        'deletePhysicalObject',
+        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+    );
+}
+
+// -----------------------------------------------------------------------------
+
 const GET_PHYSICAL_OBJECTS = gql`
 query GetPhysicalObjects {
   filterPhysicalObjects {

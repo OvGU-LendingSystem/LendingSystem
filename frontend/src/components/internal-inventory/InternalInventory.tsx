@@ -7,7 +7,7 @@ import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-hel
 import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H2, H3, InputGroup, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
 import { MdBugReport, MdWifiOff } from 'react-icons/md';
 import { ActionDialogWithRetryToast } from '../action-dialog/ActionDialog';
-import { PreviewPhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { PreviewPhysicalObject, useDeletePhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
 import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
 import { OrganizationRights } from '../../models/user.model';
 import { useGetOrganizationByIdQuery } from '../../hooks/organization-helper';
@@ -171,7 +171,7 @@ const inventoryItemDeleteDialogText = {
 
 function InventoryList({ name, orgId }: { name?: string, orgId: string }) {
     const { data: items } = useFilterPhysicalObjectsByName([orgId], name);
-    const [ deleteItem ] = useDeleteGroupMutation();
+    const [ deleteItem ] = useDeletePhysicalObject();
     const [ deleteId, setDeleteId ] = useState<string>();
 
     return (
