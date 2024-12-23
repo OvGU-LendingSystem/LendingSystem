@@ -176,7 +176,7 @@ function InventoryList({ name, orgId }: { name?: string, orgId: string }) {
 
     return (
         <>
-            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteItem({ variables: { id: deleteId } })}
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={(delId) => deleteItem({ variables: { id: delId } })}
                 icon='trash' {...inventoryItemDeleteDialogText} />
             <BaseInventoryListWithMenu items={items} menu={(id) => <InventoryOptionsOverlay id={id} onDeleteClick={() => setDeleteId(id)} />} />
         </>
@@ -301,7 +301,7 @@ function GroupList({ name, orgId }: { name?: string, orgId: string }) {
 
     return (
         <>
-            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteGroup({ variables: { id: deleteId } })}
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={(delId) => deleteGroup({ variables: { id: delId } })}
                 icon='trash' {...groupDeleteDialogText} />
             <BaseInventoryListWithMenu items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
         </>
