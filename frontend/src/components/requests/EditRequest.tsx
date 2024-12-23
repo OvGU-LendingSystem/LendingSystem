@@ -2,8 +2,8 @@ import './EditRequest.css';
 import { useNavigate, useParams  } from "react-router-dom";
 import { useSuspenseQuery, gql, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
-import { Suspense, useMemo, useState, useEffect } from "react";
-import Calendar_Querry_New from "../../core/input/Buttons/Calendar_Querry_New";
+import { Suspense, useState, useEffect } from "react";
+import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
 import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
@@ -90,17 +90,13 @@ mutation UpdateOrderStatus(
 const UPDATE_ORDER_DATE = gql`
 mutation UpdateOrder(
     $orderId: String!,
-    $physicalObjects: [String],
     $fromDate: Date!,
     $tillDate: Date!,
-    $users: [String]!
   ) {
     updateOrder(
       orderId: $orderId,
-      physicalobjects: $physicalObjects,
       fromDate: $fromDate,
       tillDate: $tillDate,
-      users: $users
     ) {
       ok
       infoText
@@ -112,11 +108,26 @@ mutation UpdateOrder(
 const REMOVE_PHYSICAL_OBJECT_FROM_ORDER = gql`
 mutation removePhysicalObjectFromOrder(
     $orderId: String!,
-    $physicalObjects: [String],
+    $physicalObjects: [String]!,
   ) {
     removePhysicalObjectFromOrder(
       orderId: $orderId,
-      physicalobjects: $physicalObjects,
+      physicalObjects: $physicalObjects,
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const ADD_PHYSICAL_OBJECT_TO_ORDER = gql`
+mutation addPhysicalObjectToOrder(
+    $orderId: String!,
+    $physicalObjects: [String]!,
+  ) {
+    addPhysicalObjectToOrder(
+      orderId: $orderId,
+      physicalObjects: $physicalObjects,
     ) {
       ok
       infoText
@@ -196,7 +207,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const navigate = useNavigate();
 
 
-    console.log("Requesting order with ID:", orderId);
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
       });
@@ -205,6 +215,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
     const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
+    const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
       
       
       useEffect(() => {
@@ -221,22 +232,93 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         }
     }, [data]);
 
-      if (error) return <p>Error: {error.message}</p>;
+    if (error) return <p>Error: {error.message}</p>;
 
-      if (!data || !data.filterOrders) return <p>No data found</p>;
-
-
-
-      const {fromDate, tillDate, physicalobjects, users } = data.filterOrders[0];
-
-      const physicalObjectsEdges = physicalobjects?.edges || [];
-      const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
+    if (!data || !data.filterOrders) return <p>No data found</p>;
 
 
-      const handleRemoveObject = (id: string) => {
-        console.log(`Remove object with ID: ${id}`);
-    
+
+    const {fromDate, tillDate, physicalobjects} = data.filterOrders[0];
+
+    const physicalObjectsEdges = physicalobjects?.edges || [];
+    const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
+    const notInBoth_Remove = physicalObjectIds.filter( (id) => !selectedObjectIds.includes(id))
+    const notInBoth_Add = selectedObjectIds.filter( (id) => !physicalObjectIds.includes(id))
+
+
+    const handleRemoveObject = async () => {
+
+
+      try {
+      
+        const { data } = await removePhysicalObjectFromOrder({
+        variables: {
+          orderId: orderId,
+          physicalObjects: notInBoth_Remove,
+        },
+        });
+
+        if (data.removePhysicalObjectFromOrder.ok) {
+        } else {
+          console.log('Order confirmation failed:', data.removePhysicalObjectFromOrder.infoText);
+        }
+        } catch (error) {
+          console.error('Error confirming order:', error);
+        }
+
+
     };
+
+
+    const handleAddObject = async () => {
+    
+      try {
+      
+        const { data } = await addPhysicalObjectToOrder({
+        variables: {
+          orderId: orderId,
+          physicalObjects: notInBoth_Add,
+        },
+        });
+
+        if (data.addPhysicalObjectToOrder.ok) {
+        } else {
+          console.log('Order confirmation failed:', data.addPhysicalObjectToOrder.infoText);
+        }
+        } catch (error) {
+          console.error('Error confirming order:', error);
+        }
+      
+    }
+    
+
+    const handleAllRequests = async () => {
+      try {
+
+        if (selectedObjectIds.length === 0) {
+          await handleDelete();
+          return;
+        }
+
+        if(notInBoth_Add.length !== 0){
+        await handleAddObject();
+        }
+
+        if(notInBoth_Remove.length !== 0){
+        await handleRemoveObject();
+        }
+
+        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
+          await handleChangeDate();
+        }
+
+        if (selectedStatus) {
+          await handleEditRequest();
+        }
+      } catch(error) {
+        console.error('Error while handling requests:', error);
+      }
+    }
 
 
     const handleEditRequest = async () => {
@@ -248,7 +330,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         try {
             let returnDate = null; 
 
-            if (selectedStatus == "RETURNED") {
+            if (selectedStatus === "RETURNED") {
                 returnDate = new Date().toISOString().split('T')[0]; 
             }
           
@@ -282,25 +364,20 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
             console.error('Start date or end date is missing');
             return; // Verhindert die Weiterverarbeitung, wenn eines der Daten fehlt.
         }
-
         
         const startDateUtc = new Date(startDate); 
         const endDateUtc = new Date(endDate);     
 
-        startDateUtc.setHours(startDateUtc.getHours()+1);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir eine stunde drauf
-        endDateUtc.setHours(endDateUtc.getHours()+1);
-
+        startDateUtc.setHours(startDateUtc.getHours()+2);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir zwei stunde drauf
+        endDateUtc.setHours(endDateUtc.getHours()+2);
 
         try {
-            const userIds = users.edges.map(edge => edge.node.id);
 
           const { data } = await UpdateOrderDate({
             variables: {
               orderId: orderId,
-              physicalObjects: null,
               fromDate: startDateUtc.toISOString().split('T')[0],
               tillDate: endDateUtc.toISOString().split('T')[0],
-              users: userIds,
             },
           });
     
@@ -317,8 +394,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     
     const handleGoBack = () => {
-        console.log("Change date");
-        
+        navigate('/requests');
     };
 
     const handleDelete = async () => {
@@ -343,10 +419,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         handleDelete();
     };
 
-    const confirmEdit = () => {
-        setShowEditPopUp(false);
-        handleEditRequest();
-    }
+    console.log("Length: " + physicalObjectIds.filter( (id) => !selectedObjectIds.includes(id)));
 
     return (
         <div style={{ padding: "20px" }}>
@@ -382,7 +455,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                                 ))}
                             </select>
                         </div>
-                        <button onClick={() => handleRemoveObject(physicalObject.id)}>Aus Order entfernen</button>
                     </div>
                 ))
             ) : (
@@ -404,7 +476,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Complete Edit</button>
                 <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
                 <button onClick={() => setShowDeletePopUp(true)}> Delete Order</button>
-                <button onClick={() => {navigate('/requests');}}> Zurück</button>
+                <button onClick={() => handleGoBack()}> Zurück</button>
             </div>
 
             <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
@@ -416,10 +488,10 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                          <h2 
                          >Objekt bearbeiten
                          </h2>
-                    <Calendar_Querry_New setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+                    <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
 
                     <div style={buttonContainerStyle}>
-                    <button onClick={handleChangeDate}>Ausleihzeit ändern</button>
+                    <button onClick={() => {setShowModal(false);}}>Ausleihzeit ändern</button>
                     <button onClick={() => {
                         setShowModal(false);
                         setEndDate(tillDate);
@@ -446,7 +518,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     <div style={modalContentStyle}>
                         <h2>Bestätigung</h2>
                         <p>Möchstest du diese Order wirklich editeren?</p>
-                        <button onClick={confirmEdit}>Bestätigen</button>
+                        <button onClick={handleAllRequests}>Bestätigen</button>
                         <button onClick={() => setShowEditPopUp(false)}>Abbrechen</button>
                     </div>
                 </div>
