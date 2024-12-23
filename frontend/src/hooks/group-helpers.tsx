@@ -51,7 +51,7 @@ export function useDeleteGroupMutation() {
 
 const GET_GROUPS_QUERY = gql`
 query GetGroups($name: String, $orgIds: [String!]!) {
-  filterGroups(name: $name) {
+  filterGroups(name: $name, organizations: $orgIds) {
     groupId,
     name,
     physicalobjects {
@@ -96,7 +96,6 @@ interface GetGroupsResponse {
 export type PreviewGroup = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
 
 export function useGetGroupsQuery(orgIds: string[], name?: string) {
-    // TODOOO: use orgIds
     const mapToGroup = (val: GetGroupsResponse[]) => {
         return val.map((groupResponse) => {
             const flattenedPhysicalObjects = flattenEdges<{ name: string }, 'physicalobjects', GetGroupsResponse>(groupResponse, 'physicalobjects');
