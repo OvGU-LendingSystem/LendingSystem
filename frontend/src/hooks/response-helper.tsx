@@ -1,4 +1,4 @@
-import { ApolloCache, DefaultContext, MutationFunctionOptions, OperationVariables, QueryResult, SuspenseQueryHookOptions, useLazyQuery, useMutation, useSuspenseQuery } from "@apollo/client";
+import { ApolloCache, DefaultContext, MutationFunctionOptions, OperationVariables, SuspenseQueryHookOptions, useLazyQuery, useMutation, useSuspenseQuery } from "@apollo/client";
 import { DocumentNode } from "graphql";
 import { useMemo } from "react";
 
@@ -85,7 +85,7 @@ export function useSuspenseQueryWithResponseMapped<T, U = T>(query: DocumentNode
             info: 'No data'
         };
         throw result;
-    }, [queryResult, queryResult.data]);
+    }, [queryResult, map, queryName]);
 
     return { ...queryResult, data };
 }

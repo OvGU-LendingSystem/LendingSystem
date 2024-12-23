@@ -48,7 +48,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
         }
 
         return () => { id && window.clearTimeout(id) };
-    }, [shouldCheck, visible]);
+    }, [shouldCheck, visible, checkSession, getUserInfo]);
 
     useEffect(() => {
         const visibilityChangeListener = () => {
