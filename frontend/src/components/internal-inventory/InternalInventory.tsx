@@ -84,7 +84,9 @@ export function InternalInventory() {
             </Collapse>
 
             <ErrorBoundary FallbackComponent={ErrorScreen}>
-                { orgs.map((org) => <PhysicalObjectAndGroupList orgId={org.id} searchParams={validSearchParams} />) }
+                <Suspense fallback={<LoadingScreen />}>
+                    { orgs.map((org) => <PhysicalObjectAndGroupList orgId={org.id} searchParams={validSearchParams} />) }
+                </Suspense>
             </ErrorBoundary>
         </div>
     );
