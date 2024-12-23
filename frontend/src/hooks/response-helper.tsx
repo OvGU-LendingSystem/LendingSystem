@@ -29,12 +29,25 @@ export function flattenEdges<U = any, Key extends string = string, T extends { [
     return res;
 }
 
-export function useMutationWithResponseMapped<T extends GQLResponse, U extends GQLResponse = T>(mutation: DocumentNode, queryName: string, map: (val: SuccessResponse<T>) => SuccessResponse<U>):
-    [ (options?: MutationFunctionOptions<{ [queryName: string]: T }, OperationVariables, DefaultContext, ApolloCache<any>> | undefined) => Promise<SuccessResponse<T> | ErrorResponse> ] {
-    const [ mutateInternal ] = useMutation<{ [queryName: string]: T }>(mutation);
-    const mutate = async (options?: MutationFunctionOptions<{ [queryName: string]: T }, OperationVariables, DefaultContext, ApolloCache<any>> | undefined) => {
+export function useMutationWithResponseMapped<
+    TVars = OperationVariables,
+    TContext = DefaultContext,
+    TCache extends ApolloCache<any> = ApolloCache<any>,
+    T extends GQLResponse = GQLResponse,
+    U extends GQLResponse = T
+>(
+    mutation: DocumentNode,
+    queryName: string,
+    map: (val: SuccessResponse<T>) => SuccessResponse<U>,
+    baseOptions: MutationFunctionOptions<TVars, TContext, TCache> = {}
+): [ (options?: MutationFunctionOptions<{ [queryName: string]: T }, TVars, TContext, TCache>) => Promise<SuccessResponse<T> | ErrorResponse> ] {
+    const [ mutateInternal ] = useMutation<{ [queryName: string]: T }, TVars, TContext, TCache>(mutation);
+    const mutate = async (options?: MutationFunctionOptions<{ [queryName: string]: T }, TVars, TContext, TCache>) => {
+        const mutationOptions = {};
+        Object.assign(mutationOptions, baseOptions, options);
+
         try {
-            const response = await mutateInternal(options);
+            const response = await mutateInternal(mutationOptions);
             if (response.errors) {
                 const result: ErrorResponse = {
                     success: false,
@@ -61,8 +74,13 @@ export function useMutationWithResponseMapped<T extends GQLResponse, U extends G
     return [ mutate ];
 }
 
-export function useMutationWithResponse<T extends GQLResponse>(mutation: DocumentNode, queryName: string) {
-    return useMutationWithResponseMapped<T, T>(mutation, queryName, (val) => val);
+export function useMutationWithResponse<
+    T extends GQLResponse,
+    TVars = OperationVariables,
+    TContext= DefaultContext,
+    TCache extends ApolloCache<any> = ApolloCache<any>
+>(mutation: DocumentNode, queryName: string, baseOptions: MutationFunctionOptions<TVars, TContext, TCache> = {}) {
+    return useMutationWithResponseMapped<TVars, TContext, TCache, T, T>(mutation, queryName, (val) => val, baseOptions);
 }
 
 export function useSuspenseQueryWithResponseMapped<T, U = T>(query: DocumentNode, queryName: string, options: SuspenseQueryHookOptions<{ [queryName: string]: T }, OperationVariables>, map: (val: T) => U) {
