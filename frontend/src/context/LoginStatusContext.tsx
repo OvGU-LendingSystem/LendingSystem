@@ -26,7 +26,10 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const userInfo = await getUserInfo({ variables: { userId: sessionRes.userId } });
+            const userInfo = await getUserInfo({
+                variables: { userId: sessionRes.userId },
+                fetchPolicy: 'network-only'
+            });
             if (!userInfo.success || !userInfo.data) {
                 // TODO: log error
                 setLoginStatus({ loggedIn: false });
@@ -48,7 +51,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
         }
 
         return () => { id && window.clearTimeout(id) };
-    }, [shouldCheck, visible]);
+    }, [shouldCheck, visible, checkSession, getUserInfo]);
 
     useEffect(() => {
         const visibilityChangeListener = () => {
