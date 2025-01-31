@@ -38,7 +38,29 @@ function DisplayLocations() {
 //ENDE APOLLO STUFF
 
 export function Cart() {
-  const itemsInCart = useCart();
+  const itemsInCartUnsorted = useCart();
+  itemsInCartUnsorted.sort(function(a, b){
+      if (a.organisation<b.organisation) return -1;
+      if (a.organisation>b.organisation) return 1;
+      return 0;
+    }
+  );
+  const itemsInCart: Product[][] = [];
+  if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
+  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organisation : "";
+  itemsInCartUnsorted.forEach(item => {
+    const ind = itemsInCart.length-1;
+    if (item.organisation == firstOrg){
+      itemsInCart[ind].push(item);
+    }
+    else{
+      itemsInCart.push([]);
+      itemsInCart[ind+1].push(item);
+      firstOrg = item.organisation;
+    }
+  });
+  //const itemsInCart = itemsInCartUnsorted;
+  console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
 
     const [buttonPopup, SetButtonPopup] = useState(false);
@@ -102,29 +124,40 @@ export function Cart() {
             <div style={{padding: '20px'}}>
                 <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
-                {itemsInCart.map((product) => (
-                 <div key={product.id} style={productCardStyle}>
-                 <img src={product.imageUrl} alt={product.name} style={imageStyle} />
-                 <div style={productInfoStyle}>
-                   <h3>{product.name}</h3>
-                   
-                   <div style={descriptionStyle}>
-                     <div style={descriptionContentStyle}>{product.description}</div>
-                     <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
-                   </div>
-                   <div style={priceStyle}>{product.price}</div>
-                   <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                   <div>Anzahl: {product.amount}</div>
 
-                   
-                   <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                     Bearbeiten
-                   </button>
-                   <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
-                     Entfernen
-                   </button>
-                 </div>
-               </div>
+                {itemsInCart.map((item) => (
+                  <div style={aroundProductCardStyle}>
+                  {item.map((product) => (
+                    <div key={product.id} style={productCardStyle}>
+                    <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+                    <div style={productInfoStyle}>
+                      <h3>{product.name}</h3>
+                      
+                      <div style={descriptionStyle}>
+                        <div style={descriptionContentStyle}>{product.description}</div>
+                        <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
+                      </div>
+                      <div style={priceStyle}>{product.price}</div>
+                      <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                      <div>Anzahl: {product.amount}</div>
+                      <div>Organistation: {product.organisation}</div>
+
+                      
+                      <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                        Bearbeiten
+                      </button>
+                      <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
+                        Entfernen
+                      </button>
+                    </div>
+                  </div>
+                  ))}
+
+                    <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
+                    {<AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/>}
+                    {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
+                  </div>
+                
                 ))}
 
                 {showModal && (
@@ -173,9 +206,7 @@ export function Cart() {
                   </div>
                 )}
             
-            <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
-            {<AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup}/>}
-            {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
+            
             </div>
         </div>
     );
@@ -226,6 +257,12 @@ const filterContainerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
   };
+
+  const aroundProductCardStyle: React.CSSProperties = {
+    marginBottom: '20px',
+    border: '1px solid #ccc',
+    padding: '10px',
+  };
   
   const imageStyle: React.CSSProperties = {
     width: '250px',
@@ -246,6 +283,11 @@ const filterContainerStyle: React.CSSProperties = {
     cursor: 'pointer',
     marginRight: '10px',
     marginTop: '10px',
+  };
+
+  const divTOSendButton: React.CSSProperties = {
+    border: 'solid',
+    marginBottom: '10px',
   };
   
   const descriptionStyle: React.CSSProperties = {
