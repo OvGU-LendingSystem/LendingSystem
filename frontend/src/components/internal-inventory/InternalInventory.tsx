@@ -1,13 +1,13 @@
 import './InternalInventory.css';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { isApolloError, useSuspenseQuery } from "@apollo/client";
+import { isApolloError } from "@apollo/client";
 import { Suspense, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { useDeleteGroupMutation, useGetGroupsQuery } from "../../hooks/group-helpers";
-import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H2, H3, IconName, InputGroup, Intent, LinkProps, MaybeElement, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
+import { Button, Card, CardList, CardListProps, CardProps, Checkbox, Classes, Collapse, ControlGroup, EntityTitle, H2, H3, InputGroup, Menu, MenuItem, NonIdealState, Popover, Spinner } from "@blueprintjs/core";
 import { MdBugReport, MdWifiOff } from 'react-icons/md';
 import { ActionDialogWithRetryToast } from '../action-dialog/ActionDialog';
-import { PreviewPhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { PreviewPhysicalObject, useDeletePhysicalObject, useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
 import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
 import { OrganizationRights } from '../../models/user.model';
 import { useGetOrganizationByIdQuery } from '../../hooks/organization-helper';
@@ -84,7 +84,9 @@ export function InternalInventory() {
             </Collapse>
 
             <ErrorBoundary FallbackComponent={ErrorScreen}>
-                { orgs.map((org) => <PhysicalObjectAndGroupList orgId={org.id} searchParams={validSearchParams} />) }
+                <Suspense fallback={<LoadingScreen />}>
+                    { orgs.map((org) => <PhysicalObjectAndGroupList orgId={org.id} searchParams={validSearchParams} />) }
+                </Suspense>
             </ErrorBoundary>
         </div>
     );
@@ -169,12 +171,12 @@ const inventoryItemDeleteDialogText = {
 
 function InventoryList({ name, orgId }: { name?: string, orgId: string }) {
     const { data: items } = useFilterPhysicalObjectsByName([orgId], name);
-    const [ deleteItem ] = useDeleteGroupMutation();
+    const [ deleteItem ] = useDeletePhysicalObject();
     const [ deleteId, setDeleteId ] = useState<string>();
 
     return (
         <>
-            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteItem({ variables: { id: deleteId } })}
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={(delId) => deleteItem({ variables: { id: delId } })}
                 icon='trash' {...inventoryItemDeleteDialogText} />
             <BaseInventoryListWithMenu items={items} menu={(id) => <InventoryOptionsOverlay id={id} onDeleteClick={() => setDeleteId(id)} />} />
         </>
@@ -299,7 +301,7 @@ function GroupList({ name, orgId }: { name?: string, orgId: string }) {
 
     return (
         <>
-            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={() => deleteGroup({ variables: { id: deleteId } })}
+            <ActionDialogWithRetryToast id={deleteId} setId={setDeleteId} action={(delId) => deleteGroup({ variables: { id: delId } })}
                 icon='trash' {...groupDeleteDialogText} />
             <BaseInventoryListWithMenu items={items} menu={(id) => <GroupListItemMenu id={id} onDeleteClick={() => setDeleteId(id)} />} />        
         </>

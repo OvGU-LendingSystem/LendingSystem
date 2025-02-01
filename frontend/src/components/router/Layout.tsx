@@ -39,6 +39,7 @@ declare global {
     amount?: number;
     category?: string;
     status?: string;
+    organisation: string;
   }
 
   interface Quest {
