@@ -8,7 +8,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 import { OrderPopup } from "../cart/OrderPopup";
-import { LoginStatus } from '../../models/login-status.model';
+import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
 
@@ -75,6 +75,8 @@ const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
 const [CreateOrder] = useMutation(CREATE_ORDER);
 const [UpdateOrder] = useMutation(UPDATE_ORDER);
+
+const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
 
 const handleCreateOrder = async () => {
     try {
@@ -181,7 +183,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl="/agb.pdf"  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
@@ -195,7 +197,7 @@ return (
                 </div>
                 <div>
                 <button 
-                    onClick={() => {handleCreateOrder; 
+                    onClick={() => {handleCreateOrder(); 
                          SetButtonPopup(true);
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}

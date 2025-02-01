@@ -1,15 +1,17 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { OrderPopup } from "./OrderPopup";
 import { useState, useEffect } from "react";
 import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
+import { useLoginStatus } from "../../context/LoginStatusContext";
 
 //APOLLO STUFF ZUM TESTEN
 
 import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
+import { Spinner } from "@blueprintjs/core";
 
 const GET_LOCATIONS = gql`
   query {
@@ -37,6 +39,8 @@ function DisplayLocations() {
 
 //ENDE APOLLO STUFF
 
+
+
 export function Cart() {
   const itemsInCartUnsorted = useCart();
   itemsInCartUnsorted.sort(function(a, b){
@@ -62,6 +66,7 @@ export function Cart() {
   //const itemsInCart = itemsInCartUnsorted;
   console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
+  const loginDispatcher = useLoginStatus();
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
@@ -153,8 +158,8 @@ export function Cart() {
                   </div>
                   ))}
 
-                    <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle}>Abschicken</button>
-                    {<AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/>}
+                    <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
+                    {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
                     {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
                   </div>
                 
