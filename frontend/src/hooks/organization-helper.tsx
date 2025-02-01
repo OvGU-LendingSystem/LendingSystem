@@ -8,6 +8,13 @@ query GetOrgById($id: String!) {
     id: organizationId
     name
     location
+    agb{
+        edges {
+            node{
+                path
+            }
+        }
+    }
   }
 }
 `;
@@ -15,8 +22,16 @@ query GetOrgById($id: String!) {
 interface GetOrgByIdResponse {
     id: string,
     name: string,
-    location: string
+    location: string,
+    agb: {
+        edges: {
+            node: {
+                    path: string;
+                }
+            }
+    }[]
 }
+
 
 export function useGetOrganizationByIdQuery(orgId: string) {
     const mapToGroup = (response: GetOrgByIdResponse[]): Organization => {
@@ -26,10 +41,13 @@ export function useGetOrganizationByIdQuery(orgId: string) {
         }
         const orgRes = response[0];
 
+
+
         return {
             id: orgRes.id,
             name: orgRes.name,
-            location: orgRes.location
+            location: orgRes.location,
+            agb: orgRes.agb[0]?.edges?.node?.path ?? "/agb.pdf"
         };
     }
     

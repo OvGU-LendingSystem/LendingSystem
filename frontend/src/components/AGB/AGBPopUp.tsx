@@ -8,6 +8,7 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 import { OrderPopup } from "../cart/OrderPopup";
+import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
 
@@ -26,11 +27,32 @@ mutation createOrder(
     $physicalObjects: [String]!,
     $tilDate: Date
   ) {
-    updateOrderStatus(
+    createOrder(
       deposit: $deposit,
       fromDate: $fromDate,
       physicalObjects: $physicalObjects,
       tilDate: $tilDate
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const UPDATE_ORDER = gql`
+mutation updateOrder(
+    $deposit: Int,
+    $fromDate: Date!,
+    $orderId: String!,
+    $tilDate: Date,
+    $users: [String]
+  ) {
+    updateOrder(
+      deposit: $deposit,
+      fromDate: $fromDate,
+      orderId: $orderId,
+      tilDate: $tilDate,
+      users: $users
     ) {
       ok
       infoText
@@ -52,6 +74,9 @@ const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
 const [CreateOrder] = useMutation(CREATE_ORDER);
+const [UpdateOrder] = useMutation(UPDATE_ORDER);
+
+const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
 
 const handleCreateOrder = async () => {
     try {
@@ -88,6 +113,9 @@ const handleCreateOrder = async () => {
             if (deposit[i]>DECKELUNG)
                 deposit[i] = DECKELUNG;
         }*/
+
+        //TODO ADD USER TO ORDER
+        //if (LoggedIn.loggedIn)
 
         for (let i=0; i<fromDate.length; i++){
             const { data } = await CreateOrder({
@@ -155,7 +183,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl="/agb.pdf"  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
@@ -169,7 +197,7 @@ return (
                 </div>
                 <div>
                 <button 
-                    onClick={() => {handleCreateOrder; 
+                    onClick={() => {handleCreateOrder(); 
                          SetButtonPopup(true);
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
