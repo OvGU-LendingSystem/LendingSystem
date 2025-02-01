@@ -315,6 +315,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         if (selectedStatus) {
           await handleEditRequest();
         }
+
+        
       } catch(error) {
         console.error('Error while handling requests:', error);
       }
@@ -424,7 +426,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     return (
         <div style={{ padding: "20px" }}>
             <h1>Order Details</h1>
-            <h2>Objects:</h2>
+            <h2>Objekte:</h2>
             {selectedObjectIds.length > 0 ? (
                 selectedObjectIds.flatMap((id) => {
                     const item = allPhysicalObjects.find((item) => item.id === id);
