@@ -507,12 +507,12 @@ useEffect(() => {
                     )}
 
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
-                            Edit
+                            Bearbeiten
                         </button>
 
 
                         <button style={buttonStyle} onClick={() => reset(request)}>
-                            reset
+                            Zurücksetzen
                         </button>
                     </div>
                     }
