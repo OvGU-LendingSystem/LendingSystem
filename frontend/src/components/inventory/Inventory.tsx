@@ -12,7 +12,8 @@ var products: Product[] = [
     description: 'Beschreibung für Objekt 1',
     price: 10,
     imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik'
+    category: 'Elektronik',
+    organisation: 'FARAFIN'
   },
   {
     id: 2,
@@ -20,7 +21,8 @@ var products: Product[] = [
     description: 'Beschreibung für Objekt 2',
     price: 20,
     imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik'
+    category: 'Elektronik',
+    organisation: 'FARAFIN'
   },
   {
     id: 3,
@@ -28,7 +30,8 @@ var products: Product[] = [
     description: 'Beschreibung für Objekt 3',
     price: 30,
     imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office'
+    category: 'Office',
+    organisation: 'FARAMATH'
   },
   {
     id: 4,
@@ -36,7 +39,8 @@ var products: Product[] = [
     description: 'Beschreibung für Objekt 4',
     price: 30,
     imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office'
+    category: 'Office',
+    organisation: 'STURA'
   },
   {
     id: 5,
@@ -44,7 +48,8 @@ var products: Product[] = [
     description: 'Beschreibung für Objekt 5',
     price: 50,
     imageUrl: 'https://via.placeholder.com/300',
-    category: 'Electronik'
+    category: 'Electronik',
+    organisation: 'FARAFIN'
   },
 ];
 
