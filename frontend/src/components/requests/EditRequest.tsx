@@ -194,7 +194,7 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId }: EditRequestProps) {
-    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(); // TODO: org?
+    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -217,7 +217,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
     const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
       
-      
+      // Set the initial values for Date, objectIds and Status of the Order
       useEffect(() => {
         setSelectedObjectIds(data?.filterOrders[0]?.physicalobjects?.edges?.map((item) => item.node.physId) ?? []);
         refetch()
@@ -247,8 +247,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
 
     const handleRemoveObject = async () => {
-
-
       try {
       
         const { data } = await removePhysicalObjectFromOrder({
@@ -269,9 +267,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     };
 
-
     const handleAddObject = async () => {
-    
       try {
       
         const { data } = await addPhysicalObjectToOrder({
@@ -288,9 +284,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         } catch (error) {
           console.error('Error confirming order:', error);
         }
-      
     }
-    
 
     const handleAllRequests = async () => {
       try {
@@ -315,7 +309,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         if (selectedStatus) {
           await handleEditRequest();
         }
-
         
       } catch(error) {
         console.error('Error while handling requests:', error);
@@ -357,16 +350,13 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     const openHandleChangeDate = () => {
         setShowModal(true);
-        
     };
 
     const handleChangeDate = async () => {
-
         if (!startDate || !endDate) {
             console.error('Start date or end date is missing');
             return; // Verhindert die Weiterverarbeitung, wenn eines der Daten fehlt.
-        }
-        
+        } 
         const startDateUtc = new Date(startDate); 
         const endDateUtc = new Date(endDate);     
 
@@ -393,7 +383,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
        console.error('Error confirming order:', error);
      }
     };
-
     
     const handleGoBack = () => {
         navigate('/requests');
@@ -421,7 +410,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         handleDelete();
     };
 
-    console.log("Length: " + physicalObjectIds.filter( (id) => !selectedObjectIds.includes(id)));
 
     return (
         <div style={{ padding: "20px" }}>
@@ -475,9 +463,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <MdAdd size={36} />
             </div>
             <div style={{ marginTop: "20px" }}>
-                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Complete Edit</button>
+                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
                 <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
-                <button onClick={() => setShowDeletePopUp(true)}> Delete Order</button>
+                <button onClick={() => setShowDeletePopUp(true)}> Order löschen</button>
                 <button onClick={() => handleGoBack()}> Zurück</button>
             </div>
 
@@ -530,6 +518,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         </div>
     );
 }
+
+
+// selectedObjects Overlay + Add Objects
 
 interface SelectObjectsOverlayProps {
     showOverlay: boolean;
