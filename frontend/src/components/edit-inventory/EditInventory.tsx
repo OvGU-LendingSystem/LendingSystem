@@ -72,7 +72,6 @@ interface GetItemResponse {
     filterPhysicalObjects: {
         name: string, borrowable: boolean, storageLocation: string, description: string,
         faults: string,
-        deposit: number,
         invNumInternal: number,
         invNumExternal: number,
         storageLocation2: string,
@@ -129,12 +128,10 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
             return await editPhysicalObject({
                 variables: {
                     physId: itemId,
-                    invNumInternal: val.inventoryNumberInternal ?? 0,
-                    invNumExternal: val.inventoryNumberExternal ?? 0,
+                    invNumInternal: val.inventoryNumberInternal, invNumExternal: val.inventoryNumberExternal,
                     storageLocation: val.storageLocation,
                     name: val.name, deposit: val.deposit,
-                    faults: val.defects ?? '',
-                    description: val.description ?? '',
+                    faults: val.defects ?? '', description: val.description ?? '',
                     pictures: images,
                     manuals: manuals,
                     borrowable: val.borrowable,

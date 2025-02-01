@@ -23,7 +23,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 const cartActionReducer = (items: Product[], action: CartDispatcherAction) => {
     switch (action.type) {
         case "add": return [ ...items, action.item ];
-        case "remove": return items.filter(item => item.id !== action.item.id);
+        case "remove": return items.filter(item => item.id != action.item.id);
         case "edit": return items.map(x => x.id === action.item.id ? action.item : x);
     }
 }

@@ -1,6 +1,6 @@
 import { useField } from 'formik';
 import './Input.css';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 export function Input({ before, after, touched, ...inputProps }: InputProps) {
     return (

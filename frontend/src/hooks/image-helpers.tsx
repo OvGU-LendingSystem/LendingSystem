@@ -102,11 +102,11 @@ export function useUploadMissingFiles() {
             fileId: res.data!.uploadFile.file.fileId // TODO handle error
         };
         return val;
-    }, [addFileMutation]);
+    }, []);
 
     const upload = useCallback(async (files: FileResource[]) => {
         return uploadFiles(files, addFile);
-    }, [addFile]);
+    }, []);
 
     return upload;
 }
@@ -115,11 +115,11 @@ export function useDeleteFiles() {
     const [ removeFileMutation ] = useMutation(REMOVE_FILE);
     const removeFile = useCallback(async (fileId: string) => {
         await removeFileMutation({ variables: { fileId: fileId } });
-    }, [removeFileMutation]);
+    }, []);
 
     const remove = useCallback(async (files: RemoteFile[]) => {
         await deleteFiles(files, removeFile);
-    }, [removeFile]);
+    }, []);
 
     return remove;
 }

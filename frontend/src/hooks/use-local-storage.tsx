@@ -27,7 +27,7 @@ export function useLocalStorage<T>(
 
         const data = JSON.parse(storageData, reviver);
         setData(data);
-    }, [key, reviver]);
+    }, []);
 
     return [ data, setDataWithLocalStorage ];
 }
@@ -54,7 +54,7 @@ export function useLocalStorageWithReducer<T extends Reducer<any, any>>(
 
     useEffect(() => {
         window.localStorage.setItem(key, JSON.stringify(data, replacer));
-    }, [data, key, replacer]);
+    }, [data]);
 
     return [ data, dispatch ];
 }

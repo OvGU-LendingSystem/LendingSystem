@@ -13,15 +13,8 @@ const ADD_GROUP_MUTATION = gql`
 
 type AddGroupResponse = GQLResponse;
 
-export interface AddGroupVars {
-    name: string,
-    physicalObjects: string[]
-}
-
 export function useAddGroupMutation() {
-    return useMutationWithResponse<AddGroupResponse, AddGroupVars>(ADD_GROUP_MUTATION, 'createGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
-    });
+    return useMutationWithResponse<AddGroupResponse>(ADD_GROUP_MUTATION, 'createGroup')
 }
 
 const EDIT_GROUP_MUTATION = gql`
@@ -35,16 +28,8 @@ const EDIT_GROUP_MUTATION = gql`
 
 type EditGroupResponse = GQLResponse;
 
-export interface EditGroupVars {
-    groupId: string,
-    name: string,
-    physicalObjects: string[]
-}
-
 export function useEditGroupMutation() {
-    return useMutationWithResponse<EditGroupResponse, EditGroupVars>(EDIT_GROUP_MUTATION, 'updateGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
-    });
+    return useMutationWithResponse<EditGroupResponse>(EDIT_GROUP_MUTATION, 'updateGroup')
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -58,21 +43,15 @@ const DELETE_GROUP_MUTATION = gql`
     }
 `;
 
-export interface DeleteGroupVars {
-    id: string
-}
-
 export function useDeleteGroupMutation() {
-    return useMutationWithResponse<GQLResponse, DeleteGroupVars>(DELETE_GROUP_MUTATION, 'deleteGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
-    });
+    return useMutationWithResponse(DELETE_GROUP_MUTATION, 'deleteGroup');
 }
 
 // -------------------------------------------------------------------------------------------------
 
 const GET_GROUPS_QUERY = gql`
 query GetGroups($name: String, $orgIds: [String!]!) {
-  filterGroups(name: $name, organizations: $orgIds) {
+  filterGroups(name: $name) {
     groupId,
     name,
     physicalobjects {
@@ -117,6 +96,7 @@ interface GetGroupsResponse {
 export type PreviewGroup = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
 
 export function useGetGroupsQuery(orgIds: string[], name?: string) {
+    // TODOOO: use orgIds
     const mapToGroup = (val: GetGroupsResponse[]) => {
         return val.map((groupResponse) => {
             const flattenedPhysicalObjects = flattenEdges<{ name: string }, 'physicalobjects', GetGroupsResponse>(groupResponse, 'physicalobjects');

@@ -113,7 +113,7 @@ export function AddInventory() {
     }
 
     return (
-        <ModifyInventory initialValue={{ organizationId: orgId, name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, deposit: 0, images: [], manuals: [] }}
+        <ModifyInventory initialValue={{ organizationId: orgId, name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, images: [], manuals: [] }}
             ErrorScreen={AddInventoryErrorView} onClick={submit} label='Add Item' onSuccess={onSuccess} />
     );
 }
