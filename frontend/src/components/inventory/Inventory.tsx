@@ -77,12 +77,14 @@ const GET_PRODUCTS = gql`
   }
 `;
 
-/*
-function DisplayRequests() {
+
+function DisplayInventory() {
   const { loading, error, data } = useQuery(GET_PRODUCTS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
+
+  console.log(data);
 
   products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
     {
@@ -94,12 +96,14 @@ function DisplayRequests() {
     }
   ));
   return <div></div>;
-}*/
+}
 
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
+
+  DisplayInventory();
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
