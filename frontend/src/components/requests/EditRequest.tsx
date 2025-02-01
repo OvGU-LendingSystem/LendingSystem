@@ -463,9 +463,9 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <MdAdd size={36} />
             </div>
             <div style={{ marginTop: "20px" }}>
-                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Complete Edit</button>
+                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
                 <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
-                <button onClick={() => setShowDeletePopUp(true)}> Delete Order</button>
+                <button onClick={() => setShowDeletePopUp(true)}> Order löschen</button>
                 <button onClick={() => handleGoBack()}> Zurück</button>
             </div>
 
