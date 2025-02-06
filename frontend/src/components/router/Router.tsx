@@ -16,6 +16,7 @@ import { ContactScreen } from "../contact/Contact";
 import { ImpressumScreen } from "../impressum/Impressum";
 import { PrivacyScreen } from "../privacy/Privacy";
 import { Profile } from "../profile/Profile";
+import { Suspense } from "react";
 
 export function Router() {
     return (
@@ -40,7 +41,7 @@ export function Router() {
             </Route>
 
             <Route path='internal'>
-              <Route path='inventory' element={<InternalInventory />} />
+              <Route path='inventory' element={<Suspense><InternalInventory /></Suspense>} />
               <Route path='calendar' element={<Calendar />} />
             </Route>
 

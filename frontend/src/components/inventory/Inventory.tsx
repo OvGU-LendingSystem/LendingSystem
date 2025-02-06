@@ -6,9 +6,105 @@ import { useCart, useCartDispatcher } from '../../context/CartContext';
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
 import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 
+var products: Product[] = [
+  {
+    id: 1,
+    name: 'Maus',
+    description: 'Beschreibung für Objekt 1',
+    price: 10,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Elektronik',
+    organisation: 'FARAFIN'
+  },
+  {
+    id: 2,
+    name: 'Maus2',
+    description: 'Beschreibung für Objekt 2',
+    price: 20,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Elektronik',
+    organisation: 'FARAFIN'
+  },
+  {
+    id: 3,
+    name: 'Tastatur',
+    description: 'Beschreibung für Objekt 3',
+    price: 30,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Office',
+    organisation: 'FARAMATH'
+  },
+  {
+    id: 4,
+    name: 'Tastatur2',
+    description: 'Beschreibung für Objekt 4',
+    price: 30,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Office',
+    organisation: 'STURA'
+  },
+  {
+    id: 5,
+    name: 'Beamer',
+    description: 'Beschreibung für Objekt 5',
+    price: 50,
+    imageUrl: 'https://via.placeholder.com/300',
+    category: 'Electronik',
+    organisation: 'FARAFIN'
+  },
+];
+
+const GET_PRODUCTS = gql`
+  query {
+    filterPhyiscalObjects {
+      physId
+      fromDate
+      tillDate
+      physicalobjects {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+      users {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+
+function DisplayInventory() {
+  const { loading, error, data } = useQuery(GET_PRODUCTS);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error : {error.message}</p>;
+
+  console.log(data);
+
+  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
+    {
+      id: orderId,
+      name: users,
+      email: users,
+      products: physicalobjects,
+      status: ""
+    }
+  ));
+  return <div></div>;
+}
+
+
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
+
+  DisplayInventory();
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);

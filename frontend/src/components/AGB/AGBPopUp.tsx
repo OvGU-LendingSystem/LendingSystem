@@ -8,14 +8,57 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 import { OrderPopup } from "../cart/OrderPopup";
+import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
+
+import { useQuery, gql, useMutation,} from '@apollo/client';
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
-
 type AGBPopUpProbs = {
     trigger : boolean,
-    setTrigger : any;
+    setTrigger : any,
+    products: Product[],
 }
+
+const CREATE_ORDER = gql`
+mutation createOrder(
+    $deposit: Int,
+    $fromDate: Date!,
+    $physicalObjects: [String]!,
+    $tilDate: Date
+  ) {
+    createOrder(
+      deposit: $deposit,
+      fromDate: $fromDate,
+      physicalObjects: $physicalObjects,
+      tilDate: $tilDate
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const UPDATE_ORDER = gql`
+mutation updateOrder(
+    $deposit: Int,
+    $fromDate: Date!,
+    $orderId: String!,
+    $tilDate: Date,
+    $users: [String]
+  ) {
+    updateOrder(
+      deposit: $deposit,
+      fromDate: $fromDate,
+      orderId: $orderId,
+      tilDate: $tilDate,
+      users: $users
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
 
 /**
  * 
@@ -30,7 +73,67 @@ const [isChecked, setIsChecked] = useState(false);
 const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
+const [CreateOrder] = useMutation(CREATE_ORDER);
+const [UpdateOrder] = useMutation(UPDATE_ORDER);
 
+const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
+
+const handleCreateOrder = async () => {
+    try {
+        const fromDate: Date[] = [];
+        const tilDate: Date[] = [];
+        const productsDividedByDate: Product[][] = [];
+        const deposit: number[] = [];
+
+        props.products.forEach(item => {
+            let x = false;
+            for (let i=0; i<fromDate.length; i++){
+                if (fromDate[i] == item.startDate && tilDate[i] == item.endDate){
+                    productsDividedByDate[i].push(item);
+                    deposit[i] += item.price;
+                    x = true;
+                    break;
+                }
+            }
+            if (!x){
+                const ind = fromDate.length;
+                
+                if (item.startDate==undefined) throw new Error('undefined startDate');
+                fromDate.push(item.startDate);
+                if (item.endDate==undefined) throw new Error('undefined endDate');
+                tilDate.push(item.endDate);
+                productsDividedByDate.push([]);
+                productsDividedByDate[ind].push(item);
+                deposit.push(item.price);
+            }
+        });
+
+        //TODO DECKELUNG FÜR DEPOSIT
+        /*for (let i=0; i<deposit.length; i++){
+            if (deposit[i]>DECKELUNG)
+                deposit[i] = DECKELUNG;
+        }*/
+
+        //TODO ADD USER TO ORDER
+        //if (LoggedIn.loggedIn)
+
+        for (let i=0; i<fromDate.length; i++){
+            const { data } = await CreateOrder({
+                variables: {
+                  deposit: deposit[i],
+                  fromDate: fromDate[i],
+                  physicalObjects: productsDividedByDate[i].map(product => product.id),
+                  tilDate : tilDate[i],
+                },
+              });
+        }
+
+        
+  
+   } catch (error) {
+     console.error('Error confirming order:', error);
+   }
+};
 
 useEffect(() => {
     if (!props.trigger) return;
@@ -80,7 +183,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl="/agb.pdf"  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
@@ -94,7 +197,8 @@ return (
                 </div>
                 <div>
                 <button 
-                    onClick={() => {SetButtonPopup(true);
+                    onClick={() => {handleCreateOrder(); 
+                         SetButtonPopup(true);
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >

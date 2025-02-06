@@ -15,6 +15,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const [ loginStatus, setLoginStatus ] = useState<LoginStatus.Status>({ loggedIn: false });
     const [ shouldCheck, setShouldCheck ] = useState(0);
     const [ visible, setVisible ] = useState<boolean>(!document.hidden);
+    const [ loaded, setLoaded ] = useState<boolean>(false);
     
     useEffect(() => {
         let id: number;
@@ -41,6 +42,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
 
         const checkStatus = (timeoutMs: number) => window.setTimeout(async () => {
             await updateSessionData();
+            setLoaded(true);
             id = checkStatus(1000 * 60);
         }, timeoutMs);
 
@@ -51,7 +53,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
         }
 
         return () => { id && window.clearTimeout(id) };
-    }, [shouldCheck, visible, checkSession, getUserInfo]);
+    }, [shouldCheck, visible]);
 
     useEffect(() => {
         const visibilityChangeListener = () => {
@@ -72,7 +74,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     return (
         <LoginStatusContext.Provider value={loginStatus}>
             <LoginStatusDispatcherContext.Provider value={handleLoginStatusAction}>
-                { children }
+                { loaded && children }
             </LoginStatusDispatcherContext.Provider>
         </LoginStatusContext.Provider>
     );

@@ -407,7 +407,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('rejected')}
                     onChange={() => handleCategoryChange('rejected')}
                   />
-                  Abgelehnt
+                  abgelehnt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -415,7 +415,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('returned')}
                     onChange={() => handleCategoryChange('returned')}
                   />
-                  Zurückgegeben
+                  zurückgegeben
                 </label>
               </div>
             )}
@@ -507,12 +507,12 @@ useEffect(() => {
                     )}
 
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
-                            Edit
+                            Bearbeiten
                         </button>
 
 
                         <button style={buttonStyle} onClick={() => reset(request)}>
-                            reset
+                            Zurücksetzen
                         </button>
                     </div>
                     }
