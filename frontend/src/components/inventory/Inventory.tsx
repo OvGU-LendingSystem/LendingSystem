@@ -4,93 +4,7 @@ import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
-
-var products: Product[] = [
-  {
-    id: 1,
-    name: 'Maus',
-    description: 'Beschreibung für Objekt 1',
-    price: 10,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik'
-  },
-  {
-    id: 2,
-    name: 'Maus2',
-    description: 'Beschreibung für Objekt 2',
-    price: 20,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik'
-  },
-  {
-    id: 3,
-    name: 'Tastatur',
-    description: 'Beschreibung für Objekt 3',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office'
-  },
-  {
-    id: 4,
-    name: 'Tastatur2',
-    description: 'Beschreibung für Objekt 4',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office'
-  },
-  {
-    id: 5,
-    name: 'Beamer',
-    description: 'Beschreibung für Objekt 5',
-    price: 50,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Electronik'
-  },
-];
-
-const GET_PRODUCTS = gql`
-  query {
-    filterPhyiscalObjects {
-      physId
-      fromDate
-      tillDate
-      physicalobjects {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-      users {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    }
-  }
-`;
-
-/*
-function DisplayRequests() {
-  const { loading, error, data } = useQuery(GET_PRODUCTS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
-    {
-      id: orderId,
-      name: users,
-      email: users,
-      products: physicalobjects,
-      status: ""
-    }
-  ));
-  return <div></div>;
-}*/
-
+import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
@@ -98,7 +12,7 @@ export function Inventory(): JSX.Element {
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [amount, setAmount] = useState<number>(1);
@@ -107,6 +21,9 @@ export function Inventory(): JSX.Element {
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetching physical objects
+  const { data: products, error } = useGetPhysicalObjects();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -121,7 +38,7 @@ export function Inventory(): JSX.Element {
     };
   }, [dropdownRef]);
 
-  const openModal = (product: Product) => {
+  const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
   };
@@ -131,7 +48,7 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
-  const openDetails = (product: Product) => {
+  const openDetails = (product: any) => {
     setSelectedProduct(product);
     setShowDetails(true);
   };
@@ -159,14 +76,11 @@ export function Inventory(): JSX.Element {
     );
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
-    (selectedCategories.length === 0 || selectedCategories.includes(product.category || ''))
+  const filteredProducts = products?.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const openMoreDetails = () => {
-
-  }
+  if (error) return <p>Error loading products: {error.message}</p>;
 
   return (
     <>
@@ -210,15 +124,15 @@ export function Inventory(): JSX.Element {
         </div>
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
-            <div key={product.id} style={productCardStyle}>
-              <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+            <div key={product.physId} style={productCardStyle}>
+              <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <h3>{product.name}</h3>
                 <div style={descriptionStyle}>
                   <div style={descriptionContentStyle}>{product.description}</div>
                   <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                 </div>
-                <div style={priceStyle}>{product.price}</div>
+                <div style={priceStyle}>{product.deposit} €</div>
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
@@ -232,7 +146,7 @@ export function Inventory(): JSX.Element {
             <ul>
               {itemsInCart.map((item, index) => (
                 <li key={index}>
-                  {products.find((product) => product.id === item.id)?.name} -{' '}
+                  {products.find((product) => product.physId === item.name)?.name} -{' '}
                   {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
                   {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
                 </li>
@@ -267,7 +181,6 @@ export function Inventory(): JSX.Element {
         </div>
       )}
 
-
       {showDetails && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
@@ -286,6 +199,7 @@ export function Inventory(): JSX.Element {
     </>
   );
 }
+
 
 const filterContainerStyle: React.CSSProperties = {
   display: 'flex',
