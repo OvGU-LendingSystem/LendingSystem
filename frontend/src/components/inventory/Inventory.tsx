@@ -4,6 +4,7 @@ import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 
 var products: Product[] = [
   {
@@ -107,7 +108,7 @@ export function Inventory(): JSX.Element {
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [amount, setAmount] = useState<number>(1);
@@ -116,6 +117,9 @@ export function Inventory(): JSX.Element {
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetching physical objects
+  const { data: products, error } = useGetPhysicalObjects();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -130,7 +134,7 @@ export function Inventory(): JSX.Element {
     };
   }, [dropdownRef]);
 
-  const openModal = (product: Product) => {
+  const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
   };
@@ -140,7 +144,7 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
-  const openDetails = (product: Product) => {
+  const openDetails = (product: any) => {
     setSelectedProduct(product);
     setShowDetails(true);
   };
@@ -168,14 +172,11 @@ export function Inventory(): JSX.Element {
     );
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().startsWith(searchQuery.toLowerCase()) &&
-    (selectedCategories.length === 0 || selectedCategories.includes(product.category || ''))
+  const filteredProducts = products?.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const openMoreDetails = () => {
-
-  }
+  if (error) return <p>Error loading products: {error.message}</p>;
 
   return (
     <>
@@ -219,15 +220,15 @@ export function Inventory(): JSX.Element {
         </div>
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
-            <div key={product.id} style={productCardStyle}>
-              <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+            <div key={product.physId} style={productCardStyle}>
+              <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <h3>{product.name}</h3>
                 <div style={descriptionStyle}>
                   <div style={descriptionContentStyle}>{product.description}</div>
                   <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                 </div>
-                <div style={priceStyle}>{product.price}</div>
+                <div style={priceStyle}>{product.deposit} €</div>
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
@@ -241,7 +242,7 @@ export function Inventory(): JSX.Element {
             <ul>
               {itemsInCart.map((item, index) => (
                 <li key={index}>
-                  {products.find((product) => product.id === item.id)?.name} -{' '}
+                  {products.find((product) => product.physId === item.name)?.name} -{' '}
                   {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
                   {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
                 </li>
@@ -276,7 +277,6 @@ export function Inventory(): JSX.Element {
         </div>
       )}
 
-
       {showDetails && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
@@ -295,6 +295,7 @@ export function Inventory(): JSX.Element {
     </>
   );
 }
+
 
 const filterContainerStyle: React.CSSProperties = {
   display: 'flex',
