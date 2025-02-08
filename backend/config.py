@@ -53,6 +53,9 @@ sender_email_password   = os.getenv('sender_email_password')
 # Secret key
 secret_key = os.getenv("secret_key")
 
+# Timezone
+timezone_string         = os.getenv('timezone')
+
 # Testing
 testing_on = 0
 
@@ -94,5 +97,7 @@ server_session = Session(app)
 jobstores = {
     'default': SQLAlchemyJobStore(engine=engine)
 }
-scheduler = BackgroundScheduler(jobstores=jobstores, timezone=pytz.timezone('Europe/Berlin'))
+
+timezone = pytz.timezone('Europe/Berlin')
+scheduler = BackgroundScheduler(jobstores=jobstores, timezone=timezone)
 scheduler.start()

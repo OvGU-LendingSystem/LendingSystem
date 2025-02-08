@@ -6,7 +6,7 @@ import traceback
 from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights, orderStatus
-from scheduler import AddJob, CancelJob
+from scheduler import AddJob, CancelJob, status_change
 from schema import Order, OrderModel, OrganizationModel, Organization_UserModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
 
 ##################################
@@ -157,6 +157,7 @@ class update_order(graphene.Mutation):
 
             # add new email reminders for modified job
             AddJob(order_id)
+            status_change(order)
 
             return update_order(ok=True, info_text="OrderStatus aktualisiert.", order=order, status_code=200)
 
@@ -213,6 +214,7 @@ class update_order_status(graphene.Mutation):
                     return update_order_status(ok=False, info_text="Invalid status provided.", status_code=400)
 
             db.commit()
+            status_change(phys_order[0].order)
             return update_order_status(ok=True, info_text="OrderStatus aktualisiert.", phys_order=phys_order, status_code=200)
 
         except Exception as e:
@@ -276,6 +278,7 @@ class add_physical_object_to_order(graphene.Mutation):
             order.deposit = min(phys_deposit, max_deposit)
 
             db.commit()
+            status_change(order)
             return add_physical_object_to_order(ok=True, info_text="Physical Objects added to Order.", phys_order=order.physicalobjects, status_code=200)
 
         except Exception as e:
@@ -333,6 +336,7 @@ class remove_physical_object_from_order(graphene.Mutation):
             order.deposit = min(phys_deposit, max_deposit)
 
             db.commit()
+            status_change(order)
             return remove_physical_object_from_order(ok=True, info_text="Physical Objects removed from Order.",
                                                      phys_order=order.physicalobjects, status_code=200)
 
@@ -340,7 +344,7 @@ class remove_physical_object_from_order(graphene.Mutation):
             print(e)
             tb = traceback.format_exc()
             print(tb)
-            return remove_physical_object_from_order(ok=False, info_text="Error removing Physical Objects from Order. " + str(e) + "traceback: " + str(tb), status_code=500)
+            return remove_physical_object_from_order(ok=False, info_text="Error removing Physical Objects from Order. " + str(e) + " traceback: " + str(tb), status_code=500)
 
 
 class delete_order(graphene.Mutation):

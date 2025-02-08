@@ -56,6 +56,8 @@ sender_email_password=
 ################################
 root_user_name=root
 root_user_password=Passw0rd!
+
+timezone=Europe/Berlin
 ```
 ## For Backend
 ### Install requirements
