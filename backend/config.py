@@ -78,6 +78,8 @@ app.debug = True
 app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_SECURE'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
 if (hostname == "container"):
     app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
