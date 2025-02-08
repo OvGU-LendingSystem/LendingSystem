@@ -1,9 +1,7 @@
-import { MdKeyboardArrowRight } from "react-icons/md";
-import { MdKeyboardArrowDown } from "react-icons/md";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 
-import { useQuery, gql, ApolloClient, InMemoryCache, useMutation,} from '@apollo/client';
+import { useQuery, gql, useMutation,} from '@apollo/client';
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -183,99 +181,6 @@ useEffect(() => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  // test data for local requests
-  {/*
-  const localRequests: Quest[] = [  {
-    id: 1,
-    name: 'Hello Test',
-    email: 'hello@test.de',
-    products: [
-      {
-          id: 1,
-          name: 'Maus',
-          description: 'Beschreibung für Objekt 1',
-          price: 'Kaution: 10€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Elektronik',
-          amount: 1,
-          startDate: new Date(),
-          endDate: new Date(),
-      },
-      {
-          id: 2,
-          name: 'Maus2',
-          description: 'Beschreibung für Objekt 2',
-          price: 'Kaution: 20€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Elektronik',
-          amount: 1,
-          startDate: new Date(),
-          endDate: new Date(),
-      },
-    ],
-    status: "rejected",
-  },
-  {
-      id: 2,
-      name: 'Testi Test',
-      email: 'Testi@test.de',
-      products: [
-        {
-            id: 1,
-            name: 'Maus',
-            description: 'Beschreibung für Objekt 1',
-            price: 'Kaution: 10€',
-            imageUrl: 'https://via.placeholder.com/300',
-            category: 'Elektronik',
-            amount: 2,
-            startDate: new Date(),
-            endDate: new Date(),
-        },
-        {
-          id: 3,
-          name: 'Tastatur',
-          description: 'Beschreibung für Objekt 3',
-          price: 'Kaution: 30€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Office',
-          amount: 3,
-          startDate: new Date(),
-          endDate: new Date(),
-        },
-      ],
-      status: "confirmed",
-  },
-  {
-      id: 3,
-      name: 'Testi Test',
-      email: 'Testi@test.de',
-      products: [
-        {
-            id: 1,
-            name: 'Maus',
-            description: 'Beschreibung für Objekt 1',
-            price: 'Kaution: 10€',
-            imageUrl: 'https://via.placeholder.com/300',
-            category: 'Elektronik',
-            amount: 2,
-            startDate: new Date(),
-            endDate: new Date(),
-        },
-        {
-          id: 3,
-          name: 'Tastatur',
-          description: 'Beschreibung für Objekt 3',
-          price: 'Kaution: 30€',
-          imageUrl: 'https://via.placeholder.com/300',
-          category: 'Office',
-          amount: 3,
-          startDate: new Date(),
-          endDate: new Date(),
-        },
-      ],
-      status: "lended",
-  },
-];*/}
   const fetchedRequests = data.filterOrders.map((order: any) => {
     const orderStatus = order.physicalobjects.edges.length > 0
         ? order.physicalobjects.edges[0].node.orderStatus
@@ -286,7 +191,6 @@ useEffect(() => {
     const username = `${user.firstName} ${user.lastName}`;
     const useremail = user.email;
 
-    {/*Price (deposit), Category und amount (selber berechnen) fehlen in der Datenbank glaub ich, Fakultät maybe noch abfragen*/}
     return {
       id: order.orderId,
       name: username, 
@@ -306,7 +210,6 @@ useEffect(() => {
   };
 });
 
-    { /*const requests = [...fetchedRequests, ...localRequests]; */}
     const requests = [...fetchedRequests];
     const filteredRequests = requests 
       .filter((request) => selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
@@ -314,8 +217,8 @@ useEffect(() => {
         const now = new Date().getTime();
     
     if (a.status === 'requested' && b.status === 'requested' && b.products.length > 0) {
-      const aTimeDifference = a.products[0].startDate.getTime() - now;
-      const bTimeDifference = b.products[0].startDate.getTime() - now;
+      const aTimeDifference = a.products[0]?.startDate ? a.products[0].startDate.getTime() - now : new Date().getTime();
+      const bTimeDifference = b.products[0]?.startDate ? b.products[0].startDate.getTime() - now : new Date().getTime();
       
       return aTimeDifference - bTimeDifference;
     }
@@ -504,7 +407,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('rejected')}
                     onChange={() => handleCategoryChange('rejected')}
                   />
-                  Abgelehnt
+                  abgelehnt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -512,42 +415,42 @@ useEffect(() => {
                     checked={selectedCategories.includes('returned')}
                     onChange={() => handleCategoryChange('returned')}
                   />
-                  Zurückgegeben
+                  zurückgegeben
                 </label>
               </div>
             )}
           </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
-                {request.status=="requested" && (
+                {request.status === "requested" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         angefragt
                     </div>
                 </div>
                 )}
-                {request.status=="confirmed" && (
+                {request.status === "confirmed" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         bestätigt
                     </div>
                 </div>
                 )}
-                {request.status=="lended" && (
+                {request.status === "lended" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         verliehen
                     </div>
                 </div>
                 )}
-                {request.status=="returned" && (
+                {request.status === "returned" && (
                 <div style={{backgroundColor: '#ffa500', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         zurückgegeben
                     </div>
                 </div>
                 )}
-                {request.status=="rejected" && (
+                {request.status === "rejected" && (
                 <div style={{backgroundColor: '#ff0000', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         abgelehnt
@@ -560,20 +463,17 @@ useEffect(() => {
                         <div>{request.name}</div>
                         <div>{request.email}</div>
                         <div>{request.phone}</div>
-                        <hr />
+                        <hr/>
                     </div>
 
                     <div>
                         {request.products.map((product : Product) => (
-                            <div style={productInfoStyle}>
+                            <div key={product.id} style={productInfoStyle}>
                                 <div>{product.name}</div>
                                 <div>{product.description}</div>
                                 <div>{product.amount}</div>
                                 <div>{formatDate(product.startDate)}</div>
                                 <div>{formatDate(product.endDate)}</div>
-                               {/* <button style={editButtonStyle} onClick={() => edit(product)}>
-                                   Bearbeiten
-                               </button>*/}
                                 <hr />
                             </div>
                             
@@ -585,34 +485,34 @@ useEffect(() => {
                     {
                     <div>
                     
-                    {request.status=="requested" && (
+                    {request.status === "requested" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Anfrage bestätigen
                         </button>
                     )}
-                    {request.status=="requested" && (
+                    {request.status === "requested" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder")}>
                             Anfrage ablehnen
                         </button>
                     )}
-                    {request.status=="confirmed" && (
+                    {request.status === "confirmed" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Verleihen
                         </button>
                     )}
-                    {request.status=="lended" && (
+                    {request.status === "lended" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
                             Zurück gegeben
                         </button>
                     )}
 
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
-                            Edit
+                            Bearbeiten
                         </button>
 
 
                         <button style={buttonStyle} onClick={() => reset(request)}>
-                            reset
+                            Zurücksetzen
                         </button>
                     </div>
                     }

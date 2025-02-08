@@ -157,9 +157,6 @@ export default function Calendar_Querry(probs: CalendarProbs) {
       .filter(order => {
         const orderFrom = new Date(order.fromDate);
         const orderTill = new Date(order.tillDate);
-
-        console.log("orderFrom: " + orderFrom);
-        console.log("orderTill:" + orderTill);
         
         // Wenn das ausgewählte Datum das aktuelle Datum ist, nicht deaktivieren
         if (originalFromDate.current && originalTillDate.current) {
@@ -171,7 +168,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
               return false; 
           }
 
-          return !(orderFrom <= originalTillDate.current && orderTill >= originalFromDate.current);
+          return !((orderFrom.getTime() <= new Date(originalTillDate.current).getTime()) && (orderTill.getTime() >= new Date(originalFromDate.current).getTime()));
         }
         return true; 
       })
