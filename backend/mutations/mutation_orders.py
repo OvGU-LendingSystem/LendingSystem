@@ -174,11 +174,12 @@ class update_order_status(graphene.Mutation):
     """
 
     class Arguments:
-        order_id = graphene.String(required=True)
-        physicalObjects = graphene.List(graphene.String, required=True)
+        order_id            = graphene.String(required=True)
+        physical_objects    = graphene.List(graphene.String, required=True)
 
-        return_date = graphene.Date()
-        status = graphene.String()
+        return_date     = graphene.Date()
+        status          = graphene.String()
+        return_notes    = graphene.String()
 
     phys_order  = graphene.List(lambda: PhysicalObject_Order)
     ok          = graphene.Boolean()
@@ -186,7 +187,7 @@ class update_order_status(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, order_id, physicalObjects, return_date=None, status=None):
+    def mutate(self, info, order_id, physical_objects, return_date=None, status=None, return_notes=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -199,19 +200,20 @@ class update_order_status(graphene.Mutation):
 
 
         try:
-            phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id, PhysicalObject_OrderModel.phys_id.in_(physicalObjects)).all()
+            phys_order = PhysicalObject_OrderModel.query.filter(PhysicalObject_OrderModel.order_id == order_id, PhysicalObject_OrderModel.phys_id.in_(physical_objects)).all()
             # Abort if object does not exist
             if len(phys_order) == 0:
                 return update_order_status(ok=False, info_text="Order nicht gefunden.", status_code=404)
 
             for order in phys_order:
-                print(order)
                 if return_date:
                     order.return_date = return_date
+
                 if status:
                     order.order_status = orderStatus[status]
-                else:
-                    return update_order_status(ok=False, info_text="Invalid status provided.", status_code=400)
+                
+                if return_notes:
+                    order.return_notes = return_notes
 
             db.commit()
             status_change(phys_order[0].order)
