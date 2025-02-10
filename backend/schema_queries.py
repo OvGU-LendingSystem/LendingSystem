@@ -5,6 +5,7 @@ from typing import Union, List
 from config import template_directory
 from models import orderStatus
 from schema import *
+from sqlalchemy import func
 
 # Api Queries go here
 class Query(graphene.ObjectType):
@@ -55,6 +56,11 @@ class Query(graphene.ObjectType):
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
         creation_date       = graphene.Argument(type=graphene.DateTime, required=False),
+
+        from_day            = graphene.Argument(type=graphene.Date, required=False),
+        till_day            = graphene.Argument(type=graphene.Date, required=False),
+        return_day          = graphene.Argument(type=graphene.Date, required=False),
+        creation_day        = graphene.Argument(type=graphene.Date, required=False),
         # float params
         deposit             = graphene.Argument(type=graphene.Float, required=False),
         #list params for the relationships
@@ -247,6 +253,11 @@ class Query(graphene.ObjectType):
         till_date: Union[str, None] = None,
         return_date: Union[str, None] = None,
         creation_date: Union[str, None] = None,
+
+        from_day: Union[str, None] = None,
+        till_day: Union[str, None] = None,
+        return_day: Union[str, None] = None,
+        creation_day: Union[str, None] = None,
         # int params
         deposit: Union[float, None] = None,
         # list params for the relationships
@@ -259,6 +270,8 @@ class Query(graphene.ObjectType):
 
         if order_id:
             query = query.filter(OrderModel.order_id == order_id)
+
+        # date params
         if from_date:
             query = query.filter(OrderModel.from_date == from_date)
         if till_date:
@@ -267,6 +280,19 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
         if creation_date:
             query = query.filter(OrderModel.creation_time == creation_date)
+        
+        if from_day:
+            query = query.filter(func.date(OrderModel.from_date) == from_day)
+
+        if till_day:
+            query = query.filter(func.date(OrderModel.till_date) == till_day)
+
+        if return_day:
+            query = query.filter(func.date(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date)) == return_day)
+
+        if creation_day:
+            query = query.filter(func.date(OrderModel.creation_time) == creation_day)
+
         if deposit:
             query = query.filter(OrderModel.deposit == deposit)
         # list params for the relationships .any() returns union (OR Statement)
