@@ -28,8 +28,7 @@ const statusTranslations: { [key in OrderStatus]: string } = {
   [OrderStatus.PICKED]: 'Abgeholt',
   [OrderStatus.REJECTED]: 'Abgelehnt',
   [OrderStatus.RETURNED]: 'Zurückgegeben'
-};
-
+}
 const EDIT_ORDER = gql`
  query FilterOrdersById($orderId: String!) {
     filterOrders(orderId: $orderId) {
@@ -64,11 +63,7 @@ const EDIT_ORDER = gql`
         }
       }
       organizations {
-        edges {
-          node {
-           organization_id
-          }
-        }
+           organizationId
       }
     }
   }

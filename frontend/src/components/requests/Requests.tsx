@@ -83,12 +83,8 @@ const GET_ORDERS = gql`
           }
         }
       }
-      organizations {
-      edges {
-      node {
-           organization_id
-          }
-        }
+      organization {
+           organizationId
       }
     }
   }
