@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
+import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
 
-var products: Product[] = [
+/*var products: Product[] = [
   {
     id: 1,
     name: 'Maus',
@@ -51,60 +52,99 @@ var products: Product[] = [
     category: 'Electronik',
     organisation: 'FARAFIN'
   },
-];
+];*/
+
+const GET_CATEGORIES = gql`
+  query{
+    filterTags{
+      name
+    }
+  }
+`;
 
 const GET_PRODUCTS = gql`
-  query {
-    filterPhyiscalObjects {
+  query{
+    filterPhysicalObjects{
       physId
-      fromDate
-      tillDate
-      physicalobjects {
-        edges {
-          node {
-            id
+      deposit
+      name
+      description
+      pictures{
+        edges{
+          node{
+            path
           }
         }
       }
-      users {
-        edges {
-          node {
-            id
+      tags{
+        edges{
+          node{
+            tagId
+            name
           }
         }
       }
+      groups{
+        edges{
+          node{
+            groupId
+          }
+        }
+      }
+      organizationId
     }
   }
 `;
 
 
-function DisplayInventory() {
+
+function GetOrganisationInformation(id: string){
+  const {data} = useGetOrganizationByIdQuery(id);
+  return data;
+}
+
+/*function DisplayInventory() {
   const { loading, error, data } = useQuery(GET_PRODUCTS);
+
+  useEffect(() => {
+    if (data) {
+
+      console.log(data);
+      const newProducts: Product[] = [];
+
+      data.filterPhysicalObjects.forEach((item: any) => {
+        var org = GetOrganisationInformation(item.organizationId);
+        var tmp = {
+          id: item.physId,
+          name: item.name,
+          description: item.description,
+          price: item.deposit,
+          imageUrl: item.pictures.edges[0]?.node?.path ?? " ",
+          amount: 1,
+          category: item.tags.edges[0]?.node?.name ?? " ",
+          organisation: org.name,
+        };
+        newProducts.push(tmp);
+      });
+
+      setProducts(newProducts);
+      console.log(products);
+  }}, [data]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
-  console.log(data);
-
-  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
-    {
-      id: orderId,
-      name: users,
-      email: users,
-      products: physicalobjects,
-      status: ""
-    }
-  ));
   return <div></div>;
-}
+  
+}*/
 
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
 
-  DisplayInventory();
-
+  //DisplayInventory();
+  
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -116,6 +156,43 @@ export function Inventory(): JSX.Element {
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [products, setProducts] = useState<Product[]>([]);
+
+
+  const [categories, setCategories] = useState<string[]>([]);
+  //HILFE
+  /*const { loading, error, data } = useQuery(GET_CATEGORIES);
+  setCategories(data.filterTags);*/
+
+  const { loading, error, data } = useQuery(GET_PRODUCTS);
+
+  //HILFE
+  /*useEffect(() => {
+    if (data) {
+
+      console.log(data);
+      const newProducts: Product[] = [];
+
+      data.filterPhysicalObjects.forEach((item: any) => {
+        var org = await GetOrganisationInformation(item.organizationId);
+        var tmp = {
+          id: item.physId,
+          name: item.name,
+          description: item.description,
+          price: item.deposit,
+          imageUrl: item.pictures.edges[0]?.node?.path ?? " ",
+          amount: 1,
+          category: item.tags.edges[0]?.node?.name ?? " ",
+          organisation: org.name,
+        };
+        newProducts.push(tmp);
+      });
+
+      setProducts(newProducts);
+      console.log(products);
+  }}, [data]);*/
+
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -197,22 +274,15 @@ export function Inventory(): JSX.Element {
             </button>
             {dropdownVisible && (
               <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('Elektronik')}
-                    onChange={() => handleCategoryChange('Elektronik')}
-                  />
-                  Elektronik
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('Office')}
-                    onChange={() => handleCategoryChange('Office')}
-                  />
-                  Office
-                </label>
+                {categories.map((category) => (
+                  <label style={checkboxLabelStyle}>
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category)}
+                      onChange={() => handleCategoryChange(category)}
+                    />
+                  </label>
+                ))}
               </div>
             )}
           </div>
@@ -236,7 +306,7 @@ export function Inventory(): JSX.Element {
             </div>
           ))}
         </div>
-        {itemsInCart.length > 0 && (
+        {/*itemsInCart.length > 0 && (
           <div style={{ marginTop: '20px' }}>
             <ul>
               {itemsInCart.map((item, index) => (
@@ -248,7 +318,7 @@ export function Inventory(): JSX.Element {
               ))}
             </ul>
           </div>
-        )}
+        )*/}
       </div>
 
       {showModal && (
@@ -267,9 +337,9 @@ export function Inventory(): JSX.Element {
               />
             </div>
             <div style={buttonContainerStyle}>
-              <button onClick={addToCart}>Add</button>
+              <button onClick={addToCart}>Hinzufügen</button>
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Cancel
+                Abbrechen
               </button>
             </div>
           </div>
@@ -286,7 +356,7 @@ export function Inventory(): JSX.Element {
             </div>
             <div style={buttonContainerStyle}>
               <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
-                Cancel
+                Abbrechen
               </button>
             </div>
           </div>

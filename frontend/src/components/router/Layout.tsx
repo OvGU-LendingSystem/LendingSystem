@@ -29,7 +29,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
 
 declare global {
   interface Product {
-    id: number;
+    id: string;
     name: string;
     description: string;
     price: number;
