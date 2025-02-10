@@ -108,7 +108,7 @@ class PhysicalObject_Order(Base):
     order               = relationship("Order",             back_populates = "physicalobjects")
 
     def __repr__(self):
-        return "Physical Object ID: " + str(self.phys_id) + "; Order ID: " + str(self.order_id) + "; Status: " + str(self.order_status)
+        return "Physical Object ID: " + str(self.phys_id) + "; Order ID: " + str(self.order_id) + "; Status: " + str(self.order_status) + "; Return Note: " + str(self.return_notes)
 
 
 
