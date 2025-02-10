@@ -130,6 +130,18 @@ class Query(graphene.ObjectType):
         description         = "Returns all files with the given parameters, List arguments get OR-ed together",
     )
 
+    filter_physical_object_order = graphene.List(
+        #return type
+        PhysicalObject_Order,
+        #uuid params
+        order_id            = graphene.Argument(type=graphene.String, required=False),
+        phys_id             = graphene.Argument(type=graphene.String, required=False),
+        order_status        = graphene.Argument(type=graphene.String, required=False),
+        return_notes        = graphene.Argument(type=graphene.String, required=False),
+        return_date         = graphene.Argument(type=graphene.DateTime, required=False),
+        description         = "Returns all physical object orders with the given parameters, List arguments get OR-ed together",
+    )
+
     get_imprint = graphene.String(
         description = "Returns the imprint of the LendingSystem"
     )
@@ -181,6 +193,7 @@ class Query(graphene.ObjectType):
         faults: Union[str, None] = None,
         name: Union[str, None] = None,
         obj_description: Union[str, None] = None,
+        return_notes: Union[str, None] = None,
         # list params for the relationships
         pictures: Union[List[str], None] = None,
         tags: Union[List[str], None] = None,
@@ -205,7 +218,7 @@ class Query(graphene.ObjectType):
         if faults:
             query = query.filter(PhysicalObjectModel.faults == faults)
         if name:
-            query = query.filter(PhysicalObjectModel.name == name)
+            query = query.filter(PhysicalObjectModel.name.like(f"%{name}%"))
         if obj_description:
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
@@ -404,7 +417,33 @@ class Query(graphene.ObjectType):
         
         files = query.all()
         return files
-    
+
+    @staticmethod
+    def resolve_filter_physical_object_order(
+        args,
+        info,
+        # uuid params
+        order_id: Union[str, None] = None,
+        phys_id: Union[str, None] = None,
+        order_status: Union[str, None] = None,
+        return_notes: Union[str, None] = None,
+        return_date: Union[str, None] = None,
+    ):
+        query = PhysicalObject_Order.get_query(info=info)
+
+        if order_id:
+            query = query.filter(PhysicalObject_OrderModel.order_id == order_id)
+        if phys_id:
+            query = query.filter(PhysicalObject_OrderModel.phys_id == phys_id)
+        if order_status:
+            query = query.filter(PhysicalObject_OrderModel.order_status == orderStatus[order_status.lower()])
+        if return_notes or return_notes == "":
+            query = query.filter(PhysicalObject_OrderModel.return_notes.like(f"%{return_notes}%"), PhysicalObject_OrderModel.return_notes != None)
+        if return_date:
+            query = query.filter(PhysicalObject_OrderModel.return_date == return_date)
+        
+        physical_object_orders = query.all()
+        return physical_object_orders    
 
     @staticmethod
     def resolve_get_imprint(
