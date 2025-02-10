@@ -3,6 +3,7 @@ import { useNavigate} from "react-router-dom";
 import { useUserInfo } from '../../context/LoginStatusContext';
 import { OrganizationRights } from '../../models/user.model';
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useFilterUserOrganizationInfo } from "../../utils/organization-info-utils";
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -112,15 +113,17 @@ mutation UpdateOrderStatus(
 
 export function Requests() {
   const UserInfoDispatcher = useUserInfo();
+  const OrgList = UserInfoDispatcher.organizationInfoList;
   const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
     variables: {
       organizationIds: ids,
     },
   });
-  const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
 
+  const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -201,6 +204,8 @@ useEffect(() => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
+
+
   const fetchedRequests = data.filterOrders.map((order: any) => {
     const orderStatus = order.physicalobjects.edges.length > 0
         ? order.physicalobjects.edges[0].node.orderStatus
@@ -210,6 +215,19 @@ useEffect(() => {
         : {email: "unknown@mail.com", firstName: "unknown", lastName: "unknown"}
     const username = `${user.firstName} ${user.lastName}`;
     const useremail = user.email;
+
+    const organizationId = order.organization.organizationId;
+
+    const userOrg = OrgList.find(
+      (org) => org.id === organizationId
+    )
+
+    const userRole = userOrg!.rights;
+
+    const canEditRequests = !["CUSTOMER", "MEMBER"].includes(userRole);
+
+    const showButtons =  userRole !== "CUSTOMER";
+
 
     return {
       id: order.orderId,
@@ -227,6 +245,10 @@ useEffect(() => {
           endDate: new Date(order.tillDate),
       })),
       status: mapOrderStatusToUIStatus(orderStatus),
+      organizationId: organizationId,
+      canEditRequests: canEditRequests,
+      showButtons: showButtons,
+
   };
 });
 
@@ -408,7 +430,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('requested')}
                     onChange={() => handleCategoryChange('requested')}
                   />
-                  angefragt
+                  Angefragt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -416,7 +438,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('confirmed')}
                     onChange={() => handleCategoryChange('confirmed')}
                   />
-                  bestätigt
+                  Bestätigt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -424,7 +446,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('lended')}
                     onChange={() => handleCategoryChange('lended')}
                   />
-                  verliehen
+                  Verliehen
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -432,7 +454,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('rejected')}
                     onChange={() => handleCategoryChange('rejected')}
                   />
-                  abgelehnt
+                  Abgelehnt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -440,7 +462,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('returned')}
                     onChange={() => handleCategoryChange('returned')}
                   />
-                  zurückgegeben
+                  Zurückgegeben
                 </label>
               </div>
             )}
@@ -451,6 +473,7 @@ useEffect(() => {
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Angefragt
+                        {request.organizationId}
                     </div>
                 </div>
                 )}
@@ -507,7 +530,8 @@ useEffect(() => {
                     
 
                     
-                    {
+
+                    {request.showButtons && (  
                     <div>
                     
                     {request.status === "requested" && (
@@ -530,17 +554,18 @@ useEffect(() => {
                             Zurück gegeben
                         </button>
                     )}
-
+                    {request.canEditRequests (
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
                             Bearbeiten
                         </button>
-
+                    )}
 
                         <button style={buttonStyle} onClick={() => reset(request)}>
                             Zurücksetzen
                         </button>
+                        
                     </div>
-                    }
+                    )}
 
                 </div>
             
