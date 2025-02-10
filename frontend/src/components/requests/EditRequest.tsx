@@ -62,7 +62,7 @@ const EDIT_ORDER = gql`
           }
         }
       }
-      organizations {
+      organization {
            organizationId
       }
     }
