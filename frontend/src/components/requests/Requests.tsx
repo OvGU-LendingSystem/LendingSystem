@@ -554,7 +554,7 @@ useEffect(() => {
                             Zurück gegeben
                         </button>
                     )}
-                    {request.canEditRequests (
+                    {request.canEditRequests && (
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
                             Bearbeiten
                         </button>
