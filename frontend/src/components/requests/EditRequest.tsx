@@ -9,6 +9,10 @@ import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { useLoginStatus } from '../../context/LoginStatusContext';
+import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
+import { useUserInfo } from '../../context/LoginStatusContext';
+import { OrganizationRights } from '../../models/user.model';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -18,6 +22,13 @@ enum OrderStatus {
     RETURNED = 'RETURNED',
 }
 
+const statusTranslations: { [key in OrderStatus]: string } = {
+  [OrderStatus.PENDING]: 'Ausstehend',
+  [OrderStatus.ACCEPTED]: 'Akzeptiert',
+  [OrderStatus.PICKED]: 'Abgeholt',
+  [OrderStatus.REJECTED]: 'Abgelehnt',
+  [OrderStatus.RETURNED]: 'Zurückgegeben'
+};
 
 const EDIT_ORDER = gql`
  query FilterOrdersById($orderId: String!) {
@@ -25,6 +36,7 @@ const EDIT_ORDER = gql`
       orderId
       fromDate
       tillDate
+      deposit
       physicalobjects {
         edges {
           node {
@@ -48,6 +60,13 @@ const EDIT_ORDER = gql`
             firstName
             lastName
             id
+          }
+        }
+      }
+      organizations {
+        edges {
+          node {
+           organization_id
           }
         }
       }
@@ -171,6 +190,7 @@ interface FilterOrdersData {
         orderId: string;
         fromDate: Date;
         tillDate: Date;
+        deposit: number;
         physicalobjects: {
             edges: {
                 node: {
@@ -190,11 +210,17 @@ interface FilterOrdersData {
                 }
             }[];
         };
+        organizations: {
+          edges: {
+              node: {
+                  id: string;
+              }
+          }[];
+      };
     }[];
 }
 
 function EditRequestScreen({ orderId }: EditRequestProps) {
-    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -206,7 +232,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null); 
     const navigate = useNavigate();
 
-
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
       });
@@ -216,8 +241,15 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
     const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
+
+    
+    const UserInfoDispatcher = useUserInfo();
+    const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+    const orgId = [data.filterOrders[0].organizations.edges[0].node.id];
+
+    const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
-      // Set the initial values for Date, objectIds and Status of the Order
+      // Set the initial values for Date, selectedObjectIds and Status of the Order
       useEffect(() => {
         setSelectedObjectIds(data?.filterOrders[0]?.physicalobjects?.edges?.map((item) => item.node.physId) ?? []);
         refetch()
@@ -432,7 +464,8 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                         <div>
                             <h3>{physicalObject.name}</h3>
                             <p>{physicalObject.description}</p>
-                            <p>Status:</p>
+                            <p>{physicalObject.id}</p>
+                           {/* <p>Status:</p>
                             <select 
                                 value={selectedStatus || ''} 
                                 onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
@@ -443,13 +476,29 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                                         {status}
                                     </option>
                                 ))}
-                            </select>
+                            </select>*/}
                         </div>
                     </div>
                 ))
             ) : (
                 <p>Keine Objekte gefunden</p>
             )}
+
+            <div>
+            <select
+                id="order-status"
+                value={selectedStatus || ''}
+                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                style={{ marginLeft: "10px", padding: "5px" }}
+            >
+              {Object.values(OrderStatus).map((status) => (
+                                    <option key={status} value={status}>
+                                        {statusTranslations[status]}
+                                    </option>
+                ))}
+            </select>
+            </div>
+
             <div style={{
                     border: "1px solid #ccc",
                     padding: "10px",
@@ -462,6 +511,17 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 onClick={() => setShowSelectOverlay(true)}>
                 <MdAdd size={36} />
             </div>
+
+             <div style={{
+                border: "1px solid #ccc",
+                padding: "10px",
+                margin: "10px 0",
+                borderRadius: "5px"
+            }}>
+            <h3>Deposit Information</h3>
+            <p>Deposit: {data.filterOrders[0].deposit.toFixed(2)} </p>
+            </div>
+
             <div style={{ marginTop: "20px" }}>
                 <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
                 <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
@@ -470,7 +530,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
             </div>
 
             <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
-                selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} />
+                selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} organizationId={orgId} />
 
             {showModal && (
                      <div style={modalOverlayStyle}>
@@ -527,11 +587,12 @@ interface SelectObjectsOverlayProps {
     close: () => void;
     selectedItemIds: string[];
     setSelectedItemIds: (item: string[]) => void;
+    organizationId : string[];
 }
 
-function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds }: SelectObjectsOverlayProps) {
+function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId }: SelectObjectsOverlayProps) {
     const [filterName, setFilterName] = useState<string>();
-    const { data } = useFilterPhysicalObjectsByName(undefined, filterName); // TODO org
+    const { data } = useFilterPhysicalObjectsByName(organizationId, filterName); // TODO org
 
     const updateItems = (id: string, checked: boolean) => {
         if (!checked) {
