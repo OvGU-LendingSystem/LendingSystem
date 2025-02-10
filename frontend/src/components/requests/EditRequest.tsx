@@ -205,12 +205,8 @@ interface FilterOrdersData {
                 }
             }[];
         };
-        organizations: {
-          edges: {
-              node: {
-                  id: string;
-              }
-          }[];
+        organization: {
+          id : string;
       };
     }[];
 }
@@ -240,7 +236,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     
     const UserInfoDispatcher = useUserInfo();
     const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
-    const orgId = [data.filterOrders[0].organizations.edges[0].node.id];
+    const orgId = [data.filterOrders[0].organization.id];
 
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
