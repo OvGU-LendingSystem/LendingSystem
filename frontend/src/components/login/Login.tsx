@@ -20,9 +20,12 @@ export function Login(props: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [first_name, setFirstName] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
-  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [city, setCity] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -47,17 +50,22 @@ export function Login(props: LoginProps) {
     }
     console.log('Register First Name:', first_name);
     console.log('Register Name:', name);
-    console.log('Register Password:', password);
     console.log('Register Email:', email);
+    console.log('Register Address:', address);
+    console.log('Register Postal Code:', postalCode);
+    console.log('Register City:', city);
   };
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setFirstName('');
     setName('');
+    setEmail('');
     setPassword('');
     setRepeatPassword('');
-    setEmail('');
+    setAddress('');
+    setPostalCode('');
+    setCity('');
     setShowPassword(false);
     setErrorMessage('');
   };
@@ -75,105 +83,32 @@ export function Login(props: LoginProps) {
           <h2>Login</h2>
           <div className="form-group">
             <label htmlFor="login-email">E-Mail-Adresse</label>
-            <input
-              type="text"
-              id="login-email"
-              value={email}
-              style={{width:"380px"}}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <input type="text" id="login-email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="form-group">
             <label htmlFor="login-password">Passwort</label>
             <div className="password-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="login-password"
-                value={password}
-                style={{width:"380px"}}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <span className="password-toggle" onClick={toggleShowPassword}>
-                {showPassword ? <FaEye /> : <FaEyeSlash />}
-              </span>
+              <input type={showPassword ? "text" : "password"} id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <span className="password-toggle" onClick={toggleShowPassword}>{showPassword ? <FaEye /> : <FaEyeSlash />}</span>
             </div>
           </div>
           <button type="submit" className="submit-button">Login</button>
-          <p style={{marginTop:"5px"}}>
-            Kein Konto? <button type="button" className="toggle-button" onClick={toggleForm}>Registrieren</button>
-          </p>
+          <p>Kein Konto? <button type="button" onClick={toggleForm}>Registrieren</button></p>
         </form>
       ) : (
         <form className="login-form" onSubmit={handleRegister}>
           <h2>Registrieren</h2>
-          <div className="form-group">
-            <label htmlFor="register-first-name">Vorname</label>
-            <input
-              type="text"
-              id="register-first-name"
-              value={first_name}
-              style={{width:"380px"}}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="register-name">Name</label>
-            <input
-              type="text"
-              id="register-name"
-              value={name}
-              style={{width:"380px"}}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="register-email">E-Mail-Adresse</label>
-            <input
-              type="email"
-              id="register-email"
-              value={email}
-              style={{width:"380px"}}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="register-password">Passwort</label>
-            <div className="password-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="register-password"
-                value={password}
-                style={{width:"380px"}}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-             <span className="password-toggle" onClick={toggleShowPassword}>
-            {showPassword ? <FaEye /> : <FaEyeSlash />}
-            </span>
-            </div>
-          </div>
-          <div className="form-group">
-            <label htmlFor="register-repeat-password">Passwort wiederholen</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              id="register-repeat-password"
-              value={repeatPassword}
-              style={{width:"380px"}}
-
-              onChange={(e) => setRepeatPassword(e.target.value)}
-              required
-            />
-          </div>
+          <div className="form-group"><label>Vorname</label><input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required /></div>
+          <div className="form-group"><label>Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></div>
+          <div className="form-group"><label>E-Mail-Adresse</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+          <div className="form-group"><label>Adresse</label><input type="text" value={address} onChange={(e) => setAddress(e.target.value)} required /></div>
+          <div className="form-group"><label>Postleitzahl</label><input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required /></div>
+          <div className="form-group"><label>Ort</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} required /></div>
+          <div className="form-group"><label>Passwort</label><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+          <div className="form-group"><label>Passwort wiederholen</label><input type={showPassword ? "text" : "password"} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} required /></div>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button type="submit" className="submit-button">Registrieren</button>
-          <p style={{marginTop:"5px"}}>
-            Bereits registriert? <button type="button" className="toggle-button" onClick={toggleForm}>Zum Login</button>
-          </p>
+          <p>Bereits registriert? <button type="button" onClick={toggleForm}>Zum Login</button></p>
         </form>
       )}
     </div>

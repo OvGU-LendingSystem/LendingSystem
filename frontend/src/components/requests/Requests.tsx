@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate} from "react-router-dom";
-
+import { useUserInfo } from '../../context/LoginStatusContext';
+import { OrganizationRights } from '../../models/user.model';
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useFilterUserOrganizationInfo } from "../../utils/organization-info-utils";
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -11,6 +13,15 @@ enum OrderStatus {
   RETURNED = 'RETURNED',
   UNKNOWN = 'UNKNOWN'
 }
+
+const statusOrder = {
+  [OrderStatus.PENDING]: 1,
+  [OrderStatus.ACCEPTED]: 2,
+  [OrderStatus.PICKED]: 3,
+  [OrderStatus.RETURNED]: 4,
+  [OrderStatus.REJECTED]: 5,
+  [OrderStatus.UNKNOWN]: 6,
+};
 
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
   switch (orderStatus) {
@@ -42,8 +53,8 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 const GET_ORDERS = gql`
-  query {
-    filterOrders {
+  query getOrdersByOrganizations($organizationIds: [String!]){
+    filterOrders(organizations: $organizationIds) {
       orderId
       fromDate
       tillDate
@@ -73,6 +84,9 @@ const GET_ORDERS = gql`
           }
         }
       }
+      organization {
+           organizationId
+      }
     }
   }
 `;
@@ -98,9 +112,18 @@ mutation UpdateOrderStatus(
 
 
 export function Requests() {
-  const { loading, error, data, refetch } = useQuery(GET_ORDERS);
-  const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
+  const UserInfoDispatcher = useUserInfo();
+  const OrgList = UserInfoDispatcher.organizationInfoList;
+  const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
 
+
+  const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
+    variables: {
+      organizationIds: ids,
+    },
+  });
+
+  const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -181,6 +204,8 @@ useEffect(() => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
 
+
+
   const fetchedRequests = data.filterOrders.map((order: any) => {
     const orderStatus = order.physicalobjects.edges.length > 0
         ? order.physicalobjects.edges[0].node.orderStatus
@@ -190,6 +215,19 @@ useEffect(() => {
         : {email: "unknown@mail.com", firstName: "unknown", lastName: "unknown"}
     const username = `${user.firstName} ${user.lastName}`;
     const useremail = user.email;
+
+    const organizationId = order.organization.organizationId;
+
+    const userOrg = OrgList.find(
+      (org) => org.id === organizationId
+    )
+
+    const userRole = userOrg!.rights;
+
+    const canEditRequests = !["CUSTOMER", "WATCHER"].includes(userRole);
+
+    const showButtons =  userRole !== "CUSTOMER";
+
 
     return {
       id: order.orderId,
@@ -207,6 +245,10 @@ useEffect(() => {
           endDate: new Date(order.tillDate),
       })),
       status: mapOrderStatusToUIStatus(orderStatus),
+      organizationId: organizationId,
+      canEditRequests: canEditRequests,
+      showButtons: showButtons,
+
   };
 });
 
@@ -214,15 +256,20 @@ useEffect(() => {
     const filteredRequests = requests 
       .filter((request) => selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
       .sort((a, b) => {
-        const now = new Date().getTime();
+
+        const aStatusOrder = statusOrder[a.status as OrderStatus];
+        const bStatusOrder = statusOrder[b.status as OrderStatus];
+        
+          if (aStatusOrder !== bStatusOrder) {
+            return aStatusOrder - bStatusOrder;
+          }
+
+          const now = new Date().getTime();
     
-    if (a.status === 'requested' && b.status === 'requested' && b.products.length > 0) {
-      const aTimeDifference = a.products[0]?.startDate ? a.products[0].startDate.getTime() - now : new Date().getTime();
-      const bTimeDifference = b.products[0]?.startDate ? b.products[0].startDate.getTime() - now : new Date().getTime();
-      
-      return aTimeDifference - bTimeDifference;
-    }
-    return 0;
+          const aTimeDifference = a.products[0]?.startDate ? a.products[0].startDate.getTime() - now : new Date().getTime();
+          const bTimeDifference = b.products[0]?.startDate ? b.products[0].startDate.getTime() - now : new Date().getTime();
+            
+          return aTimeDifference - bTimeDifference;
   });
 
   
@@ -383,7 +430,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('requested')}
                     onChange={() => handleCategoryChange('requested')}
                   />
-                  angefragt
+                  Angefragt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -391,7 +438,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('confirmed')}
                     onChange={() => handleCategoryChange('confirmed')}
                   />
-                  bestätigt
+                  Bestätigt
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -399,7 +446,7 @@ useEffect(() => {
                     checked={selectedCategories.includes('lended')}
                     onChange={() => handleCategoryChange('lended')}
                   />
-                  verliehen
+                  Verliehen
                 </label>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -425,35 +472,35 @@ useEffect(() => {
                 {request.status === "requested" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
-                        angefragt
+                        Angefragt
                     </div>
                 </div>
                 )}
                 {request.status === "confirmed" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
-                        bestätigt
+                        Bestätigt
                     </div>
                 </div>
                 )}
                 {request.status === "lended" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
-                        verliehen
+                        Verliehen
                     </div>
                 </div>
                 )}
                 {request.status === "returned" && (
                 <div style={{backgroundColor: '#ffa500', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
-                        zurückgegeben
+                        Zurückgegeben
                     </div>
                 </div>
                 )}
                 {request.status === "rejected" && (
                 <div style={{backgroundColor: '#ff0000', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
-                        abgelehnt
+                        Abgelehnt
                     </div>
                 </div>
                 )}
@@ -482,7 +529,8 @@ useEffect(() => {
                     
 
                     
-                    {
+
+                    {request.showButtons && (  
                     <div>
                     
                     {request.status === "requested" && (
@@ -505,17 +553,18 @@ useEffect(() => {
                             Zurück gegeben
                         </button>
                     )}
-
+                    {request.canEditRequests &&(
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
                             Bearbeiten
                         </button>
-
+                    )}
 
                         <button style={buttonStyle} onClick={() => reset(request)}>
                             Zurücksetzen
                         </button>
+                        
                     </div>
-                    }
+                    )}
 
                 </div>
             
