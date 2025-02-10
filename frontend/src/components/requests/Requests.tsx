@@ -224,7 +224,7 @@ useEffect(() => {
 
     const userRole = userOrg!.rights;
 
-    const canEditRequests = !["CUSTOMER", "MEMBER"].includes(userRole);
+    const canEditRequests = !["CUSTOMER", "WATCHER"].includes(userRole);
 
     const showButtons =  userRole !== "CUSTOMER";
 
@@ -473,7 +473,6 @@ useEffect(() => {
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Angefragt
-                        {request.organizationId}
                     </div>
                 </div>
                 )}
@@ -554,7 +553,7 @@ useEffect(() => {
                             Zurück gegeben
                         </button>
                     )}
-                    {request.canEditRequests && (
+                    {request.canEditRequests &&(
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
                             Bearbeiten
                         </button>
