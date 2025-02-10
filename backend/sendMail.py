@@ -1,4 +1,6 @@
-from config import use_ssl, mail_server_address, mail_server_port, sender_email_address, sender_email_password, scheduler
+import pytz
+
+from config import use_ssl, mail_server_address, mail_server_port, sender_email_address, sender_email_password, scheduler, timezone
 import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -35,5 +37,5 @@ def sendMail(receiver, subject, body):
             func=sendMail,
             args=(receiver, subject + " RETRY", body),
             trigger='date',
-            run_date=datetime.now() + timedelta(minutes=5)
+            run_date=datetime.now(timezone) + timedelta(minutes=5)
         )

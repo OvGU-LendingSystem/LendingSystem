@@ -5,6 +5,7 @@ from typing import Union, List
 from config import template_directory
 from models import orderStatus
 from schema import *
+from sqlalchemy import func
 
 # Api Queries go here
 class Query(graphene.ObjectType):
@@ -55,6 +56,11 @@ class Query(graphene.ObjectType):
         till_date           = graphene.Argument(type=graphene.DateTime, required=False),
         return_date         = graphene.Argument(type=graphene.DateTime, required=False, description="return_date has to be before this date"),
         creation_date       = graphene.Argument(type=graphene.DateTime, required=False),
+
+        from_day            = graphene.Argument(type=graphene.Date, required=False),
+        till_day            = graphene.Argument(type=graphene.Date, required=False),
+        return_day          = graphene.Argument(type=graphene.Date, required=False),
+        creation_day        = graphene.Argument(type=graphene.Date, required=False),
         # float params
         deposit             = graphene.Argument(type=graphene.Float, required=False),
         #list params for the relationships
@@ -130,6 +136,18 @@ class Query(graphene.ObjectType):
         description         = "Returns all files with the given parameters, List arguments get OR-ed together",
     )
 
+    filter_physical_object_order = graphene.List(
+        #return type
+        PhysicalObject_Order,
+        #uuid params
+        order_id            = graphene.Argument(type=graphene.String, required=False),
+        phys_id             = graphene.Argument(type=graphene.String, required=False),
+        order_status        = graphene.Argument(type=graphene.String, required=False),
+        return_notes        = graphene.Argument(type=graphene.String, required=False),
+        return_date         = graphene.Argument(type=graphene.DateTime, required=False),
+        description         = "Returns all physical object orders with the given parameters, List arguments get OR-ed together",
+    )
+
     get_imprint = graphene.String(
         description = "Returns the imprint of the LendingSystem"
     )
@@ -181,6 +199,7 @@ class Query(graphene.ObjectType):
         faults: Union[str, None] = None,
         name: Union[str, None] = None,
         obj_description: Union[str, None] = None,
+        return_notes: Union[str, None] = None,
         # list params for the relationships
         pictures: Union[List[str], None] = None,
         tags: Union[List[str], None] = None,
@@ -205,7 +224,7 @@ class Query(graphene.ObjectType):
         if faults:
             query = query.filter(PhysicalObjectModel.faults == faults)
         if name:
-            query = query.filter(PhysicalObjectModel.name == name)
+            query = query.filter(PhysicalObjectModel.name.like(f"%{name}%"))
         if obj_description:
             query = query.filter(PhysicalObjectModel.description == obj_description)
         # list params for the relationships .any() returns union (OR Statement)
@@ -234,6 +253,11 @@ class Query(graphene.ObjectType):
         till_date: Union[str, None] = None,
         return_date: Union[str, None] = None,
         creation_date: Union[str, None] = None,
+
+        from_day: Union[str, None] = None,
+        till_day: Union[str, None] = None,
+        return_day: Union[str, None] = None,
+        creation_day: Union[str, None] = None,
         # int params
         deposit: Union[float, None] = None,
         # list params for the relationships
@@ -246,6 +270,8 @@ class Query(graphene.ObjectType):
 
         if order_id:
             query = query.filter(OrderModel.order_id == order_id)
+
+        # date params
         if from_date:
             query = query.filter(OrderModel.from_date == from_date)
         if till_date:
@@ -254,6 +280,19 @@ class Query(graphene.ObjectType):
             query = query.filter(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date <= return_date))
         if creation_date:
             query = query.filter(OrderModel.creation_time == creation_date)
+        
+        if from_day:
+            query = query.filter(func.date(OrderModel.from_date) == from_day)
+
+        if till_day:
+            query = query.filter(func.date(OrderModel.till_date) == till_day)
+
+        if return_day:
+            query = query.filter(func.date(OrderModel.physicalobjects.any(PhysicalObject_OrderModel.return_date)) == return_day)
+
+        if creation_day:
+            query = query.filter(func.date(OrderModel.creation_time) == creation_day)
+
         if deposit:
             query = query.filter(OrderModel.deposit == deposit)
         # list params for the relationships .any() returns union (OR Statement)
@@ -404,7 +443,33 @@ class Query(graphene.ObjectType):
         
         files = query.all()
         return files
-    
+
+    @staticmethod
+    def resolve_filter_physical_object_order(
+        args,
+        info,
+        # uuid params
+        order_id: Union[str, None] = None,
+        phys_id: Union[str, None] = None,
+        order_status: Union[str, None] = None,
+        return_notes: Union[str, None] = None,
+        return_date: Union[str, None] = None,
+    ):
+        query = PhysicalObject_Order.get_query(info=info)
+
+        if order_id:
+            query = query.filter(PhysicalObject_OrderModel.order_id == order_id)
+        if phys_id:
+            query = query.filter(PhysicalObject_OrderModel.phys_id == phys_id)
+        if order_status:
+            query = query.filter(PhysicalObject_OrderModel.order_status == orderStatus[order_status.lower()])
+        if return_notes or return_notes == "":
+            query = query.filter(PhysicalObject_OrderModel.return_notes.like(f"%{return_notes}%"), PhysicalObject_OrderModel.return_notes != None)
+        if return_date:
+            query = query.filter(PhysicalObject_OrderModel.return_date == return_date)
+        
+        physical_object_orders = query.all()
+        return physical_object_orders    
 
     @staticmethod
     def resolve_get_imprint(

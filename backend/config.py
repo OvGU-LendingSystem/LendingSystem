@@ -53,6 +53,9 @@ sender_email_password   = os.getenv('sender_email_password')
 # Secret key
 secret_key = os.getenv("secret_key")
 
+# Timezone
+timezone_string         = os.getenv('timezone')
+
 # Testing
 testing_on = 0
 
@@ -62,7 +65,6 @@ application_root_user_password  = os.getenv('root_user_password')
 
 # Create engine depending on test mode
 if not (int)(testing_on):
-    print("mysql://" + db_user + ":" + db_pw + "@" + db_host + ":" + db_port + "/" + db_database)
     engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
 else:
     engine = create_engine('sqlite:///:memory:')
@@ -75,6 +77,8 @@ app.debug = True
 app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_SECURE'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
 if (hostname == "container"):
     app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
@@ -94,5 +98,7 @@ server_session = Session(app)
 jobstores = {
     'default': SQLAlchemyJobStore(engine=engine)
 }
-scheduler = BackgroundScheduler(jobstores=jobstores, timezone=pytz.timezone('Europe/Berlin'))
+
+timezone = pytz.timezone('Europe/Berlin')
+scheduler = BackgroundScheduler(jobstores=jobstores, timezone=timezone)
 scheduler.start()

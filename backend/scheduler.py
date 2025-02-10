@@ -1,6 +1,6 @@
 import os
 
-from config import scheduler, template_directory
+from config import scheduler, template_directory, timezone
 from datetime import datetime, timedelta
 from schema import *
 from sendMail import sendMail
@@ -61,3 +61,21 @@ def reminder_return(order, order_id):
                                 template_return.substitute(time=str(schedule_date.time())[:5], organization_name=organization_name)), 
                         trigger='date', 
                         run_date=schedule_date)
+        
+
+##################
+# Status change  #
+##################
+def status_change(order):
+    receiver_mail = order.users[0].email
+
+    # read template text
+    with open(os.path.join(template_directory, "order_status_change_template.html"), encoding="utf-8") as file:
+        template_status = Template(file.read())
+
+    scheduler.add_job(
+                    name=order.order_id,
+                    func=sendMail, 
+                    args=(receiver_mail, "Ovgu Ausleihsystem Statusänderung", template_status.substitute()), 
+                    trigger='date', 
+                    run_date=datetime.now(timezone) + timedelta(minutes=1))
