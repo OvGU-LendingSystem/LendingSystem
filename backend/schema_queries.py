@@ -237,7 +237,7 @@ class Query(graphene.ObjectType):
         if groups:
             query = query.filter(PhysicalObjectModel.groups.any(GroupModel.group_id.in_(groups)))
         if organizations:
-            query = query.filter(PhysicalObjectModel.organizations.any(OrganizationModel.organization_id.in_(organizations)))
+            query = query.filter(PhysicalObjectModel.organization.has(OrganizationModel.organization_id.in_(organizations)))
         
         physical_objects = query.all()
         return physical_objects
