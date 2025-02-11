@@ -126,8 +126,8 @@ export function CalendarEntry({ date }: { date: Date }) {
          })
     }, []); // TODO: language dependency
 
-    const { data: outgoingOrders } = useGetOrder();
-    const { data: incomingOrders } = useGetOrder();
+    const { data: outgoingOrders } = useGetOrder(date, undefined);
+    const { data: incomingOrders } = useGetOrder(undefined, date);
     const outgoingOrdersSorted = useMemo(() => {
         return [...outgoingOrders].sort((a, b) => a.fromDate.getTime() - b.fromDate.getTime());
     }, [outgoingOrders]);

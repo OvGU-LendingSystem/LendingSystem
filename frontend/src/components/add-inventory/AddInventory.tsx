@@ -76,7 +76,7 @@ export function AddInventory() {
                     description: values.description,
                     deposit: values.deposit,
                     faults: values.defects,
-                    tags: [],
+                    tags: values.tags,
                     pictures: images,
                     manuals: manuals,
                     borrowable: values.borrowable,
