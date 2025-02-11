@@ -2,8 +2,8 @@ import { gql } from "@apollo/client";
 import { flattenEdges, useSuspenseQueryWithResponseMapped } from "./response-helper";
 
 const GET_ORDER = gql`
-query All {
-  filterOrders {
+query All(fromDay: Date, tillDay: Date) {
+  filterOrders(fromDay: $fromDay, tillDay: $tillDay) {
     orderId,
     fromDate,
     tillDate,
@@ -75,7 +75,7 @@ export interface Order {
     }
 }
 
-export function useGetOrder() {
+export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined) {
     const mapToOrder = (response: OrderResponse[]) => {
         return response.map(orderResponse => {
             const flattenedOrder = flattenEdges<{ orderStatus: string, physicalobject: {
@@ -104,5 +104,10 @@ export function useGetOrder() {
         });
     };
 
-    return useSuspenseQueryWithResponseMapped<OrderResponse[], Order[]>(GET_ORDER, 'filterOrders', {}, mapToOrder);
+    return useSuspenseQueryWithResponseMapped<OrderResponse[], Order[]>(GET_ORDER, 'filterOrders', {
+        variables: {
+            fromDay: fromDay,
+            tillDay: tillDay
+        }
+    }, mapToOrder);
 }
