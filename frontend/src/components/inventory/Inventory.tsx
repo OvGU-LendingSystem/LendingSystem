@@ -287,8 +287,8 @@ export function Inventory(): JSX.Element {
         </div>
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
-            <div key={product.physId} style={productCardStyle}>
-              <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+            <div key={product.id} style={productCardStyle}>
+              <img src={product.imageUrl || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <h3>{product.name}</h3>
                 <div style={descriptionStyle}>
