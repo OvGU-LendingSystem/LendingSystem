@@ -2,7 +2,7 @@ import { gql } from "@apollo/client";
 import { flattenEdges, useSuspenseQueryWithResponseMapped } from "./response-helper";
 
 const GET_ORDER = gql`
-query All(fromDay: Date, tillDay: Date) {
+query All($fromDay: Date, $tillDay: Date) {
   filterOrders(fromDay: $fromDay, tillDay: $tillDay) {
     orderId,
     fromDate,
