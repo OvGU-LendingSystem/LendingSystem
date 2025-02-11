@@ -105,7 +105,8 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
             inventoryNumberInternal: data.filterPhysicalObjects[0].invNumInternal,
             inventoryNumberExternal: data.filterPhysicalObjects[0].invNumExternal,
             images: [],
-            manuals: []
+            manuals: [],
+            tags: [] // TODO
         };
         val.images = data.filterPhysicalObjects[0].pictures.edges.map((node: any) => {
             return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
@@ -113,6 +114,9 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
         val.manuals = data.filterPhysicalObjects[0].manual.edges.map((node: any) => {
             return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
         });
+        /*val.tags = data.filterPhysicalObjects[0].tags.edges.map((node: any) => {
+            return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
+        });*/
         return val;
     }, [data]);
 

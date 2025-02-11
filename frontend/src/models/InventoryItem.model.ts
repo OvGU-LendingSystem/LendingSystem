@@ -26,5 +26,6 @@ export interface AddInventoryItem {
     description: string;
     images: ImageResource[];
     manuals: FileResource[];
+    tags: string[];
     organizationId: string;
 }
