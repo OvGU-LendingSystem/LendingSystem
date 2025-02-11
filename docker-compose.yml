@@ -21,29 +21,11 @@ services:
       - database
       - public
 
-  redis:
-    image: redis:8.0-M01
-    expose:
-      - 6379
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - database
-      - public
-
-
   backend:
     build: ./backend
     hostname: container
     depends_on:
       database:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     expose:
       - 5000
