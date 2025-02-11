@@ -60,6 +60,17 @@ mutation updateOrder(
   }
 `;
 
+const GET_MAX_DEPOSIT = gql`
+    mutation deposit {
+        getMaxDeposit (
+            $organizationId: String
+            $userRight: String
+        ) {
+            maxDeposit
+        }
+    }
+`;
+
 /**
  * 
  * @param props trigger as a boolean and setTrigger to change the boolean to show or not show the PopUp
@@ -75,6 +86,7 @@ const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
 const [CreateOrder] = useMutation(CREATE_ORDER);
 const [UpdateOrder] = useMutation(UPDATE_ORDER);
+const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
 
@@ -108,14 +120,17 @@ const handleCreateOrder = async () => {
             }
         });
 
-        //TODO DECKELUNG FÜR DEPOSIT
-        /*for (let i=0; i<deposit.length; i++){
-            if (deposit[i]>DECKELUNG)
-                deposit[i] = DECKELUNG;
-        }*/
+        for (let i=0; i<deposit.length; i++){
+            const { data } = await GetMaxDeposit({
+                variables:{
+                    organizationId: props.products[0].organisation,
+                    userRight: "" //HILFE
+                },
+            });
+            if (deposit[i]>data.maxDeposit)
+                deposit[i] = data.maxDeposit;
+        }
 
-        //TODO ADD USER TO ORDER
-        //if (LoggedIn.loggedIn)
 
         for (let i=0; i<fromDate.length; i++){
             const { data } = await CreateOrder({
@@ -202,11 +217,11 @@ return (
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >
-                    Accept
+                    Akzeptiern
                 </button>
                 <button
                     onClick={() => {props.setTrigger(false)}}>
-                    Back
+                    Zurück
                 </button>
                 <ZoomIn>
                 {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
