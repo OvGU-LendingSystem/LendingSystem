@@ -165,7 +165,7 @@ class update_physical_object(graphene.Mutation):
                 physical_object.inv_num_external = inv_num_external
             if deposit:
                 physical_object.deposit = deposit
-            if borrowable:
+            if borrowable != None:
                 physical_object.borrowable = borrowable
             if storage_location:
                 physical_object.storage_location = storage_location
