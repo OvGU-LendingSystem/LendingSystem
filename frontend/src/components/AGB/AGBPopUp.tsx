@@ -63,10 +63,13 @@ mutation updateOrder(
 `;
 
 const GET_MAX_DEPOSIT = gql`
-    mutation deposit {
-        getMaxDeposit (
-            $organizationId: String
+    mutation deposit (
+            $organizationId: String,
             $userRight: String
+        ) {
+        getMaxDeposit (
+            organizationId: $organizationId,
+            userRight: $userRight
         ) {
             maxDeposit
         }

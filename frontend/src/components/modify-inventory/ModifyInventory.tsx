@@ -1,13 +1,13 @@
 import '../../styles/style.css';
 import './ModifyInventory.css';
-import { FormikHelpers, Formik, FormikProps, Field, Form } from "formik";
+import { FormikHelpers, Formik, FormikProps, Field, Form, useField } from "formik";
 import { FormikInput, FormikSelectionInputWithCustomInput, FormikTextarea } from "../../core/input/Input";
 import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
 import { Suspense, useState } from 'react';
-import { Button, H3, NonIdealState, Spinner } from '@blueprintjs/core';
+import { Button, H3, NonIdealState, Spinner, TagInput } from '@blueprintjs/core';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
 
 /**
@@ -132,6 +132,9 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                     </div>
 
                     <H3><label htmlFor='description'>Beschreibung</label></H3>
+                    <FormikTagInput fieldName='tags' />
+
+                    <H3><label htmlFor='description'>Beschreibung</label></H3>
                     <FormikTextarea id='description' rows={6} fieldName='description' />
 
                     <H3><label htmlFor='defects'>Mängel</label></H3>
@@ -149,6 +152,10 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
     );
 }
 
+function FormikTagInput({ fieldName }: { fieldName: string }) {
+    const [ field, meta, helper ] = useField<string[]>(fieldName);
+    return <TagInput values={field.value} onChange={(val) => { helper.setValue(val as string[]) }} tagProps={{ minimal: true }} />;
+}
 
 function LoadingScreen() {
     return (

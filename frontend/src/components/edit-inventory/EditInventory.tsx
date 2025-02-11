@@ -42,6 +42,13 @@ const GET_ITEM = gql`
                         fileId
                     }
                 }
+            },
+            tags {
+                edges {
+                    node {
+                        name
+                    }
+                }
             }
         }
     }
@@ -92,6 +99,13 @@ interface GetItemResponse {
                     fileId: string
                 }
             }[]
+        },
+        tags: {
+            edges: {
+                node: {
+                    name: string
+                }
+            }[]
         }
     }[]
 }
@@ -105,13 +119,17 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
             inventoryNumberInternal: data.filterPhysicalObjects[0].invNumInternal,
             inventoryNumberExternal: data.filterPhysicalObjects[0].invNumExternal,
             images: [],
-            manuals: []
+            manuals: [],
+            tags: []
         };
         val.images = data.filterPhysicalObjects[0].pictures.edges.map((node: any) => {
             return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
         });
         val.manuals = data.filterPhysicalObjects[0].manual.edges.map((node: any) => {
             return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
+        });
+        val.tags = data.filterPhysicalObjects[0].tags.edges.map((node: any) => {
+            return node.node.name;
         });
         return val;
     }, [data]);
