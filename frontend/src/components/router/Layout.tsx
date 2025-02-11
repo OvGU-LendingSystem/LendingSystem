@@ -5,6 +5,7 @@ import { Link, Outlet } from "react-router-dom";
 import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Footer } from "../footer/Footer";
+import { VscAccount } from "react-icons/vsc";
 
 interface ModalProps {
   children: ReactNode;
@@ -18,7 +19,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
-        <button style={{marginRight:"40px", marginTop:"5px"}}className="modal-close" onClick={onClose}>
+        <button style={{ marginRight: "40px", marginTop: "5px" }} className="modal-close" onClick={onClose}>
           &times;
         </button>
         {children}
@@ -67,31 +68,41 @@ export function Layout() {
 
   return (
     <div className="layout">
-      <nav className='nav-bar'>
+      <nav className="nav-bar">
         <ul>
           <li>
-            <Link to='/'>Home</Link>
+            <Link to="/">Home</Link>
           </li>
           <li>
-            <Link to='/requests'>Anfragen</Link>
+            <Link to="/requests">Anfragen</Link>
           </li>
           <li>
-            <Link to='/internal/inventory'>Internes Inventar</Link>
+            <Link to="/internal/inventory">Internes Inventar</Link>
           </li>
           <li>
-            { loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : 'Nicht eingeloggt' }
+            {loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : "Nicht eingeloggt"}
           </li>
           <li>
-            { loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0 ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}` : 'keine Orga' }
+            {loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0
+              ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}`
+              : "keine Orga"}
           </li>
         </ul>
 
         <ul>
           <li>
-            <button style={{ padding: "3px" }} onClick={handleLoginClick}>Login</button>
+            {loginStatus.loggedIn ? (
+              <Link to="/profile">
+                <VscAccount size={24} style={{ cursor: "pointer" }} />
+              </Link>
+            ) : (
+              <button style={{ padding: "3px" }} onClick={handleLoginClick}>
+                Login
+              </button>
+            )}
           </li>
           <li>
-            <Link to='/cart'>
+            <Link to="/cart">
               <MdOutlineShoppingBasket size={24} />
             </Link>
           </li>
