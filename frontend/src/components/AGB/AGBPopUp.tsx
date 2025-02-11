@@ -92,6 +92,8 @@ const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
 
+const user = useUserInfo();
+
 const handleCreateOrder = async () => {
     try {
         const fromDate: Date[] = [];
@@ -122,9 +124,11 @@ const handleCreateOrder = async () => {
             }
         });
 
+        
+
         for (let i=0; i<deposit.length; i++){
             //Rechte aus useUserInfo und Minimum bilden
-            const user = useUserInfo();
+            
             var maxD = 1000000;
 
             const userInfoResult = user.organizationInfoList.map(async org => {
@@ -137,7 +141,7 @@ const handleCreateOrder = async () => {
                 if(data.maxDeposit<maxD) maxD=data.maxDeposit;
             });
             Promise.allSettled(userInfoResult);
-            
+
             if (deposit[i]>maxD)
                 deposit[i] = maxD;
         }
