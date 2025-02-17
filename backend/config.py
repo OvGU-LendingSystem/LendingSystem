@@ -82,7 +82,7 @@ app.config['SESSION_TYPE'] = 'sqlalchemy'
 app.permanent_session_lifetime = timedelta(hours=2)
 
 if not (int)(testing_on):
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + '/' + db_database
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
