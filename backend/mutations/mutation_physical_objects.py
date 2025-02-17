@@ -6,6 +6,7 @@ from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights
 from schema import FileModel, GroupModel, OrderModel, PhysicalObject, PhysicalObjectModel, TagModel
+from sqlalchemy import func
 
 ##################################
 # Mutations for Physical Objects #
@@ -239,3 +240,53 @@ class delete_physical_object(graphene.Mutation):
             return delete_physical_object(ok=True, info_text="Objekt erfolgreich entfernt.", status_code=200)
         else:
             return delete_physical_object(ok=False, info_text="Objekt konnte nicht gefunden werden.", status_code=500)
+        
+
+
+class is_physical_object_available(graphene.Mutation):
+    """
+    Checks if the physical object with the given phys_id is available.
+    """
+
+    class Arguments:
+        phys_id     = graphene.String(required=True)
+
+        start_date  = graphene.Date(required=True)
+        end_date    = graphene.Date(required=True)
+
+    ok          = graphene.Boolean()
+    info_text   = graphene.String()
+    status_code = graphene.Int()
+    is_available = graphene.Boolean()
+
+    @staticmethod
+    def mutate(self, info, phys_id, start_date, end_date):
+
+        physical_object = PhysicalObjectModel.query.filter(PhysicalObjectModel.phys_id == phys_id).first()
+
+        if not physical_object:
+            return is_physical_object_available(ok=False, info_text="Objekt nicht gefunden.", status_code=404)
+
+        # Check if user is authorised
+        try:
+            session_user_id = session['user_id']
+        except:
+            return is_physical_object_available(ok=False, info_text="Keine valide session vorhanden", status_code=419)
+        
+        if not is_authorised(userRights.customer, session_user_id, phys_id=phys_id):
+            return is_physical_object_available(ok=False, info_text=reject_message, status_code=403)
+    
+
+        # Check if object is available
+        phys_orders = physical_object.orders
+
+        for phys_order in phys_orders:
+            order = phys_order.order
+            from_date = order.from_date.date()
+            till_date = order.till_date.date()
+            print("From Date: ", from_date)
+            print("Till Date: ", till_date)
+            if from_date <= end_date and till_date >= start_date:
+                return is_physical_object_available(ok=True, info_text="Objekt nicht verfügbar.", is_available=False, status_code=200)
+        
+        return is_physical_object_available(ok=True, info_text="Objekt verfügbar.", is_available=True, status_code=200)
