@@ -1,7 +1,16 @@
 import { MarkdownScreen } from "../markdown-screen/MarkdownScreen";
+import { useQuery, gql, useMutation,} from '@apollo/client';
+
+const GET_CONTACT = gql`
+    query {
+        getImprint
+    }
+`;
 
 export function ContactScreen() {
+    const {data: contact} = useQuery(GET_CONTACT);
+        
     return (
-        <MarkdownScreen res='/templates/contact.md' />
+        <div dangerouslySetInnerHTML={contact.getImprint}></div>
     )
 }
