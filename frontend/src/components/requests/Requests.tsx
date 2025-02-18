@@ -438,8 +438,6 @@ useEffect(() => {
     const reset = async (request : Quest) => {
       try {
         const returnDate = null;
-        console.log(request.id);
-        console.log(request.products.map(product=>product.id));
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -554,7 +552,7 @@ useEffect(() => {
             )}
             <button
               style={dropdownButtonStyle}
-              onClick={() => setDropdownVisible(!dropdownOrgFilterVisible)}
+              onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
               ref={buttonRef}
             >
               Filter Organisationen
