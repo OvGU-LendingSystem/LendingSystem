@@ -9,20 +9,23 @@ import { Button, NonIdealState } from '@blueprintjs/core';
 import { MdPriorityHigh } from 'react-icons/md';
 import { useToaster } from '../../context/ToasterContext';
 import { SubmitState } from '../../utils/submit-state';
+import { useUpdateTags } from '../../hooks/tag-helpers';
 
 interface AddInventoryRetryData {
     imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
     manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    tagsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateTags>>>,
     addObjectResult?: {
         success: boolean;
         info: any;
     },
-    addObject: (images: string[], manuals: string[]) => Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse>
+    addObject: (images: string[], manuals: string[], tags: string[]) => Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse>
 }
 
 const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInventoryRetryData>> => {
     let [ imageResult, retryImages ] = data.imageStatus;
     let [ manualsResult, retryManuals ] = data.manualsStatus;
+    let [ tagsResult, retryTags ] = data.tagsStatus;
     
     if (!imageResult.success)
         imageResult = await retryImages();
@@ -30,21 +33,26 @@ const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInvent
     if (!manualsResult.success)
         manualsResult = await retryManuals();
 
-    if (!imageResult.success || !manualsResult.success) {
+    if (!tagsResult.success)
+        tagsResult = await retryTags();
+
+    if (!imageResult.success || !manualsResult.success || !tagsResult.success) {
         return new SubmitState.Error({
             imageStatus: [imageResult, retryImages],
             manualsStatus: [manualsResult, retryManuals],
+            tagsStatus: [tagsResult, retryTags],
             addObject: data.addObject
         }, retry);
     }
 
-    const addObjectResult = await data.addObject(imageResult.value, manualsResult.value);
+    const addObjectResult = await data.addObject(imageResult.value, manualsResult.value, tagsResult.value);
     if (addObjectResult.success)
         return SubmitState.SUCCESS;
 
     return new SubmitState.Error({
         imageStatus: [imageResult, retryImages],
         manualsStatus: [manualsResult, retryManuals],
+        tagsStatus: [tagsResult, retryTags],
         addObjectResult,
         addObject: data.addObject
     }, retry);
@@ -60,13 +68,15 @@ export function AddInventory() {
     }
 
     const updateFiles = useUpdateFiles();
+    const updateTags = useUpdateTags();
     const [ addPhysicalObject ] = useAddPhysicalObject();
 
     const submit = async (values: AddInventoryItem): Promise<SubmitState<AddInventoryRetryData>> => {
         let [ imageResult, retryImages ] = await updateFiles([], values.images);
         let [ manualsResult, retryManuals ] = await updateFiles([], values.manuals);
+        let [ tagsResult, retryTags ] = await updateTags(values.tags);
 
-        const addObject = async (images: string[], manuals: string[]): Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse> => {
+        const addObject = async (images: string[], manuals: string[], tags: string[]): Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse> => {
             return await addPhysicalObject({
                 variables: {
                     invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
@@ -76,7 +86,7 @@ export function AddInventory() {
                     description: values.description,
                     deposit: values.deposit,
                     faults: values.defects,
-                    tags: values.tags,
+                    tags: tags,
                     pictures: images,
                     manuals: manuals,
                     borrowable: values.borrowable,
@@ -86,12 +96,13 @@ export function AddInventory() {
             });
         }
 
-        if (imageResult.success && manualsResult.success) {
-            const addObjResult = await addObject(imageResult.value, manualsResult.value);
+        if (imageResult.success && manualsResult.success && tagsResult.success) {
+            const addObjResult = await addObject(imageResult.value, manualsResult.value, tagsResult.value);
             if (!addObjResult.success) {
                 return new SubmitState.Error<AddInventoryRetryData>({
                     imageStatus: [imageResult, retryImages],
                     manualsStatus: [manualsResult, retryManuals],
+                    tagsStatus: [tagsResult, retryTags],
                     addObjectResult: addObjResult,
                     addObject: addObject
                 }, retry);
@@ -103,12 +114,13 @@ export function AddInventory() {
         return new SubmitState.Error({
             imageStatus: [imageResult, retryImages],
             manualsStatus: [manualsResult, retryManuals],
+            tagsStatus: [tagsResult, retryTags],
             addObject: addObject
         }, retry);
     }
 
     const onSuccess = () => {
-        navigate('/');
+        navigate('/internal/inventory');
         toaster.show({ message: 'Objekt erfolgreich erstellt', intent: 'success' });
     }
 

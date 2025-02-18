@@ -1,4 +1,5 @@
 import { FileResource, ImageResource, RemoteImage } from "./file.model";
+import { Tag } from "./tag.model";
 
 export interface InventoryItem {
     physId: string;
@@ -26,6 +27,6 @@ export interface AddInventoryItem {
     description: string;
     images: ImageResource[];
     manuals: FileResource[];
-    tags: string[];
+    tags: Tag[];
     organizationId: string;
 }

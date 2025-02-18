@@ -75,6 +75,7 @@ const EDIT_PYSICAL_OBJECT = gql`
         $faults: String!, $description: String!,
         $pictures: [String!]!,
         $manuals: [String!]!,
+        $tags: [String!]!,
         $storageLocation2: String!,
         $borrowable: Boolean!
     ) {
@@ -86,6 +87,7 @@ const EDIT_PYSICAL_OBJECT = gql`
             faults: $faults, description: $description,
             pictures: $pictures,
             manual: $manuals,
+            tags: $tags,
             storageLocation2: $storageLocation2,
             borrowable: $borrowable
         ) {
@@ -106,6 +108,7 @@ export interface EditPhysicalObjectVars {
     description: string,
     pictures: string[],
     manuals: string[],
+    tags: string[],
     storageLocation2: string,
     borrowable: boolean
 }
@@ -225,6 +228,9 @@ const FILTER_INVENTORY_BY_NAME = gql`
             physId,
             name,
             description,
+            deposit,
+            invNumInternal,
+            invNumExternal,
             pictures {
                 edges {
                     node {
@@ -240,6 +246,9 @@ interface FilterPhysicalObjectsByNameResponse {
     physId: string;
     name: string;
     description: string;
+    deposit: number;
+    invNumInternal: number;
+    invNumExternal: number;
     pictures: {
         edges: {
             node: {
@@ -253,6 +262,9 @@ export interface PreviewPhysicalObject {
     id: string;
     name: string;
     description: string;
+    invNumInternal?: number;
+    invNumExternal?: number;
+    deposit?: number;
     imageSrc?: string;
 }
 
@@ -266,6 +278,9 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
             const res: PreviewPhysicalObject = {
                 id: flattenedVal.physId,
                 name: flattenedVal.name,
+                invNumInternal: flattenedVal.invNumInternal,
+                invNumExternal: flattenedVal.invNumExternal,
+                deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
                 imageSrc: imageSrc
             }
