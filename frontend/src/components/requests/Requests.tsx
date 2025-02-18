@@ -262,7 +262,7 @@ useEffect(() => {
       id: order.orderId,
       name: username, 
       email: useremail, 
-      userid: order.user.edges[0].node.id,
+      userid: order.user?.edges[0]?.node?.id || null,
       deposit: order.deposit,
       products: order.physicalobjects.edges.map((edge: any) => ({
           id: edge.node.physId,
