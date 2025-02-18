@@ -7,8 +7,11 @@ import { FormikImagesSelectorComponent } from "../image-selector-with-preview/Im
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
 import { Suspense, useState } from 'react';
-import { Button, H3, NonIdealState, Spinner, TagInput } from '@blueprintjs/core';
+import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
+import { MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
+import { Tag } from '../../models/tag.model';
+import { useGetTagsQuery } from '../../hooks/tag-helpers';
 
 /**
  * Props for {@link ModifyInventoryScreen}
@@ -131,7 +134,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                         </div>
                     </div>
 
-                    <H3><label htmlFor='description'>Beschreibung</label></H3>
+                    <H3><label htmlFor='tags'>Tags</label></H3>
                     <FormikTagInput fieldName='tags' />
 
                     <H3><label htmlFor='description'>Beschreibung</label></H3>
@@ -153,8 +156,27 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 }
 
 function FormikTagInput({ fieldName }: { fieldName: string }) {
-    const [ field, meta, helper ] = useField<string[]>(fieldName);
-    return <TagInput values={field.value} onChange={(val) => { helper.setValue(val as string[]) }} tagProps={{ minimal: true }} />;
+    const [ field, meta, helper ] = useField<Tag[]>(fieldName);
+    const tagsQuery = useGetTagsQuery();
+    
+    return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
+        onItemSelect={(selectedTag) => helper.setValue([...field.value, selectedTag])}
+        createNewItemFromQuery={(query) => ({ tag: query })}
+        createNewItemRenderer={(query, active, click) => <MenuItem icon='add'
+            text={`neuen Tag "${query}" erstellen`} active={active}
+            onClick={click} shouldDismissPopover={false} />
+        }
+        itemsEqual={(tagA, tagB) => {
+            if ('id' in tagA !== 'id' in tagB) return false;
+            if ('id' in tagA && 'id' in tagB) return tagA.id === tagB.id;
+            return tagA.tag === tagB.tag;
+        }}
+        tagRenderer={(tag) => tag.tag}
+        itemRenderer={(tag) => <p>{tag.tag}</p>}
+        tagInputProps={{
+            onRemove: (node, idx) => helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]),
+            tagProps: { minimal: true }
+        }} />
 }
 
 function LoadingScreen() {

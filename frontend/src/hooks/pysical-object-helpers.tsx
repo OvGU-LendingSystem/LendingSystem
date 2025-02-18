@@ -75,6 +75,7 @@ const EDIT_PYSICAL_OBJECT = gql`
         $faults: String!, $description: String!,
         $pictures: [String!]!,
         $manuals: [String!]!,
+        $tags: [String!]!,
         $storageLocation2: String!,
         $borrowable: Boolean!
     ) {
@@ -86,6 +87,7 @@ const EDIT_PYSICAL_OBJECT = gql`
             faults: $faults, description: $description,
             pictures: $pictures,
             manual: $manuals,
+            tags: $tags,
             storageLocation2: $storageLocation2,
             borrowable: $borrowable
         ) {
@@ -106,6 +108,7 @@ export interface EditPhysicalObjectVars {
     description: string,
     pictures: string[],
     manuals: string[],
+    tags: string[],
     storageLocation2: string,
     borrowable: boolean
 }
