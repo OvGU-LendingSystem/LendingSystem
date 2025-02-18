@@ -3,7 +3,7 @@ import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
-import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+import { useQuery, gql } from '@apollo/client';
 import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 
 var products: Product[] = [
@@ -54,7 +54,7 @@ var products: Product[] = [
   },*/
 ];
 
-const GET_PRODUCTS = gql`
+/*const GET_PRODUCTS = gql`
   query {
     filterPhyiscalObjects {
       physId
@@ -97,14 +97,12 @@ function DisplayInventory() {
     }
   ));
   return <div></div>;
-}
+}*/
 
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
-
-  DisplayInventory();
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showDetails, setShowDetails] = useState<boolean>(false);
@@ -237,19 +235,7 @@ export function Inventory(): JSX.Element {
             </div>
           ))}
         </div>
-        {itemsInCart.length > 0 && (
-          <div style={{ marginTop: '20px' }}>
-            <ul>
-              {itemsInCart.map((item, index) => (
-                <li key={index}>
-                  {products.find((product) => product.physId === item.name)?.name} -{' '}
-                  {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
-                  {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        
       </div>
 
       {showModal && (

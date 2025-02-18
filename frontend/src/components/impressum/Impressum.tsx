@@ -1,7 +1,17 @@
 import { MarkdownScreen } from "../markdown-screen/MarkdownScreen";
+import { useQuery, gql, useMutation,} from '@apollo/client';
+
+const GET_IMPRESSUM = gql`
+    query {
+        getImprint
+    }
+`;
 
 export function ImpressumScreen() {
+
+    const {data: impressum} = useQuery(GET_IMPRESSUM);
+    
     return (
-        <MarkdownScreen res='/templates/impressum.md' />
+        <div dangerouslySetInnerHTML={impressum.getImprint}></div>
     )
 }

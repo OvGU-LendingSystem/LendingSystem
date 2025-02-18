@@ -11,6 +11,8 @@ import { OrderPopup } from "../cart/OrderPopup";
 import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useUserInfo } from "../../context/LoginStatusContext";
+import { ALL } from "dns";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
@@ -93,6 +95,8 @@ const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
 
+const user = useUserInfo();
+
 const handleCreateOrder = async () => {
     try {
         const fromDate: Date[] = [];
@@ -123,15 +127,26 @@ const handleCreateOrder = async () => {
             }
         });
 
+        
+
         for (let i=0; i<deposit.length; i++){
-            const { data } = await GetMaxDeposit({
-                variables:{
-                    organizationId: props.products[0].organisation,
-                    userRight: "" //HILFE
-                },
+            //Rechte aus useUserInfo und Minimum bilden
+            
+            var maxD = 1000000;
+
+            const userInfoResult = user.organizationInfoList.map(async org => {
+                const { data } = await GetMaxDeposit({
+                    variables:{
+                        organizationId: props.products[0].organisation,
+                        userRight: org.rights
+                    },
+                });
+                if(data.maxDeposit<maxD) maxD=data.maxDeposit;
             });
-            if (deposit[i]>data.maxDeposit)
-                deposit[i] = data.maxDeposit;
+            Promise.allSettled(userInfoResult);
+
+            if (deposit[i]>maxD)
+                deposit[i] = maxD;
         }
 
 
