@@ -11,6 +11,7 @@ import { useToaster } from "../../context/ToasterContext";
 import { Button, NonIdealState } from "@blueprintjs/core";
 import { MdPriorityHigh } from "react-icons/md";
 import { SubmitState } from "../../utils/submit-state";
+import { useUpdateTags } from "../../hooks/tag-helpers";
 
 const GET_ITEM = gql`
     query GetPhysicalObject($id: String!) {
@@ -136,14 +137,16 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
 
     const [ editPhysicalObject ] = useEditPhysicalObject();
     const updateFiles = useUpdateFiles();
+    const updateTags = useUpdateTags();
     const navigate = useNavigate();
     const toaster = useToaster();
 
-    const submit = async (val: AddInventoryItem): Promise<SubmitState<EditInventoryRetryData>> => {        
+    const submit = async (val: AddInventoryItem): Promise<SubmitState<EditInventoryRetryData>> => {
         const [ imageResult, retryImages ] = await updateFiles(initialValue?.images ?? [], val.images);
         const [ manualsResult, retryManuals ] = await updateFiles(initialValue?.manuals ?? [], val.manuals);
+        const [ tagsResult, retryTags ] = await updateTags(val.tags);
 
-        const editObject = async (images: string[], manuals: string[]) => {
+        const editObject = async (images: string[], manuals: string[], tags: string[]) => {
             return await editPhysicalObject({
                 variables: {
                     physId: itemId,
@@ -155,14 +158,15 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
                     description: val.description ?? '',
                     pictures: images,
                     manuals: manuals,
+                    tags: tags,
                     borrowable: val.borrowable,
                     storageLocation2: val.storageLocation2
                 }
             });
         }
 
-        if (imageResult.success && manualsResult.success) {
-            const editResult = await editObject(imageResult.value, manualsResult.value);
+        if (imageResult.success && manualsResult.success && tagsResult.success) {
+            const editResult = await editObject(imageResult.value, manualsResult.value, tagsResult.value);
 
             if (editResult.success)
                 return SubmitState.SUCCESS;
@@ -170,6 +174,7 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
             return new SubmitState.Error({
                 imageStatus: [ imageResult, retryImages ],
                 manualsStatus: [ manualsResult, retryManuals ],
+                tagsStatus: [ tagsResult, retryTags ],
                 editObjectResult: editResult,
                 editObject: editObject
             }, retry);
@@ -179,12 +184,13 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
         return new SubmitState.Error({
             imageStatus: [ imageResult, retryImages ],
             manualsStatus: [ manualsResult, retryManuals ],
+            tagsStatus: [ tagsResult, retryTags ],
             editObject: editObject
         }, retry);
     }
 
     const onSuccess = () => {
-        navigate('/');
+        navigate('/internal/inventory');
         toaster.show({ message: 'Objekt erfolgreich aktualisiert', intent: 'success' });
     }
 
@@ -197,17 +203,19 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
 interface EditInventoryRetryData {
     imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
     manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    tagsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateTags>>>,
     editObjectResult?: {
         success: boolean;
         info: any;
     },
-    editObject: (images: string[], manuals: string[]) => Promise<SuccessResponse<EditPhysicalObjectResponse> | ErrorResponse>
+    editObject: (images: string[], manuals: string[], tags: string[]) => Promise<SuccessResponse<EditPhysicalObjectResponse> | ErrorResponse>
 
 }
 
 const retry = async (data: EditInventoryRetryData): Promise<SubmitState<EditInventoryRetryData>> => {
     let [ imageResult, retryImages ] = data.imageStatus;
     let [ manualsResult, retryManuals ] = data.manualsStatus;
+    let [ tagsResult, retryTags ] = data.tagsStatus;
     
     if (!imageResult.success)
         imageResult = await retryImages();
@@ -215,21 +223,26 @@ const retry = async (data: EditInventoryRetryData): Promise<SubmitState<EditInve
     if (!manualsResult.success)
         manualsResult = await retryManuals();
 
-    if (!imageResult.success || !manualsResult.success) {
+    if (!tagsResult.success)
+        tagsResult = await retryTags();
+
+    if (!imageResult.success || !manualsResult.success || !tagsResult.success) {
         return new SubmitState.Error({
             imageStatus: [imageResult, retryImages],
             manualsStatus: [manualsResult, retryManuals],
+            tagsStatus: [tagsResult, retryTags],
             editObject: data.editObject
         }, retry);
     }
 
-    const editObjectResult = await data.editObject(imageResult.value, manualsResult.value);
+    const editObjectResult = await data.editObject(imageResult.value, manualsResult.value, tagsResult.value);
     if (editObjectResult.success)
         return SubmitState.SUCCESS;
 
     return new SubmitState.Error({
         imageStatus: [imageResult, retryImages],
         manualsStatus: [manualsResult, retryManuals],
+        tagsStatus: [tagsResult, retryTags],
         editObjectResult,
         editObject: data.editObject
     }, retry);

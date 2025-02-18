@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate} from "react-router-dom";
 import { useUserInfo } from '../../context/LoginStatusContext';
-import { OrganizationRights } from '../../models/user.model';
 import { useQuery, gql, useMutation,} from '@apollo/client';
-import { useFilterUserOrganizationInfo } from "../../utils/organization-info-utils";
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -22,6 +20,8 @@ const statusOrder = {
   [OrderStatus.REJECTED]: 5,
   [OrderStatus.UNKNOWN]: 6,
 };
+
+
 
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
   switch (orderStatus) {
@@ -58,6 +58,7 @@ const GET_ORDERS = gql`
       orderId
       fromDate
       tillDate
+      deposit
       physicalobjects {
         edges {
           node {
@@ -86,6 +87,7 @@ const GET_ORDERS = gql`
       }
       organization {
            organizationId
+           name
       }
     }
   }
@@ -110,30 +112,51 @@ mutation UpdateOrderStatus(
   }
 `;
 
+const DELETE_ORDER = gql`
+mutation DeleteOrder(
+    $orderId: String!
+) {
+    deleteOrder(
+        orderId: $orderId
+    ) {
+    ok
+    infoText
+    }
+}
+`;
+
 
 export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
-  const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+  const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
     variables: {
-      organizationIds: ids,
+      organizationIds: UserOrgids,
     },
   });
 
   const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
+  const [DeleteOrder] = useMutation(DELETE_ORDER);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
+  const [dropdownOrgFilterVisible, setDropdownOrgFilterVisible] = useState<boolean>(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [popupText, setPopupText] = useState("");
   const [currentRequest, setCurrentRequest] = useState<Quest | null>(null);
   const [currentStatus, setCurrentStatus] = useState("");
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
+  const [showCustomerOrders, setShowCustomerOrders] = useState(false);
+
+  
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownOrgFilterRef = useRef<HTMLDivElement>(null);
+const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
   const showConfirmationPopup = (request: Quest, status: string) => {
@@ -180,6 +203,7 @@ export function Requests() {
       default:
         break;
     }
+    await refetch();
     setShowModal(false);
     setCheckBoxChecked(false);
   };
@@ -193,13 +217,18 @@ useEffect(() => {
     buttonRef.current && !buttonRef.current.contains(event.target as Node))  {
       setDropdownVisible(false);
     }
+
+    if (dropdownOrgFilterRef.current && !dropdownOrgFilterRef.current.contains(event.target as Node) &&
+      buttonOrgFilterRef.current && !buttonOrgFilterRef.current.contains(event.target as Node)) {
+      setDropdownOrgFilterVisible(false); 
+    }
   }
 
   document.addEventListener('mousedown', handleClickOutside);
   return () => {
     document.removeEventListener('mousedown', handleClickOutside);
   };
-}, [dropdownRef, buttonRef]);
+}, [dropdownRef, buttonRef, dropdownOrgFilterRef, buttonOrgFilterRef]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error : {error.message}</p>;
@@ -233,6 +262,8 @@ useEffect(() => {
       id: order.orderId,
       name: username, 
       email: useremail, 
+      userid: order.user?.edges[0]?.node?.id || null,
+      deposit: order.deposit,
       products: order.physicalobjects.edges.map((edge: any) => ({
           id: edge.node.physId,
           name: edge.node.physicalobject.name, 
@@ -246,6 +277,7 @@ useEffect(() => {
       })),
       status: mapOrderStatusToUIStatus(orderStatus),
       organizationId: organizationId,
+      organizationName: order.organization.name,
       canEditRequests: canEditRequests,
       showButtons: showButtons,
 
@@ -254,7 +286,25 @@ useEffect(() => {
 
     const requests = [...fetchedRequests];
     const filteredRequests = requests 
-      .filter((request) => selectedCategories.length === 0 || selectedCategories.includes(request.status || ''))
+      .filter((request) => {
+
+        
+        const isWatcher = OrgList.find((org) => org.id === request.organizationId)?.rights === "WATCHER";
+        const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
+
+        if (showCustomerOrders) {
+          return isCustomer && request.customerId === UserInfoDispatcher.id;
+        }
+
+        if (isCustomer) {
+          return request.customerId === UserInfoDispatcher.id;
+        }
+        if (isWatcher)
+          return ["confirmed", "lended"].includes(request.status);
+        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
+        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
+        return categoryMatch && organizationMatch;
+      })
       .sort((a, b) => {
 
         const aStatusOrder = statusOrder[a.status as OrderStatus];
@@ -278,6 +328,14 @@ useEffect(() => {
         prevCategories.includes(category)
           ? prevCategories.filter(c => c !== category)
           : [...prevCategories, category]
+      );
+    };
+
+    const handleOrgChange = (orgId: string) => {
+      setSelectedOrg((prevOrg) =>
+        prevOrg.includes(orgId)
+          ? prevOrg.filter((id) => id !== orgId) // Entfernen, wenn bereits ausgewählt
+          : [...prevOrg, orgId] // Hinzufügen, wenn noch nicht ausgewählt
       );
     };
 
@@ -380,8 +438,6 @@ useEffect(() => {
     const reset = async (request : Quest) => {
       try {
         const returnDate = null;
-        console.log(request.id);
-        console.log(request.products.map(product=>product.id));
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -402,6 +458,23 @@ useEffect(() => {
       }
     };
 
+    const handleDelete = async (request : Quest) => {
+      try {
+          const { data: deleteData } = await DeleteOrder({
+               variables: {  orderId: request.id } 
+              });
+          if (deleteData.deleteOrder.ok) {
+              alert(deleteData.deleteOrder.infoText);
+              navigate('/requests'); 
+          } else {
+              alert("Failed to delete the order.");
+          }
+      } catch (error) {
+          console.error("Delete order failed:", error);
+          alert("An error occurred while deleting the order.");
+       }
+  };
+
 
 
     const edit = (orderID: string, product: Product) => {
@@ -413,6 +486,17 @@ useEffect(() => {
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
 
+            <div style={{ marginTop: '10px' }}>
+              <label>
+               <input
+                  type="checkbox"
+                  checked={showCustomerOrders}
+                  onChange={() => setShowCustomerOrders(!showCustomerOrders)}
+                />
+              Costumer
+            </label>
+            </div>
+
             {/*<DisplayLocations /> */}
             <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
             <button
@@ -420,7 +504,7 @@ useEffect(() => {
               onClick={() => setDropdownVisible(!dropdownVisible)}
               ref={buttonRef}
             >
-              Filter
+              Filter Anfragenstatus
             </button>
             {dropdownVisible && (
               <div style={dropdownContentStyle}>
@@ -466,6 +550,32 @@ useEffect(() => {
                 </label>
               </div>
             )}
+            <button
+              style={dropdownButtonStyle}
+              onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
+              ref={buttonRef}
+            >
+              Filter Organisationen
+            </button>
+            {dropdownOrgFilterVisible && (
+      <div style={dropdownContentStyle}>
+        {[
+          { id: '00000000-0000-0000-0000-000000000003', name: 'Stark Industries' },
+          { id: '1376ac52-85f7-4720-9aaa-b8bccd667aeb', name: 'X-Men' },
+          { id: '69590f30-0959-406d-a9b5-3fefbda28fb4', name: 'Avengers' },
+          { id: 'c9c5feb9-01ff-45de-ba44-c0b38e268170', name: 'root_organization' },
+        ].map((org) => (
+          <label key={org.id} style={checkboxLabelStyle}>
+            <input
+              type="checkbox"
+              checked={selectedOrg.includes(org.id)}
+              onChange={() => handleOrgChange(org.id)}
+            />
+            {org.name}
+          </label>
+        ))}
+      </div>
+    )}
           </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
@@ -507,9 +617,11 @@ useEffect(() => {
 
                 <div style={infoStyle}>
                     <div style={personInfoStyle}>
-                        <div>{request.name}</div>
-                        <div>{request.email}</div>
-                        <div>{request.phone}</div>
+                        <div>{"Name: " + request.name}</div>
+                        <div>{"Email: " + request.email}</div>
+                        <div>{"Telefonnummer: " + request.phone}</div>
+                        <div>{"Organisationsname: " + request.organizationName}</div>
+                        <div>{"Ausleihgebühr: " + request.deposit}</div>
                         <hr/>
                     </div>
 
@@ -550,10 +662,10 @@ useEffect(() => {
                     )}
                     {request.status === "lended" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
-                            Zurück gegeben
+                            Zurückgegeben
                         </button>
                     )}
-                    {request.canEditRequests &&(
+                    {request.canEditRequests && (
                      <button style={buttonStyle} onClick={() => edit(request.id, request )}>
                             Bearbeiten
                         </button>
@@ -565,6 +677,12 @@ useEffect(() => {
                         
                     </div>
                     )}
+
+                    {!request.showButtons && (
+                        <button style={buttonStyle} onClick={() => handleDelete(request)}>
+                          Löschen
+                        </button>
+                        )}
 
                 </div>
             
