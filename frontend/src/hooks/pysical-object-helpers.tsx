@@ -172,6 +172,18 @@ query GetPhysicalObjects {
           path
         }
       }
+    },
+    tags{
+      edges{
+        node{
+          tagId,
+          name
+        }
+      }
+    },
+    organization{
+      organizationId,
+      name
     }
   }
 }
@@ -194,6 +206,18 @@ interface GetPhysicalObjectsResponse {
           path: string
         }
       }[]
+    };
+    tags: {
+        edges: {
+            node:{
+                tagId: string,
+                name: string
+            }
+        }[]
+    };
+    organization: {
+        organizationId: string,
+        name: string
     }
 }
 
@@ -211,7 +235,10 @@ export function useGetPhysicalObjects() {
                 storageLocation: flattenedVal.storageLocation,
                 defects: flattenedVal.faults,
                 description: flattenedVal.description,
-                images: flattenedVal.pictures.map((pic) => {return { type: 'remote', ...pic }})
+                images: flattenedVal.pictures.map((pic) => {return { type: 'remote', ...pic }}),
+                category: flattenedVal.tags.edges[0]?.node?.name ?? "",
+                organizationId: flattenedVal.organization.organizationId,
+                organization: flattenedVal.organization.name,
             };
             return res;
         });

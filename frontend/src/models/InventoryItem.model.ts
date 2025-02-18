@@ -12,6 +12,9 @@ export interface InventoryItem {
     defects: string;
     description: string;
     images: RemoteImage[];
+    category: string;
+    organizationId: string;
+    organization: string;
 }
 
 //export type AddInventoryItem = Omit<InventoryItem, 'id'>
