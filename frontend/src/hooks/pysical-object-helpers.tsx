@@ -225,6 +225,9 @@ const FILTER_INVENTORY_BY_NAME = gql`
             physId,
             name,
             description,
+            deposit,
+            invNumInternal,
+            invNumExternal,
             pictures {
                 edges {
                     node {
@@ -240,6 +243,9 @@ interface FilterPhysicalObjectsByNameResponse {
     physId: string;
     name: string;
     description: string;
+    deposit: number;
+    invNumInternal: number;
+    invNumExternal: number;
     pictures: {
         edges: {
             node: {
@@ -253,6 +259,9 @@ export interface PreviewPhysicalObject {
     id: string;
     name: string;
     description: string;
+    invNumInternal?: number;
+    invNumExternal?: number;
+    deposit?: number;
     imageSrc?: string;
 }
 
@@ -266,6 +275,9 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
             const res: PreviewPhysicalObject = {
                 id: flattenedVal.physId,
                 name: flattenedVal.name,
+                invNumInternal: flattenedVal.invNumInternal,
+                invNumExternal: flattenedVal.invNumExternal,
+                deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
                 imageSrc: imageSrc
             }
