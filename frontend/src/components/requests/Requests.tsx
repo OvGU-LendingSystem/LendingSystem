@@ -438,8 +438,6 @@ useEffect(() => {
     const reset = async (request : Quest) => {
       try {
         const returnDate = null;
-        console.log(request.id);
-        console.log(request.products.map(product=>product.id));
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -554,7 +552,7 @@ useEffect(() => {
             )}
             <button
               style={dropdownButtonStyle}
-              onClick={() => setDropdownVisible(!dropdownOrgFilterVisible)}
+              onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
               ref={buttonRef}
             >
               Filter Organisationen
@@ -619,11 +617,11 @@ useEffect(() => {
 
                 <div style={infoStyle}>
                     <div style={personInfoStyle}>
-                        <div>{"Name:" + request.name}</div>
-                        <div>{"Email:" + request.email}</div>
-                        <div>{"Telefonnummer" + request.phone}</div>
-                        <div>{"Organisationsname" + request.organizationName}</div>
-                        <div>{"Ausleihgebühr" + request.deposit}</div>
+                        <div>{"Name: " + request.name}</div>
+                        <div>{"Email: " + request.email}</div>
+                        <div>{"Telefonnummer: " + request.phone}</div>
+                        <div>{"Organisationsname: " + request.organizationName}</div>
+                        <div>{"Ausleihgebühr: " + request.deposit}</div>
                         <hr/>
                     </div>
 

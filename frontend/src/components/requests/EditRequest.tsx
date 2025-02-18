@@ -440,6 +440,21 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     return (
         <div style={{ padding: "20px" }}>
             <h1>Order Details</h1>
+            <div>
+            <select
+                id="order-status"
+                value={selectedStatus || ''}
+                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                style={{ marginLeft: "10px", padding: "5px" }}
+            >
+              {Object.values(OrderStatus).map((status) => (
+                                    <option key={status} value={status}>
+                                        {statusTranslations[status]}
+                                    </option>
+                ))}
+            </select>
+            </div>
+
             <h2>Objekte:</h2>
             {selectedObjectIds.length > 0 ? (
                 selectedObjectIds.flatMap((id) => {
@@ -480,21 +495,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <p>Keine Objekte gefunden</p>
             )}
 
-            <div>
-            <select
-                id="order-status"
-                value={selectedStatus || ''}
-                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                style={{ marginLeft: "10px", padding: "5px" }}
-            >
-              {Object.values(OrderStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {statusTranslations[status]}
-                                    </option>
-                ))}
-            </select>
-            </div>
-
             <div style={{
                 border: "1px solid #ccc",
                 padding: "10px",
@@ -502,7 +502,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 borderRadius: "5px"
             }}>
             <h3>Deposit Information</h3>
-            <p>Deposit: {data.filterOrders[0].deposit.toFixed(2)} </p>
+            <p>Deposit: {data.filterOrders[0].deposit} </p>
             </div>
 
 
@@ -665,10 +665,15 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
 
   const checkObjectAvailability = async (itemId: string, fromDate: Date, tillDate: Date) => {
     try {
+      const startDateUtc = new Date(fromDate); 
+        const endDateUtc = new Date(tillDate);     
+
+        startDateUtc.setHours(startDateUtc.getHours()+2);  // Da bei new Date() in die lokale Zeit umgerechnet wird und wir Daten bekommen von UTC würden wir einen Tag verlieren also rechnen wir zwei stunde drauf
+        endDateUtc.setHours(endDateUtc.getHours()+2);
         const response = await checkAvailability({
             variables: {
-                startDate: fromDate,
-                endDate: tillDate,
+                startDate: startDateUtc.toISOString().split('T')[0],
+                endDate: endDateUtc.toISOString().split('T')[0],
                 physId: itemId,
             }
         });
