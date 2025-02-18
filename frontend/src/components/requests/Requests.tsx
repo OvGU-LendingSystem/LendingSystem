@@ -617,11 +617,11 @@ useEffect(() => {
 
                 <div style={infoStyle}>
                     <div style={personInfoStyle}>
-                        <div>{"Name:" + request.name}</div>
-                        <div>{"Email:" + request.email}</div>
-                        <div>{"Telefonnummer" + request.phone}</div>
-                        <div>{"Organisationsname" + request.organizationName}</div>
-                        <div>{"Ausleihgebühr" + request.deposit}</div>
+                        <div>{"Name: " + request.name}</div>
+                        <div>{"Email: " + request.email}</div>
+                        <div>{"Telefonnummer: " + request.phone}</div>
+                        <div>{"Organisationsname: " + request.organizationName}</div>
+                        <div>{"Ausleihgebühr: " + request.deposit}</div>
                         <hr/>
                     </div>
 
