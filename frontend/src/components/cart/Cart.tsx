@@ -13,54 +13,28 @@ import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
 import { Spinner } from "@blueprintjs/core";
 
-const GET_LOCATIONS = gql`
-  query {
-    filterTags {
-      tagId
-      name
-    }
-  }
-`;
-
-function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_LOCATIONS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  return data.filterTags.map(({ tagId, name }: { tagId: number, name: string }) => (
-    <div key={tagId}>
-      <p>
-        {tagId}: {name}
-      </p>
-    </div>
-  ));
-}
-
-//ENDE APOLLO STUFF
-
-
 
 export function Cart() {
   const itemsInCartUnsorted = useCart();
+  console.log(itemsInCartUnsorted);
   itemsInCartUnsorted.sort(function(a, b){
-      if (a.organisation<b.organisation) return -1;
-      if (a.organisation>b.organisation) return 1;
+      if (a.organization<b.organization) return -1;
+      if (a.organization>b.organization) return 1;
       return 0;
     }
   );
   const itemsInCart: Product[][] = [];
   if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
-  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organisation : "";
+  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   itemsInCartUnsorted.forEach(item => {
     const ind = itemsInCart.length-1;
-    if (item.organisation == firstOrg){
+    if (item.organization == firstOrg){
       itemsInCart[ind].push(item);
     }
     else{
       itemsInCart.push([]);
       itemsInCart[ind+1].push(item);
-      firstOrg = item.organisation;
+      firstOrg = item.organization;
     }
   });
   //const itemsInCart = itemsInCartUnsorted;
@@ -70,7 +44,6 @@ export function Cart() {
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [showDetails, setShowDetails] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [amount, setAmount] = useState<number>(1);
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -101,14 +74,6 @@ export function Cart() {
         setShowModal(false);
         setSelectedProduct(null);
     };
-    const openDetails = (product: Product) => {
-      setSelectedProduct(product);
-      setShowDetails(true);
-    };
-    const closeDetails = () => {
-      setShowDetails(false);
-      setSelectedProduct(null);
-    };
     const editProduct = () => {
      if (selectedProduct && startDate && endDate){
         productNew = {...selectedProduct!,amount,startDate,endDate};
@@ -118,9 +83,6 @@ export function Cart() {
      }
     };
 
-    const openMoreDetails = () => {
-
-    }
 
     return (
         
@@ -140,17 +102,15 @@ export function Cart() {
                       
                       <div style={descriptionStyle}>
                         <div style={descriptionContentStyle}>{product.description}</div>
-                        <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                       </div>
                       <div style={priceStyle}>{product.price}</div>
                       <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                      <div>Anzahl: {product.amount}</div>
-                      <div>Organistation: {product.organisation}</div>
+                      <div>Organistation: {product.organization}</div>
 
                       
-                      <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                      {/**<button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                         Bearbeiten
-                      </button>
+                      </button>*/}
                       <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
                         Entfernen
                       </button>
@@ -194,23 +154,6 @@ export function Cart() {
                     </div>
                     </div>
                 )}
-
-                {showDetails && (
-                  <div style={modalOverlayStyle}>
-                    <div style={modalContentStyle}>
-                      <h2>{selectedProduct?.name}</h2>
-                      <div style={inputContainerStyle}>
-                        <div>{selectedProduct?.description}</div>
-                      </div>
-                      <div style={buttonContainerStyle}>
-                        <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            
             
             </div>
         </div>

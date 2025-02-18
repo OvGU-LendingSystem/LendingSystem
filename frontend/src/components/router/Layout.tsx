@@ -40,7 +40,8 @@ declare global {
     amount?: number;
     category?: string;
     status?: string;
-    organisation: string;
+    organization: string;
+    organizationId: string;
   }
 
   interface Quest {

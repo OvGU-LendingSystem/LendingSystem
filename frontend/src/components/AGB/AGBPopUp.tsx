@@ -93,7 +93,7 @@ const [CreateOrder] = useMutation(CREATE_ORDER);
 const [UpdateOrder] = useMutation(UPDATE_ORDER);
 const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
-const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
+const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
 const user = useUserInfo();
 
@@ -137,7 +137,7 @@ const handleCreateOrder = async () => {
             const userInfoResult = user.organizationInfoList.map(async org => {
                 const { data } = await GetMaxDeposit({
                     variables:{
-                        organizationId: props.products[0].organisation,
+                        organizationId: props.products[0].organizationId,
                         userRight: org.rights
                     },
                 });
@@ -216,7 +216,8 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>
+                            {/**<Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>*/}
+                            <Viewer fileUrl="agb.pdf"  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
