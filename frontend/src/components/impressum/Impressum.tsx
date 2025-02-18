@@ -12,6 +12,6 @@ export function ImpressumScreen() {
     const {data: impressum} = useQuery(GET_IMPRESSUM);
     
     return (
-        <div>{impressum.getImprint}</div>
+        <div dangerouslySetInnerHTML={impressum.getImprint}></div>
     )
 }
