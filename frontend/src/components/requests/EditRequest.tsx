@@ -9,10 +9,6 @@ import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
-import { useLoginStatus } from '../../context/LoginStatusContext';
-import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
-import { useUserInfo } from '../../context/LoginStatusContext';
-import { OrganizationRights } from '../../models/user.model';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -41,6 +37,7 @@ const EDIT_ORDER = gql`
           node {
             orderStatus
             physId
+            returnNotes
             physicalobject {
               invNumInternal
               invNumExternal
@@ -87,13 +84,15 @@ mutation UpdateOrderStatus(
     $orderId: String!,
     $physicalObjects: [String]!,
     $returnDate: Date,
-    $status: String
+    $status: String,
+    $returnNotes : String
   ) {
     updateOrderStatus(
       orderId: $orderId,
       physicalObjects: $physicalObjects,
       returnDate: $returnDate,
       status: $status
+      returnNotes: $returnNotes
     ) {
       ok
       infoText
@@ -150,6 +149,7 @@ mutation addPhysicalObjectToOrder(
 `;
 
 
+
 export function EditRequest() {
     useTitle('Edit Request');
     const params = useParams<'orderId'>();
@@ -191,6 +191,7 @@ interface FilterOrdersData {
                 node: {
                     orderStatus: OrderStatus;
                     physId: string;
+                    returnNotes: string;
                     physicalobject: PhysicalObject;
                 }
             }[];
@@ -221,6 +222,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null); 
+    const [returnNotes, setReturnNotes] = useState<string>("");
     const navigate = useNavigate();
 
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
@@ -234,8 +236,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
 
     
-    const UserInfoDispatcher = useUserInfo();
-    const ids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
     const orgId = [data.filterOrders[0].organization.organizationId];
     console.log(orgId);
 
@@ -251,6 +251,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 setEndDate(tillDate ?? null);
                 if (physicalobjects.edges.length > 0) {
                     setSelectedStatus(physicalobjects.edges[0].node.orderStatus);
+                    setReturnNotes(physicalobjects.edges[0].node.returnNotes)
                 }
 
         }
@@ -359,6 +360,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
               physicalObjects: selectedObjectIds,
               returnDate : returnDate,
               status: selectedStatus.toLowerCase(),
+              returnNotes: returnNotes,
             },
           });
     
@@ -455,8 +457,10 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     }}>
                         <div>
                             <h3>{physicalObject.name}</h3>
-                            <p>{physicalObject.description}</p>
-                            <p>{physicalObject.id}</p>
+                            <p>{"Beschreibung " + physicalObject.description}</p>
+                            <p>{"Intenre Inventarnummer " + physicalObject.invNumInternal}</p>
+                            <p>{"Extenre Inventarnummer " + physicalObject.invNumExternal}</p>
+                            <p>{"Leihgebühr" + physicalObject.deposit}</p>
                            {/* <p>Status:</p>
                             <select 
                                 value={selectedStatus || ''} 
@@ -492,6 +496,17 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
             </div>
 
             <div style={{
+                border: "1px solid #ccc",
+                padding: "10px",
+                margin: "10px 0",
+                borderRadius: "5px"
+            }}>
+            <h3>Deposit Information</h3>
+            <p>Deposit: {data.filterOrders[0].deposit.toFixed(2)} </p>
+            </div>
+
+
+            <div style={{
                     border: "1px solid #ccc",
                     padding: "10px",
                     margin: "10px 0",
@@ -504,15 +519,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 <MdAdd size={36} />
             </div>
 
-             <div style={{
-                border: "1px solid #ccc",
-                padding: "10px",
-                margin: "10px 0",
-                borderRadius: "5px"
-            }}>
-            <h3>Deposit Information</h3>
-            <p>Deposit: {data.filterOrders[0].deposit.toFixed(2)} </p>
-            </div>
+             
 
             <div style={{ marginTop: "20px" }}>
                 <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
@@ -522,7 +529,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
             </div>
 
             <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
-                selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} organizationId={orgId} />
+                selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} organizationId={orgId} fromDate={startDate} tillDate={endDate} />
 
             {showModal && (
                      <div style={modalOverlayStyle}>
@@ -560,6 +567,16 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     <div style={modalContentStyle}>
                         <h2>Bestätigung</h2>
                         <p>Möchstest du diese Order wirklich editeren?</p>
+                        <div>
+                            <label htmlFor="returnNotes">Rückgabebemerkungen</label>
+                            <textarea
+                                id="returnNotes"
+                                value={returnNotes}
+                                onChange={(e) => setReturnNotes(e.target.value)}
+                                placeholder="Optional: Geben Sie hier Rückgabebemerkungen ein"
+                                rows={4}
+                             />
+                        </div>
                         <button onClick={handleAllRequests}>Bestätigen</button>
                         <button onClick={() => setShowEditPopUp(false)}>Abbrechen</button>
                     </div>
@@ -580,11 +597,46 @@ interface SelectObjectsOverlayProps {
     selectedItemIds: string[];
     setSelectedItemIds: (item: string[]) => void;
     organizationId : string[];
+    fromDate : Date | null;
+    tillDate : Date | null;
 }
 
-function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId }: SelectObjectsOverlayProps) {
+function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId, fromDate, tillDate }: SelectObjectsOverlayProps) {
+    const IS_PHYSICAL_OBJECT_AVAILABLE = gql`
+    mutation isPhysicalObjectAvailable(
+        $endDate: Date!,
+        $physId: String!,
+        $startDate: Date!,
+    ) {
+        isPhysicalObjectAvailable(
+          endDate: $endDate,
+          physId: $physId,
+          startDate: $startDate,
+        ) {
+          isAvailable
+          ok
+          infoText
+        }
+          
+      }
+    `;
+
     const [filterName, setFilterName] = useState<string>();
     const { data } = useFilterPhysicalObjectsByName(organizationId, filterName); // TODO org
+    const [availableObjects, setAvailableObjects] = useState<any[]>([])
+    const [checkAvailability] = useMutation(IS_PHYSICAL_OBJECT_AVAILABLE);
+
+    useEffect(() => {
+      const updateAvailableObjects = async () => {
+          if (fromDate && tillDate && data) {
+              const available = await filterAvailableObjects(data, fromDate, tillDate);
+              setAvailableObjects(available);
+          } else {
+              setAvailableObjects(data);
+          }
+      };
+      updateAvailableObjects();
+  }, [data, fromDate, tillDate]);
 
     const updateItems = (id: string, checked: boolean) => {
         if (!checked) {
@@ -599,6 +651,37 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
         setSelectedItemIds([...selectedItemIds, itemId]);
     }
 
+    const filterAvailableObjects = async (objects: any[], fromDate: Date, tillDate: Date) => {
+      const availableObjects = [];
+  
+      for (const object of objects) {
+          const isAvailable = await checkObjectAvailability(object.id, fromDate, tillDate);
+          if (isAvailable) {
+              availableObjects.push(object);
+          }
+      }
+      return availableObjects;
+  };
+
+  const checkObjectAvailability = async (itemId: string, fromDate: Date, tillDate: Date) => {
+    try {
+        const response = await checkAvailability({
+            variables: {
+                startDate: fromDate,
+                endDate: tillDate,
+                physId: itemId,
+            }
+        });
+        if (response.data.isPhysicalObjectAvailable.ok) { 
+          return response.data.isPhysicalObjectAvailable.isAvailable;
+       } else {
+         console.log('Order confirmation failed:', response.data.isPhysicalObjectAvailable.infoText);
+    }} catch (error) {
+        console.error('Fehler bei der Abfrage der Verfügbarkeit:', error);
+        return false;
+    }
+};
+
     const isChecked = (id: string) => selectedItemIds.includes(id);
     const changeCheckedState = (id: string) => { updateItems(id, !isChecked(id)); console.error('changed') }
 
@@ -608,7 +691,7 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
                 <p className='select-objects--text' onClick={close}>Fertig</p>
                 <div className="select-objects--list">
                     <InputGroup type="text" large={true} placeholder='Suchen...' onChange={(e) => setFilterName(e.target.value)} />
-                    { data.length > 0 && <BaseInventoryList items={data} onItemClick={(id) => changeCheckedState(id)}
+                    { data.length > 0 && <BaseInventoryList items={availableObjects} onItemClick={(id) => changeCheckedState(id)}
                         after={(id) => <Checkbox checked={isChecked(id)} />} /> }
                     { data.length === 0 && <NonIdealState title='keine Objekte gefunden' /> }
                 </div>
