@@ -493,7 +493,7 @@ useEffect(() => {
                   checked={showCustomerOrders}
                   onChange={() => setShowCustomerOrders(!showCustomerOrders)}
                 />
-              Costumer
+              Customer
             </label>
             </div>
 
