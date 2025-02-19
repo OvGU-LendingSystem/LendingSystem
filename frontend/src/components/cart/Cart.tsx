@@ -38,7 +38,7 @@ export function Cart() {
     }
   });
   //const itemsInCart = itemsInCartUnsorted;
-  console.log(itemsInCart);
+  //console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
   const loginDispatcher = useLoginStatus();
 
@@ -83,81 +83,86 @@ export function Cart() {
      }
     };
 
+    if (loginDispatcher.loggedIn){
+      return (
+          
+          <div>
+              <div style={{padding: '20px'}}>
+                  <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
-    return (
-        
-        <div>
 
-            <div style={{padding: '20px'}}>
-                <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
+                  {itemsInCart.map((item) => (
+                    <div style={aroundProductCardStyle}>
+                    {item.map((product) => (
+                      <div key={product.id} style={productCardStyle}>
+                      <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+                      <div style={productInfoStyle}>
+                        <h3>{product.name}</h3>
+                        
+                        <div style={descriptionStyle}>
+                          <div style={descriptionContentStyle}>{product.description}</div>
+                        </div>
+                        <div style={priceStyle}>{product.price}</div>
+                        <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                        <div>Organistation: {product.organization}</div>
 
-
-                {itemsInCart.map((item) => (
-                  <div style={aroundProductCardStyle}>
-                  {item.map((product) => (
-                    <div key={product.id} style={productCardStyle}>
-                    <img src={product.imageUrl} alt={product.name} style={imageStyle} />
-                    <div style={productInfoStyle}>
-                      <h3>{product.name}</h3>
-                      
-                      <div style={descriptionStyle}>
-                        <div style={descriptionContentStyle}>{product.description}</div>
+                        
+                        {/**<button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                          Bearbeiten
+                        </button>*/}
+                        <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
+                          Entfernen
+                        </button>
                       </div>
-                      <div style={priceStyle}>{product.price}</div>
-                      <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                      <div>Organistation: {product.organization}</div>
-
-                      
-                      {/**<button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                        Bearbeiten
-                      </button>*/}
-                      <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
-                        Entfernen
-                      </button>
                     </div>
-                  </div>
+                    ))}
+
+                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
+                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
+                      {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
+                    </div>
+                  
                   ))}
 
-                    <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
-                    {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
-                    {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
-                  </div>
-                
-                ))}
+                  {showModal && (
+                      <div style={modalOverlayStyle}>
+                      <div style={modalContentStyle}>
+                          <h2 //add calendar under here
+                          >Objekt bearbeiten
+                          </h2>
+                          <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
+                          
 
-                {showModal && (
-                    <div style={modalOverlayStyle}>
-                    <div style={modalContentStyle}>
-                        <h2 //add calendar under here
-                        >Objekt bearbeiten
-                        </h2>
-                         <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
-                        
-
-                        <div style={inputContainerStyle}>
-                        <label>Menge:</label>
-                        <input
-                            
-                            type="number"
-                            value={amount}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
-                            min="1"
-                            style={{ marginLeft: '10px' }}
-                        />
-                        </div>
-                        <div style={buttonContainerStyle}>
-                        <button onClick={() => editProduct()}>Edit</button>
-                        <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                            Cancel
-                        </button>
-                        </div>
-                    </div>
-                    </div>
-                )}
-            
-            </div>
-        </div>
+                          <div style={inputContainerStyle}>
+                          <label>Menge:</label>
+                          <input
+                              
+                              type="number"
+                              value={amount}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
+                              min="1"
+                              style={{ marginLeft: '10px' }}
+                          />
+                          </div>
+                          <div style={buttonContainerStyle}>
+                          <button onClick={() => editProduct()}>Edit</button>
+                          <button onClick={closeModal} style={{ marginLeft: '10px' }}>
+                              Cancel
+                          </button>
+                          </div>
+                      </div>
+                      </div>
+                  )}
+              
+              </div>
+          </div>
+      );
+    }
+    
+    return (
+      <div>Bitte einloggen Seite.</div>
     );
+
 }
 
 
