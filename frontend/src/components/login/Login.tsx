@@ -4,7 +4,7 @@ import './Login.css';
 import { gql, useMutation } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 
-interface LoginProps {}
+interface LoginProps {onClose: () => void;}
 
 const query = gql`
 mutation Login($email: String!, $password: String!) {
@@ -28,6 +28,8 @@ export function Login(props: LoginProps) {
   const [city, setCity] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -40,10 +42,11 @@ export function Login(props: LoginProps) {
           password: password
         }
       });
-
+  
       if (data?.login?.ok) {
         setLoginAction({ type: 'login' });
-        setErrorMessage(''); 
+        setErrorMessage('');
+        props.onClose(); // Close modal on successful login
       } else {
         setErrorMessage(data?.login?.infoText || 'Fehler beim Login!');
       }
@@ -51,6 +54,9 @@ export function Login(props: LoginProps) {
       setErrorMessage('Fehler bei der Anfrage. Bitte versuche es später erneut.');
     }
   };
+  
+
+
 
   const handleRegister = (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,6 +69,7 @@ export function Login(props: LoginProps) {
       setErrorMessage('Die Passwörter stimmen nicht überein!');
       return;
     }
+
 
     console.log('Register First Name:', first_name);
     console.log('Register Name:', name);

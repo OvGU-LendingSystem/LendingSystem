@@ -45,7 +45,7 @@ export function Router() {
               <Route path='calendar' element={<Calendar />} />
             </Route>
 
-            <Route path='login' element={<Login />}/>
+            <Route path='login' element={<Login onClose={() => {}}/>}/>
             <Route path='requests' element={<Requests />}/>
 
             <Route path='requests'>

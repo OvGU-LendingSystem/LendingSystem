@@ -30,7 +30,7 @@ export function Orders() {
 
   return (
             <div style={{marginTop:"30px"}}>
-          <h2>Offene Bestellungen</h2>
+          <h2></h2>
           </div>
       ) 
 }

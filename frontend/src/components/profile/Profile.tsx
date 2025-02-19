@@ -3,7 +3,17 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Orders } from "./orders";
 import { Login } from "../login/Login";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 import './Profile.css';
+
+const CHECK_EMAIL_EXISTENCE = gql`
+  query CheckEmail($email: String!) {
+    checkEmailExists(email: $email) {
+      exists
+    }
+  }
+`;
 
 export function Profile() {
   const navigate = useNavigate();
@@ -17,8 +27,12 @@ export function Profile() {
   const [newAddress, setNewAddress] = useState("");
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("User");
+  const setLoginAction = useLoginStatusDispatcher();
 
   const handleLogout = () => {
+    setLoginAction({ type: "logout" });
+    localStorage.removeItem("authToken");
+    console.log("User logged out");
     navigate("/");
   };
 
@@ -26,14 +40,25 @@ export function Profile() {
     setModalOpen(false);
   };
 
+  const { data, loading, error } = useQuery(CHECK_EMAIL_EXISTENCE, {
+    variables: { email: roleEmail },
+    skip: !roleEmail, // Only run when there's an email input
+  });
+
   const handleAssignRole = () => {
+    if (loading) return; // Prevent clicking while checking
+
+    if (error || !data?.checkEmailExists?.exists) {
+      alert("Diese E-Mail existiert nicht!");
+      return;
+    }
+
     console.log(`Assigning ${selectedRole} role to ${roleEmail}`);
     setRoleModalOpen(false);
   };
 
-  // If user is not logged in, show the Login component
   if (!loginStatus.loggedIn) {
-    return <Login />;
+    return <Login onClose={() => {}} />;
   }
 
   return (
@@ -44,10 +69,10 @@ export function Profile() {
           Vorname: {loginStatus.user?.firstName || ""}
         </p>
         <p style={{ marginBottom: '20px' }}>
-          Name: {loginStatus.user?.organizationInfoList?.[0]?.rights || ""}
+          Name: {loginStatus.user?.lastName || ""}
         </p>
         <p>
-          Organisation: {loginStatus.user?.organizationInfoList?.length > 0
+          Rolle: {loginStatus.user?.organizationInfoList?.length > 0
             ? loginStatus.user.organizationInfoList[0].rights
             : "keine Organisation"}
           <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button">
@@ -115,6 +140,9 @@ export function Profile() {
               />
             </label>
             <br /><br />
+            {data && !data.checkEmailExists.exists && (
+              <p style={{ color: "red" }}>Diese E-Mail existiert nicht!</p>
+            )}
             <label>
               Rolle:
               <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
