@@ -11,7 +11,7 @@ import { OrderPopup } from "../cart/OrderPopup";
 import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
-import { useUserInfo } from "../../context/LoginStatusContext";
+import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 import { ALL } from "dns";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
@@ -93,8 +93,9 @@ const [CreateOrder] = useMutation(CREATE_ORDER);
 const [UpdateOrder] = useMutation(UPDATE_ORDER);
 const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
-const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
+const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
+const status = useLoginStatus();
 const user = useUserInfo();
 
 const handleCreateOrder = async () => {
@@ -137,7 +138,7 @@ const handleCreateOrder = async () => {
             const userInfoResult = user.organizationInfoList.map(async org => {
                 const { data } = await GetMaxDeposit({
                     variables:{
-                        organizationId: props.products[0].organisation,
+                        organizationId: props.products[0].organizationId,
                         userRight: org.rights
                     },
                 });

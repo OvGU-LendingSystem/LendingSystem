@@ -13,64 +13,37 @@ import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
 import { Spinner } from "@blueprintjs/core";
 
-const GET_LOCATIONS = gql`
-  query {
-    filterTags {
-      tagId
-      name
-    }
-  }
-`;
-
-function DisplayLocations() {
-  const { loading, error, data } = useQuery(GET_LOCATIONS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  return data.filterTags.map(({ tagId, name }: { tagId: number, name: string }) => (
-    <div key={tagId}>
-      <p>
-        {tagId}: {name}
-      </p>
-    </div>
-  ));
-}
-
-//ENDE APOLLO STUFF
-
-
 
 export function Cart() {
   const itemsInCartUnsorted = useCart();
+  console.log(itemsInCartUnsorted);
   itemsInCartUnsorted.sort(function(a, b){
-      if (a.organisation<b.organisation) return -1;
-      if (a.organisation>b.organisation) return 1;
+      if (a.organization<b.organization) return -1;
+      if (a.organization>b.organization) return 1;
       return 0;
     }
   );
   const itemsInCart: Product[][] = [];
   if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
-  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organisation : "";
+  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   itemsInCartUnsorted.forEach(item => {
     const ind = itemsInCart.length-1;
-    if (item.organisation == firstOrg){
+    if (item.organization == firstOrg){
       itemsInCart[ind].push(item);
     }
     else{
       itemsInCart.push([]);
       itemsInCart[ind+1].push(item);
-      firstOrg = item.organisation;
+      firstOrg = item.organization;
     }
   });
   //const itemsInCart = itemsInCartUnsorted;
-  console.log(itemsInCart);
+  //console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
   const loginDispatcher = useLoginStatus();
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [showDetails, setShowDetails] = useState<boolean>(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [amount, setAmount] = useState<number>(1);
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -101,14 +74,6 @@ export function Cart() {
         setShowModal(false);
         setSelectedProduct(null);
     };
-    const openDetails = (product: Product) => {
-      setSelectedProduct(product);
-      setShowDetails(true);
-    };
-    const closeDetails = () => {
-      setShowDetails(false);
-      setSelectedProduct(null);
-    };
     const editProduct = () => {
      if (selectedProduct && startDate && endDate){
         productNew = {...selectedProduct!,amount,startDate,endDate};
@@ -118,103 +83,86 @@ export function Cart() {
      }
     };
 
-    const openMoreDetails = () => {
-
-    }
-
-    return (
-        
-        <div>
-
-            <div style={{padding: '20px'}}>
-                <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
+    if (loginDispatcher.loggedIn){
+      return (
+          
+          <div>
+              <div style={{padding: '20px'}}>
+                  <h2 style={{marginBottom: '20px'}}>Warenkorb</h2>
 
 
-                {itemsInCart.map((item) => (
-                  <div style={aroundProductCardStyle}>
-                  {item.map((product) => (
-                    <div key={product.id} style={productCardStyle}>
-                    <img src={product.imageUrl} alt={product.name} style={imageStyle} />
-                    <div style={productInfoStyle}>
-                      <h3>{product.name}</h3>
-                      
-                      <div style={descriptionStyle}>
-                        <div style={descriptionContentStyle}>{product.description}</div>
-                        <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
+                  {itemsInCart.map((item) => (
+                    <div style={aroundProductCardStyle}>
+                    {item.map((product) => (
+                      <div key={product.id} style={productCardStyle}>
+                      <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+                      <div style={productInfoStyle}>
+                        <h3>{product.name}</h3>
+                        
+                        <div style={descriptionStyle}>
+                          <div style={descriptionContentStyle}>{product.description}</div>
+                        </div>
+                        <div style={priceStyle}>{product.price}</div>
+                        <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
+                        <div>Organistation: {product.organization}</div>
+
+                        
+                        {/**<button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                          Bearbeiten
+                        </button>*/}
+                        <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
+                          Entfernen
+                        </button>
                       </div>
-                      <div style={priceStyle}>{product.price}</div>
-                      <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
-                      <div>Anzahl: {product.amount}</div>
-                      <div>Organistation: {product.organisation}</div>
-
-                      
-                      <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                        Bearbeiten
-                      </button>
-                      <button style={addToCartButtonStyle} onClick={() => itemsInCartDispatcher({ type: 'remove', item: product })}>
-                        Entfernen
-                      </button>
                     </div>
-                  </div>
+                    ))}
+
+                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
+                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
+                      {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
+                    </div>
+                  
                   ))}
 
-                    <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
-                    {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
-                    {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
-                  </div>
-                
-                ))}
+                  {showModal && (
+                      <div style={modalOverlayStyle}>
+                      <div style={modalContentStyle}>
+                          <h2 //add calendar under here
+                          >Objekt bearbeiten
+                          </h2>
+                          <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
+                          
 
-                {showModal && (
-                    <div style={modalOverlayStyle}>
-                    <div style={modalContentStyle}>
-                        <h2 //add calendar under here
-                        >Objekt bearbeiten
-                        </h2>
-                         <Calendar_Querry setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate}/>
-                        
-
-                        <div style={inputContainerStyle}>
-                        <label>Menge:</label>
-                        <input
-                            
-                            type="number"
-                            value={amount}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
-                            min="1"
-                            style={{ marginLeft: '10px' }}
-                        />
-                        </div>
-                        <div style={buttonContainerStyle}>
-                        <button onClick={() => editProduct()}>Edit</button>
-                        <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                            Cancel
-                        </button>
-                        </div>
-                    </div>
-                    </div>
-                )}
-
-                {showDetails && (
-                  <div style={modalOverlayStyle}>
-                    <div style={modalContentStyle}>
-                      <h2>{selectedProduct?.name}</h2>
-                      <div style={inputContainerStyle}>
-                        <div>{selectedProduct?.description}</div>
+                          <div style={inputContainerStyle}>
+                          <label>Menge:</label>
+                          <input
+                              
+                              type="number"
+                              value={amount}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
+                              min="1"
+                              style={{ marginLeft: '10px' }}
+                          />
+                          </div>
+                          <div style={buttonContainerStyle}>
+                          <button onClick={() => editProduct()}>Edit</button>
+                          <button onClick={closeModal} style={{ marginLeft: '10px' }}>
+                              Cancel
+                          </button>
+                          </div>
                       </div>
-                      <div style={buttonContainerStyle}>
-                        <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
-                          Cancel
-                        </button>
                       </div>
-                    </div>
-                  </div>
-                )}
-            
-            
-            </div>
-        </div>
+                  )}
+              
+              </div>
+          </div>
+      );
+    }
+    
+    return (
+      <div>Bitte einloggen Seite.</div>
     );
+
 }
 
 

@@ -195,7 +195,7 @@ function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
     }
 
     return (
-        <ModifyInventory initialValue={initialValue} label='Save changes' onClick={submit}
+        <ModifyInventory initialValue={initialValue} label='Änderungen speichern' onClick={submit}
             onSuccess={onSuccess} ErrorScreen={EditObjectErrorScreen} />
     );
 }

@@ -40,7 +40,6 @@
 }
 
 .checkbox-label {
-  display: block;
   margin-bottom: 10px;
 }
 
@@ -136,9 +135,7 @@
   align-items: center;
 }
 
-.modal-content {
 
-}
 
 .input-container {
   margin-bottom: 20px;
