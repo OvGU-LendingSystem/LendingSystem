@@ -106,8 +106,14 @@ export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined
 
     return useSuspenseQueryWithResponseMapped<OrderResponse[], Order[]>(GET_ORDER, 'filterOrders', {
         variables: {
-            fromDay: fromDay,
-            tillDay: tillDay
+            fromDay: fromDay ? getApolloDateString(fromDay) : undefined,
+            tillDay: tillDay ? getApolloDateString(tillDay) : undefined
         }
     }, mapToOrder);
+}
+
+function getApolloDateString(date: Date) {
+    const offset = date.getTimezoneOffset();
+    date = new Date(date.getTime() - (offset * 60 * 1000));
+    return date.toISOString().split('T')[0];
 }
