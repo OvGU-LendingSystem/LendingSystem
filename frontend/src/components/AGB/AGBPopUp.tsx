@@ -11,7 +11,7 @@ import { OrderPopup } from "../cart/OrderPopup";
 import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
-import { useUserInfo } from "../../context/LoginStatusContext";
+import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 import { ALL } from "dns";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
@@ -95,6 +95,7 @@ const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
+const status = useLoginStatus();
 const user = useUserInfo();
 
 const handleCreateOrder = async () => {
@@ -216,8 +217,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            {/**<Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>*/}
-                            <Viewer fileUrl="agb.pdf"  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>

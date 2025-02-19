@@ -239,9 +239,9 @@ export function Inventory(): JSX.Element {
             <h2>Objekt hinzufügen</h2>
             <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
             <div style={buttonContainerStyle}>
-              <button onClick={addToCart}>Add</button>
+              <button onClick={addToCart}>Hinzufügen</button>
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Cancel
+                Schließen
               </button>
             </div>
           </div>
