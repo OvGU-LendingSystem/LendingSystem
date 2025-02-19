@@ -124,7 +124,7 @@ export function Layout() {
 
         <ul>
           <li style={{ position: "relative" }}>
-            {!loginStatus.loggedIn ? (
+            {loginStatus.loggedIn ? (
               <>
                 <VscAccount
                   size={24}
