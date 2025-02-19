@@ -53,7 +53,7 @@ export function FileSelector({ files, setFiles, title }: { files: FileResource[]
         <Card>
             <H3>{title}</H3>
             <Divider />
-            <Button onClick={selectFiles}>Select files</Button>
+            <Button onClick={selectFiles}>Dateien auswählen</Button>
             <input type='file' accept='application/pdf' multiple ref={fileInput} onChange={onFileSelected} className='file-input-handler' />
             <div className='file-drop-target' onDragEnter={stopEvent} onDragOver={stopEvent} onDrop={dropFiles}>
                 {
@@ -68,8 +68,8 @@ export function FileSelector({ files, setFiles, title }: { files: FileResource[]
 
 function NoFileSelectedComponent({ selectFiles }: { selectFiles: () => Promise<void> }) {
     return (
-        <NonIdealState title='Drop pdf files here!' icon='cloud-upload' 
-            action={<Button outlined icon='add' onClick={selectFiles}>Select files</Button>} />
+        <NonIdealState title='Pdf Dateien hier ablegen!' icon='cloud-upload' 
+            action={<Button outlined icon='add' onClick={selectFiles}>Dateien auswählen</Button>} />
     );
 }
 
