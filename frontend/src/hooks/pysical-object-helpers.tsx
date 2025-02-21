@@ -40,10 +40,32 @@ export interface AddPhysicalObjectResponse extends GQLResponse {
     }
 }
 
+export interface AddPhysicalObjectVars {
+    invNumInternal: number,
+    invNumExternal: number,
+    storageLocation: string,
+    name: string,
+    tags: string[],
+    deposit: number,
+    faults: string,
+    description: string,
+    borrowable: boolean,
+    storageLocation2: string,
+    organizationId: string,
+    pictures: string[],
+    manuals: string[]
+}
+
 export function useAddPhysicalObject() {
-    const [ mutate ] = useMutationWithResponse<AddPhysicalObjectResponse>(ADD_PYSICAL_OBJECT, 'createPhysicalObject');
+    const [ mutate ] = useMutationWithResponse<AddPhysicalObjectResponse, AddPhysicalObjectVars>(
+        ADD_PYSICAL_OBJECT,
+        'createPhysicalObject',
+        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+    );
     return [ mutate ];
 }
+
+// -----------------------------------------------------------------------------
 
 const EDIT_PYSICAL_OBJECT = gql`
     mutation EditPhysicalObject(
@@ -53,6 +75,7 @@ const EDIT_PYSICAL_OBJECT = gql`
         $faults: String!, $description: String!,
         $pictures: [String!]!,
         $manuals: [String!]!,
+        $tags: [String!]!,
         $storageLocation2: String!,
         $borrowable: Boolean!
     ) {
@@ -64,6 +87,7 @@ const EDIT_PYSICAL_OBJECT = gql`
             faults: $faults, description: $description,
             pictures: $pictures,
             manual: $manuals,
+            tags: $tags,
             storageLocation2: $storageLocation2,
             borrowable: $borrowable
         ) {
@@ -73,15 +97,61 @@ const EDIT_PYSICAL_OBJECT = gql`
     }
 `;
 
+export interface EditPhysicalObjectVars {
+    physId: string,
+    invNumInternal: number,
+    invNumExternal: number,
+    storageLocation: string,
+    name: string,
+    deposit: number,
+    faults: string,
+    description: string,
+    pictures: string[],
+    manuals: string[],
+    tags: string[],
+    storageLocation2: string,
+    borrowable: boolean
+}
+
 export interface EditPhysicalObjectResponse extends GQLResponse {
     ok: boolean,
     infoText: string
 }
 
 export function useEditPhysicalObject() {
-    const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse>(EDIT_PYSICAL_OBJECT, 'updatePhysicalObject');
+    const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse, EditPhysicalObjectVars>(
+        EDIT_PYSICAL_OBJECT,
+        'updatePhysicalObject',
+        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+    );
     return [ mutate ];
 }
+
+// -----------------------------------------------------------------------------
+
+const DELETE_PHYSICAL_OBJECT = gql`
+mutation DeletePhysicalObject($id: String!) {
+  deletePhysicalObject(physId: $id) {
+    ok
+    infoText
+    statusCode
+  }
+}`;
+
+
+export interface DeletePhysicalObjectVars {
+    id: string
+}
+
+export function useDeletePhysicalObject() {
+    return useMutationWithResponse<GQLResponse, DeletePhysicalObjectVars>(
+        DELETE_PHYSICAL_OBJECT,
+        'deletePhysicalObject',
+        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+    );
+}
+
+// -----------------------------------------------------------------------------
 
 const GET_PHYSICAL_OBJECTS = gql`
 query GetPhysicalObjects {
@@ -102,6 +172,18 @@ query GetPhysicalObjects {
           path
         }
       }
+    },
+    tags{
+      edges{
+        node{
+          tagId,
+          name
+        }
+      }
+    },
+    organization{
+      organizationId,
+      name
     }
   }
 }
@@ -124,6 +206,18 @@ interface GetPhysicalObjectsResponse {
           path: string
         }
       }[]
+    };
+    tags: {
+        edges: {
+            node:{
+                tagId: string,
+                name: string
+            }
+        }[]
+    };
+    organization: {
+        organizationId: string,
+        name: string
     }
 }
 
@@ -141,7 +235,10 @@ export function useGetPhysicalObjects() {
                 storageLocation: flattenedVal.storageLocation,
                 defects: flattenedVal.faults,
                 description: flattenedVal.description,
-                images: flattenedVal.pictures.map((pic) => {return { type: 'remote', ...pic }})
+                images: flattenedVal.pictures.map((pic) => {return { type: 'remote', ...pic }}),
+                category: flattenedVal.tags.edges[0]?.node?.name ?? "",
+                organizationId: flattenedVal.organization.organizationId,
+                organization: flattenedVal.organization.name,
             };
             return res;
         });
@@ -158,6 +255,9 @@ const FILTER_INVENTORY_BY_NAME = gql`
             physId,
             name,
             description,
+            deposit,
+            invNumInternal,
+            invNumExternal,
             pictures {
                 edges {
                     node {
@@ -173,6 +273,9 @@ interface FilterPhysicalObjectsByNameResponse {
     physId: string;
     name: string;
     description: string;
+    deposit: number;
+    invNumInternal: number;
+    invNumExternal: number;
     pictures: {
         edges: {
             node: {
@@ -186,6 +289,9 @@ export interface PreviewPhysicalObject {
     id: string;
     name: string;
     description: string;
+    invNumInternal?: number;
+    invNumExternal?: number;
+    deposit?: number;
     imageSrc?: string;
 }
 
@@ -199,6 +305,9 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
             const res: PreviewPhysicalObject = {
                 id: flattenedVal.physId,
                 name: flattenedVal.name,
+                invNumInternal: flattenedVal.invNumInternal,
+                invNumExternal: flattenedVal.invNumExternal,
+                deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
                 imageSrc: imageSrc
             }

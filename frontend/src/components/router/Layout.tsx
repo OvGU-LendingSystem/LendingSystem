@@ -1,10 +1,13 @@
-import React, { useState, ReactNode } from "react";
+import React, { useState, ReactNode, useEffect } from "react";
 import "./Layout.css";
 import { MdOutlineShoppingBasket } from "react-icons/md";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Footer } from "../footer/Footer";
+import { VscAccount } from "react-icons/vsc";
+import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
+
 
 interface ModalProps {
   children: ReactNode;
@@ -18,7 +21,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
-        <button style={{marginRight:"40px", marginTop:"5px"}}className="modal-close" onClick={onClose}>
+        <button style={{ marginRight: "40px", marginTop: "5px" }} className="modal-close" onClick={onClose}>
           &times;
         </button>
         {children}
@@ -29,7 +32,7 @@ function Modal({ children, isVisible, onClose }: ModalProps) {
 
 declare global {
   interface Product {
-    id: number;
+    id: string;
     name: string;
     description: string;
     price: number;
@@ -39,7 +42,8 @@ declare global {
     amount?: number;
     category?: string;
     status?: string;
-    organisation: string;
+    organization: string;
+    organizationId: string;
   }
 
   interface Quest {
@@ -55,7 +59,28 @@ declare global {
 
 export function Layout() {
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+  const [isDropdownVisible, setDropdownVisible] = useState(false);
+  const setLoginAction = useLoginStatusDispatcher();
   const loginStatus = useLoginStatus();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement).closest(".dropdown-menu") && !(event.target as HTMLElement).closest(".account-icon")) {
+        setDropdownVisible(false);
+      }
+    };
+
+    if (isDropdownVisible) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownVisible]);
 
   const handleLoginClick = () => {
     setLoginModalVisible(true);
@@ -65,33 +90,63 @@ export function Layout() {
     setLoginModalVisible(false);
   };
 
+  const handleLogout = () => {
+    console.log("Logout clicked");
+    setDropdownVisible(false);
+    setLoginAction({ type: "logout" });
+    localStorage.removeItem("authToken");
+    console.log("User logged out");
+    navigate("/");
+  };
+
   return (
     <div className="layout">
-      <nav className='nav-bar'>
+      <nav className="nav-bar">
         <ul>
           <li>
-            <Link to='/'>Home</Link>
+            <Link to="/">Home</Link>
           </li>
           <li>
-            <Link to='/requests'>Anfragen</Link>
+            <Link to="/requests">Anfragen</Link>
           </li>
           <li>
-            <Link to='/internal/inventory'>Internes Inventar</Link>
+            <Link to="/internal/inventory">Internes Inventar</Link>
           </li>
           <li>
-            { loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : 'Nicht eingeloggt' }
+            {loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : "Nicht eingeloggt"}
           </li>
           <li>
-            { loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0 ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}` : 'keine Orga' }
+            {loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0
+              ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}`
+              : "keine Orga"}
           </li>
         </ul>
 
         <ul>
-          <li>
-            <button style={{ padding: "3px" }} onClick={handleLoginClick}>Login</button>
+          <li style={{ position: "relative" }}>
+            {loginStatus.loggedIn ? (
+              <>
+                <VscAccount
+                  size={24}
+                  className="account-icon"
+                  style={{ cursor: "pointer", color: "white" }}
+                  onClick={() => setDropdownVisible(!isDropdownVisible)}
+                />
+                {isDropdownVisible && (
+                  <div className="dropdown-menu">
+                    <button onClick={() => { setDropdownVisible(false); navigate("/profile"); }}>Nutzereinstellungen</button>
+                    <button onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button style={{ padding: "3px" }} onClick={handleLoginClick}>
+                Login
+              </button>
+            )}
           </li>
           <li>
-            <Link to='/cart'>
+            <Link to="/cart">
               <MdOutlineShoppingBasket size={24} />
             </Link>
           </li>
@@ -104,7 +159,7 @@ export function Layout() {
         <Footer />
       </div>
       <Modal isVisible={isLoginModalVisible} onClose={handleCloseModal}>
-        <Login />
+        <Login onClose={handleCloseModal} />
       </Modal>
     </div>
   );

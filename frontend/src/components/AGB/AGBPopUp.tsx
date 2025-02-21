@@ -11,6 +11,8 @@ import { OrderPopup } from "../cart/OrderPopup";
 import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
+import { ALL } from "dns";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
@@ -60,6 +62,20 @@ mutation updateOrder(
   }
 `;
 
+const GET_MAX_DEPOSIT = gql`
+    mutation deposit (
+            $organizationId: String,
+            $userRight: String
+        ) {
+        getMaxDeposit (
+            organizationId: $organizationId,
+            userRight: $userRight
+        ) {
+            maxDeposit
+        }
+    }
+`;
+
 /**
  * 
  * @param props trigger as a boolean and setTrigger to change the boolean to show or not show the PopUp
@@ -75,8 +91,12 @@ const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
 const [CreateOrder] = useMutation(CREATE_ORDER);
 const [UpdateOrder] = useMutation(UPDATE_ORDER);
+const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
-const {data} = useGetOrganizationByIdQuery(props.products[0].organisation);
+const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
+
+const status = useLoginStatus();
+const user = useUserInfo();
 
 const handleCreateOrder = async () => {
     try {
@@ -108,14 +128,28 @@ const handleCreateOrder = async () => {
             }
         });
 
-        //TODO DECKELUNG FÜR DEPOSIT
-        /*for (let i=0; i<deposit.length; i++){
-            if (deposit[i]>DECKELUNG)
-                deposit[i] = DECKELUNG;
-        }*/
+        
 
-        //TODO ADD USER TO ORDER
-        //if (LoggedIn.loggedIn)
+        for (let i=0; i<deposit.length; i++){
+            //Rechte aus useUserInfo und Minimum bilden
+            
+            var maxD = 1000000;
+
+            const userInfoResult = user.organizationInfoList.map(async org => {
+                const { data } = await GetMaxDeposit({
+                    variables:{
+                        organizationId: props.products[0].organizationId,
+                        userRight: org.rights
+                    },
+                });
+                if(data.maxDeposit<maxD) maxD=data.maxDeposit;
+            });
+            Promise.allSettled(userInfoResult);
+
+            if (deposit[i]>maxD)
+                deposit[i] = maxD;
+        }
+
 
         for (let i=0; i<fromDate.length; i++){
             const { data } = await CreateOrder({
@@ -202,11 +236,11 @@ return (
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >
-                    Accept
+                    Akzeptiern
                 </button>
                 <button
                     onClick={() => {props.setTrigger(false)}}>
-                    Back
+                    Zurück
                 </button>
                 <ZoomIn>
                 {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}

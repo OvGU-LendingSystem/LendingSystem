@@ -75,23 +75,18 @@ db = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine)
 app = Flask(__name__)
 app.debug = True
 app.secret_key = secret_key
-app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_PERMANENT'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+# app.config['SESSION_PERMANENT'] = True
+# app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+# app.config['SESSION_COOKIE_SECURE'] = True
 app.permanent_session_lifetime = timedelta(hours=2)
-if (hostname == "container"):
-    app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
-else:
-    app.config['SESSION_REDIS'] = redis.from_url('redis://hades.fritz.box:6379')
 
 if not (int)(testing_on):
-    app.config[
-        'SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + '/' + db_database
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 server_session = Session(app)
 
 # Create scheduler for automated mail sending

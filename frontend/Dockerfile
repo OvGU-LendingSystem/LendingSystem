@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Quellcode kopieren
 COPY . .
+RUN npx update-browserslist-db@latest
 RUN npm install
 
 # Build des React-Frontends

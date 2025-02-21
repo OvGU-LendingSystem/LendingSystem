@@ -7,7 +7,7 @@ from mutation_group import create_group, update_group, delete_group
 from mutation_login import login, logout, check_session
 from mutation_orders import create_order, update_order, update_order_status, add_physical_object_to_order, remove_physical_object_from_order, delete_order
 from mutation_organizations import create_organization, update_organization, delete_organization, add_user_to_organization, remove_user_from_organization, get_max_deposit, set_max_deposit, update_user_rights
-from mutation_physical_objects import create_physical_object, update_physical_object, delete_physical_object
+from mutation_physical_objects import create_physical_object, update_physical_object, delete_physical_object, is_physical_object_available
 from mutation_tags import create_tag, update_tag, delete_tag
 from mutation_users import create_user, update_user, reset_password, delete_user
 
@@ -21,6 +21,7 @@ class Mutations(graphene.ObjectType):
     create_physical_object = create_physical_object.Field()
     update_physical_object = update_physical_object.Field()
     delete_physical_object = delete_physical_object.Field()
+    is_physical_object_available = is_physical_object_available.Field()
 
     upload_file = upload_file.Field()
     update_file = update_file.Field()

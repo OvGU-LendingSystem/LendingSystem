@@ -1,14 +1,17 @@
 import '../../styles/style.css';
 import './ModifyInventory.css';
-import { FormikHelpers, Formik, FormikProps, Field, Form } from "formik";
+import { FormikHelpers, Formik, FormikProps, Field, Form, useField } from "formik";
 import { FormikInput, FormikSelectionInputWithCustomInput, FormikTextarea } from "../../core/input/Input";
 import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense, useState } from 'react';
-import { Button, H3, NonIdealState, Spinner } from '@blueprintjs/core';
+import { Suspense, useCallback, useState } from 'react';
+import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
+import { ItemPredicate, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
+import { Tag } from '../../models/tag.model';
+import { useGetTagsQuery } from '../../hooks/tag-helpers';
 
 /**
  * Props for {@link ModifyInventoryScreen}
@@ -131,6 +134,9 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                         </div>
                     </div>
 
+                    <H3><label htmlFor='tags'>Tags</label></H3>
+                    <FormikTagInput fieldName='tags' />
+
                     <H3><label htmlFor='description'>Beschreibung</label></H3>
                     <FormikTextarea id='description' rows={6} fieldName='description' />
 
@@ -149,6 +155,65 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
     );
 }
 
+const filterTags: ItemPredicate<Tag> = (query, tag, idx, exactMatch) => {
+    const lowerQuery = query.trim().toLowerCase();
+    const lowerTag = tag.tag.trim().toLowerCase();
+    if (exactMatch) {
+        return lowerQuery === lowerTag;
+    }
+
+    return lowerTag.includes(lowerQuery);
+}
+
+function FormikTagInput({ fieldName }: { fieldName: string }) {
+    const [ field, meta, helper ] = useField<Tag[]>(fieldName);
+    const tagsQuery = useGetTagsQuery();
+
+    const areTagsEqual = useCallback((tagA: Tag, tagB: Tag) => {
+        if ('id' in tagA !== 'id' in tagB) return false;
+        if ('id' in tagA && 'id' in tagB) return tagA.id === tagB.id;
+        return tagA.tag === tagB.tag;
+    }, []);
+
+    const tagIsSelected = useCallback((tag: Tag) => {
+        return field.value.findIndex((val) => areTagsEqual(val, tag)) !== -1;
+    }, [areTagsEqual, field, field.value]);
+
+    const removeTag = useCallback((idx: number) => {
+        helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]);
+    }, [helper, field, field.value]);
+    
+    return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
+        onItemSelect={(selectedTag, e) => {
+            if (tagIsSelected(selectedTag)) {
+                const tagIdx = field.value.findIndex((val) => areTagsEqual(val, selectedTag));
+                removeTag(tagIdx);
+            } else {
+                helper.setValue([...field.value, selectedTag]);
+            }
+            e?.stopPropagation();
+            e?.preventDefault();
+        }}
+        onItemsPaste={(tags) => {
+            helper.setValue([...field.value, ...tags]);
+        }}
+        onClear={() => helper.setValue([])}
+        createNewItemFromQuery={(query) => ({ tag: query })}
+        createNewItemRenderer={(query, active, click) => <MenuItem icon='add'
+            text={`neuen Tag "${query}" erstellen`} active={active}
+            onClick={click} shouldDismissPopover={false} />
+        }
+        createNewItemPosition='first'
+        itemsEqual={areTagsEqual}
+        itemPredicate={filterTags}
+        tagRenderer={(tag) => <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)} shouldDismissPopover={false} text={tag.tag} />}
+        itemRenderer={(tag) => <p>{tag.tag}</p>}
+        tagInputProps={{
+            onRemove: (node, idx) => removeTag(idx),
+            tagProps: { minimal: true }
+        }}
+        placeholder='Auswählen...' />
+}
 
 function LoadingScreen() {
     return (

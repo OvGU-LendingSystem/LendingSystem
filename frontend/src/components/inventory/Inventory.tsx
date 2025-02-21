@@ -3,11 +3,12 @@ import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
 
-import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+import { useQuery, gql } from '@apollo/client';
 import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
+import { useGetTagsQuery } from '../../hooks/tag-helpers';
 
 var products: Product[] = [
-  {
+  /*{
     id: 1,
     name: 'Maus',
     description: 'Beschreibung für Objekt 1',
@@ -51,10 +52,10 @@ var products: Product[] = [
     imageUrl: 'https://via.placeholder.com/300',
     category: 'Electronik',
     organisation: 'FARAFIN'
-  },
+  },*/
 ];
 
-const GET_PRODUCTS = gql`
+/*const GET_PRODUCTS = gql`
   query {
     filterPhyiscalObjects {
       physId
@@ -97,17 +98,18 @@ function DisplayInventory() {
     }
   ));
   return <div></div>;
-}
+}*/
 
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
 
-  DisplayInventory();
+  // Fetching physical objects
+  const { data: products, error } = useGetPhysicalObjects();
+  const { data: tags, error: e } = useGetTagsQuery();
 
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [showDetails, setShowDetails] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -118,8 +120,9 @@ export function Inventory(): JSX.Element {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetching physical objects
-  const { data: products, error } = useGetPhysicalObjects();
+  
+
+  console.log(products);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -144,18 +147,10 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
-  const openDetails = (product: any) => {
-    setSelectedProduct(product);
-    setShowDetails(true);
-  };
-
-  const closeDetails = () => {
-    setShowDetails(false);
-    setSelectedProduct(null);
-  };
-
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
+      console.log("HELLO TEST");
+      console.log(selectedProduct);
       itemsInCartDispatcher({
         type: 'add',
         item: { ...selectedProduct, startDate, endDate, amount }
@@ -173,7 +168,7 @@ export function Inventory(): JSX.Element {
   };
 
   const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategories.includes(product.category) || selectedCategories.length==0)}
   );
 
   if (error) return <p>Error loading products: {error.message}</p>;
@@ -198,22 +193,20 @@ export function Inventory(): JSX.Element {
             </button>
             {dropdownVisible && (
               <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('Elektronik')}
-                    onChange={() => handleCategoryChange('Elektronik')}
-                  />
-                  Elektronik
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('Office')}
-                    onChange={() => handleCategoryChange('Office')}
-                  />
-                  Office
-                </label>
+                { tags.map((ele) => (
+                  <div style={checkboxLabelStyle}>
+                    <input
+                      id={ele.id}
+                      type="checkbox"
+                      style={{  marginRight: "10px", width: "auto"}}
+                      checked={selectedCategories.includes(ele.tag)}
+                      onChange={() => handleCategoryChange(ele.tag)}
+                    />
+                    <label htmlFor={ele.id}>{ele.tag}</label>
+                    
+                    
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -223,12 +216,12 @@ export function Inventory(): JSX.Element {
             <div key={product.physId} style={productCardStyle}>
               <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
-                <h3>{product.name}</h3>
                 <div style={descriptionStyle}>
+                  <h3>{product.name}</h3>
                   <div style={descriptionContentStyle}>{product.description}</div>
-                  <button style={descriptionButtonStyle} onClick={() => openDetails(product)}>Mehr Informationen</button>
                 </div>
-                <div style={priceStyle}>{product.deposit} €</div>
+                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit} €</div>
+                <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
@@ -237,19 +230,7 @@ export function Inventory(): JSX.Element {
             </div>
           ))}
         </div>
-        {itemsInCart.length > 0 && (
-          <div style={{ marginTop: '20px' }}>
-            <ul>
-              {itemsInCart.map((item, index) => (
-                <li key={index}>
-                  {products.find((product) => product.physId === item.name)?.name} -{' '}
-                  {item.startDate?.toLocaleDateString() ?? 'N/A'} to{' '}
-                  {item.endDate?.toLocaleDateString() ?? 'N/A'} - {item.amount ?? 'N/A'}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        
       </div>
 
       {showModal && (
@@ -257,42 +238,17 @@ export function Inventory(): JSX.Element {
           <div style={modalContentStyle}>
             <h2>Objekt hinzufügen</h2>
             <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
-            <div className="input-container">
-              <label>Menge:</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(parseInt(e.target.value))}
-                min="1"
-                style={{ marginLeft: '10px' }}
-              />
-            </div>
             <div style={buttonContainerStyle}>
-              <button onClick={addToCart}>Add</button>
+              <button onClick={addToCart}>Hinzufügen</button>
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Cancel
+                Schließen
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {showDetails && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <h2>{selectedProduct?.name}</h2>
-            <div style={inputContainerStyle}>
-              <div>{selectedProduct?.description}</div>
-            </div>
-            <div style={buttonContainerStyle}>
-              <button onClick={closeDetails} style={{ marginLeft: '10px' }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </>
   );
 }
 
@@ -330,8 +286,7 @@ const dropdownContentStyle: React.CSSProperties = {
 };
 
 const checkboxLabelStyle: React.CSSProperties = {
-  display: 'block',
-  marginBottom: '10px',
+  marginBottom: '15px',
 };
 
 const productCardStyle: React.CSSProperties = {

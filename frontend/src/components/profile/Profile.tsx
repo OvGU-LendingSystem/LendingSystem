@@ -1,25 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useLoginStatus } from "../../context/LoginStatusContext";
+import { Orders } from "./orders";
+import { Login } from "../login/Login";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 import './Profile.css';
 
-//interface ProfileProps {
-//  onLogout: () => void;
-//}
+const CHECK_EMAIL_EXISTENCE = gql`
+  query CheckEmail($email: String!) {
+    checkEmailExists(email: $email) {
+      exists
+    }
+  }
+`;
 
 export function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
+  const loginStatus = useLoginStatus();
   const { email } = location.state || {};
   const [isModalOpen, setModalOpen] = useState(false);
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
   const [editField, setEditField] = useState<"email" | "address" | null>(null);
   const [newEmail, setNewEmail] = useState(email);
   const [newAddress, setNewAddress] = useState("");
-  const [roleEmail, setRoleEmail8] = useState("");
+  const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("User");
+  const setLoginAction = useLoginStatusDispatcher();
 
   const handleLogout = () => {
-    //onLogout();
+    setLoginAction({ type: "logout" });
+    localStorage.removeItem("authToken");
+    console.log("User logged out");
     navigate("/");
   };
 
@@ -27,44 +40,64 @@ export function Profile() {
     setModalOpen(false);
   };
 
+  const { data, loading, error } = useQuery(CHECK_EMAIL_EXISTENCE, {
+    variables: { email: roleEmail },
+    skip: !roleEmail, // Only run when there's an email input
+  });
+
   const handleAssignRole = () => {
+    if (loading) return; // Prevent clicking while checking
+
+    if (error || !data?.checkEmailExists?.exists) {
+      alert("Diese E-Mail existiert nicht!");
+      return;
+    }
+
     console.log(`Assigning ${selectedRole} role to ${roleEmail}`);
     setRoleModalOpen(false);
   };
 
+  if (!loginStatus.loggedIn) {
+    return <Login onClose={() => {}} />;
+  }
+
   return (
     <div className="profile-container">
       <h2>Nutzereinstellungen</h2>
-     
-        <div className="profile-details">
-          <p style={{ marginBottom: '20px'}}>Vorname:</p>
-          <p>Name:</p>
-          <p>
-            Rolle: {" "}
-            <button onClick={() => setRoleModalOpen(true)} className="edit-button">
-              Rechte zuweisen
-            </button>
-          </p>
-          <p>
-            E-Mail: {email}{" "}
-            <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button">
-              ✎
-            </button>
-          </p>
-          <p>
-            Adresse: {newAddress || "Keine Adresse angegeben"}{" "}
-            <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button">
-              ✎
-            </button>
-          </p>
-          <button onClick={handleLogout} className="logout-button">Logout</button>
-        </div>
-      
+      <div className="profile-details">
+        <p style={{ marginBottom: '20px' }}>
+          Vorname: {loginStatus.user?.firstName || ""}
+        </p>
+        <p style={{ marginBottom: '20px' }}>
+          Name: {loginStatus.user?.lastName || ""}
+        </p>
+        <p>
+          Rolle: {loginStatus.user?.organizationInfoList?.length > 0
+            ? loginStatus.user.organizationInfoList[0].rights
+            : "keine Organisation"}
+          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button">
+            Rechte zuweisen
+          </button>
+        </p>
+        <p>
+          E-Mail: {loginStatus.user?.email || " "}
+          <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button">
+            ✎
+          </button>
+        </p>
+        <p>
+          Adresse: {"Keine Adresse angegeben"}
+          <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button">
+            ✎
+          </button>
+        </p>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
+      </div>
 
       {isModalOpen && (
         <div className="modal22">
           <div className="modal-content22">
-            <h3>{editField === "email" ? "Email" : "Addresse"} Bearbeiten</h3>
+            <h3>{editField === "email" ? "Email" : "Adresse"} Bearbeiten</h3>
             {editField === "email" ? (
               <label>
                 Email:
@@ -102,17 +135,18 @@ export function Profile() {
               <input 
                 type="email" 
                 value={roleEmail} 
-                onChange={(e) => setRoleEmail8(e.target.value)} 
+                onChange={(e) => setRoleEmail(e.target.value)} 
                 placeholder="Benutzer E-Mail"
               />
             </label>
-            <br />
-            <br />
-
+            <br /><br />
+            {data && !data.checkEmailExists.exists && (
+              <p style={{ color: "red" }}>Diese E-Mail existiert nicht!</p>
+            )}
             <label>
               Rolle:
               <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-              <option value="Guest">Guest</option>
+                <option value="Guest">Guest</option>
                 <option value="Manager">Member</option>
                 <option value="Admin">Inventaradmin</option>
                 <option value="Admin">Organisationsadmin</option>
@@ -126,6 +160,7 @@ export function Profile() {
           </div>
         </div>
       )}
+      <Orders />
     </div>
   );
 }
