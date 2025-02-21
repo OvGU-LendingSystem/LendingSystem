@@ -263,6 +263,7 @@ class Group(Base):
     group_id            = Column(String(36),    primary_key = True, default=lambda: str(uuid.uuid4()))
     name                = Column(String(60),    unique = True, nullable = False)
     organization_id     = Column(String(36),    ForeignKey('organization.organization_id'), nullable=False)
+    description         = Column(String(600),   unique = False, nullable = True)
 
     physicalobjects     = relationship("PhysicalObject", secondary = group_physicalobject, back_populates = "groups")
     pictures            = relationship("File",                                             back_populates = "group")
