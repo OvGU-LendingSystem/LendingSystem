@@ -170,8 +170,8 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
     const tagsQuery = useGetTagsQuery();
 
     const areTagsEqual = useCallback((tagA: Tag, tagB: Tag) => {
-        if ('id' in tagA !== 'id' in tagB) return false;
-        if ('id' in tagA && 'id' in tagB) return tagA.id === tagB.id;
+        if (Object.hasOwn(tagA, 'id') !== Object.hasOwn(tagB, 'id')) return false;
+        if (Object.hasOwn(tagA,'id') && Object.hasOwn(tagB, 'id')) return (tagA as any).id === (tagB as any).id;
         return tagA.tag === tagB.tag;
     }, []);
 
