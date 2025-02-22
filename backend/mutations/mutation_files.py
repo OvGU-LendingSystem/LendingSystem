@@ -103,11 +103,11 @@ class upload_file(graphene.Mutation):
             db.add(file)
             db.commit()
 
-            return upload_file(ok=True, info_text="File uploaded successfully.", file=file, upload_file=200)
+            return upload_file(ok=True, info_text="File uploaded successfully.", file=file, status_code=200)
         except Exception as e:
             print(e)
             tb = traceback.format_exc()
-            return upload_file(ok=False, info_text="Error uploading file. " + str(e) + "\n" + tb, upload_file=500)
+            return upload_file(ok=False, info_text="Error uploading file. " + str(e) + "\n" + tb, status_code=500)
 
 
 class update_file(graphene.Mutation):
