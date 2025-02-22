@@ -67,9 +67,19 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    const handleLoginStatusAction = (action: LoginStatusDispatcherAction) => {
-        setShouldCheck(shouldCheck + 1);
-    }
+    const handleLoginStatusAction = async (action: LoginStatusDispatcherAction) => {
+        if (action.type === "logout") {
+            try {
+                setLoginStatus({ loggedIn: false });
+                //reset session check trigger
+                setShouldCheck((prev) => prev + 1);
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        } else {
+            setShouldCheck((prev) => prev + 1);
+        }
+    };
 
     return (
         <LoginStatusContext.Provider value={loginStatus}>
