@@ -5,7 +5,7 @@ import traceback
 from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights
-from schema import Group, GroupModel, OrganizationModel, PhysicalObjectModel
+from schema import Group, GroupModel, OrganizationModel, PhysicalObjectModel, FileModel
 
 ##################################
 # Mutations for Groups           #
@@ -19,7 +19,11 @@ class create_group(graphene.Mutation):
     class Arguments:
         name            = graphene.String(required=True)
         organization_id = graphene.String(required=True)
+        description     = graphene.String()
+
+        pictures        = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
+
 
     group       = graphene.Field(lambda: Group)
     ok          = graphene.Boolean()
@@ -27,7 +31,7 @@ class create_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, name, organization_id, physicalobjects=None):
+    def mutate(self, info, name, organization_id, description=None, pictures=None, physicalobjects=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -45,6 +49,13 @@ class create_group(graphene.Mutation):
                 name = name,
                 organization=organization
             )
+
+            if description:
+                group.description = description
+
+            if pictures:
+                db_pictures = db.query(FileModel).filter(FileModel.pic_id.in_(pictures)).all()
+                group.pictures = db_pictures
 
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
@@ -73,11 +84,12 @@ class update_group(graphene.Mutation):
     Updates content of the group with the given group_id.
     For Connections to physical objects use array of their String uuid
     """
-    # TODO: remove physicalobjects as argument, and create two new mutations for adding and removing physical objects from a group, like order
     class Arguments:
         group_id        = graphene.String(required=True)
         name            = graphene.String()
+
         physicalobjects = graphene.List(graphene.String)
+        pictures        = graphene.List(graphene.String)
 
     group       = graphene.Field(lambda: Group)
     ok          = graphene.Boolean()
@@ -85,7 +97,7 @@ class update_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, group_id, name=None, physicalobjects=None):
+    def mutate(self, info, group_id, name=None, physicalobjects=None, pictures=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -102,6 +114,7 @@ class update_group(graphene.Mutation):
 
             if not group:
                 return update_group(ok=False, info_text="Gruppe \"" + name + "\" nicht gefunden.", status_code=404)
+            
             if physicalobjects:
                 organization = group.organization
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
@@ -112,8 +125,13 @@ class update_group(graphene.Mutation):
                         return update_group(ok=False, info_text="Nicht alle Physical Objects sind in der Organisation.", status_code=403)
 
                 group.physicalobjects = db_physicalobjects
+
             if name:
                 group.name = name
+
+            if pictures:
+                db_pictures = db.query(FileModel).filter(FileModel.pic_id.in_(pictures)).all()
+                group.pictures = db_pictures
 
             db.commit()
             return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.", group=group, status_code=200)

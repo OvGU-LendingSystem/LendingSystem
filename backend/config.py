@@ -63,11 +63,13 @@ testing_on = 0
 application_root_user_name      = os.getenv('root_user_name')
 application_root_user_password  = os.getenv('root_user_password')
 
-# Create engine depending on test mode
 if not (int)(testing_on):
-    engine = create_engine('mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database)
+    database_connection_string = 'mysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database
 else:
-    engine = create_engine('sqlite:///:memory:')
+    database_connection_string = 'sqlite:///:memory:'
+
+# Create engine depending on test mode
+engine = create_engine(database_connection_string, convert_unicode=True)
 
 db = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
@@ -82,10 +84,7 @@ app.config['SESSION_TYPE'] = 'sqlalchemy'
 # app.config['SESSION_COOKIE_HTTPONLY'] = False
 app.permanent_session_lifetime = timedelta(hours=2)
 
-if not (int)(testing_on):
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + db_user + ':' + db_pw + '@' + db_host + ":" + db_port + '/' + db_database
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_connection_string
 
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 server_session = Session(app)
