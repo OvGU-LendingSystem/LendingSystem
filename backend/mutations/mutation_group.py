@@ -54,7 +54,7 @@ class create_group(graphene.Mutation):
                 group.description = description
 
             if pictures:
-                db_pictures = db.query(FileModel).filter(FileModel.pic_id.in_(pictures)).all()
+                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
                 group.pictures = db_pictures
 
             if physicalobjects:
@@ -87,6 +87,7 @@ class update_group(graphene.Mutation):
     class Arguments:
         group_id        = graphene.String(required=True)
         name            = graphene.String()
+        description     = graphene.String()
 
         physicalobjects = graphene.List(graphene.String)
         pictures        = graphene.List(graphene.String)
@@ -97,7 +98,7 @@ class update_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, group_id, name=None, physicalobjects=None, pictures=None):
+    def mutate(self, info, group_id, name=None, description=None, physicalobjects=None, pictures=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -128,9 +129,12 @@ class update_group(graphene.Mutation):
 
             if name:
                 group.name = name
-
+            
+            if description:
+                group.description = description
+            
             if pictures:
-                db_pictures = db.query(FileModel).filter(FileModel.pic_id.in_(pictures)).all()
+                db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
                 group.pictures = db_pictures
 
             db.commit()
