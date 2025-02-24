@@ -267,7 +267,7 @@ useEffect(() => {
       id: order.orderId,
       name: username, 
       email: useremail, 
-      userid: order.user?.edges[0]?.node?.id || null,
+      userid: order.users?.edges[0]?.node?.id || null,
       deposit: order.deposit,
       products: order.physicalobjects.edges.map((edge: any) => ({
           id: edge.node.physId,
@@ -297,17 +297,20 @@ useEffect(() => {
         
         const isWatcher = OrgList.find((org) => org.id === request.organizationId)?.rights === "WATCHER";
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
+        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
+
+        console.log(request.userid);
+        console.log(UserInfoDispatcher.id);
 
         if (showCustomerOrders) {
-          return isCustomer && request.userid === UserInfoDispatcher.id;
+          return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
 
         if (isCustomer) {
-          return request.userid === UserInfoDispatcher.id;
+          return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
         if (isWatcher)
           return ["confirmed", "lended"].includes(request.status);
-        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
         const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
         return categoryMatch && organizationMatch;
       })

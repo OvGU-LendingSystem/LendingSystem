@@ -89,7 +89,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     useEffect(() => {
       probs.setStartDate(range?.from || null);
       probs.setEndDate(range?.to || null);
-      console.log("Change range: " +probs.fromDate);
+      console.log("Change range: " + probs.fromDate);
     }, [range]);
 
     if (range?.from!=undefined){
@@ -124,28 +124,6 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error : {error.message}</p>;
-
-
-    const css = `
-
-    .my-selected:not([disabled]) { 
-      font-weight: bold; 
-      border: 2px solid black;
-      color: black;
-      background-color: magenta;
-    }
-    .my-selected:hover:not([disabled]) { 
-      border-color: purple;
-      color: magenta;
-      background-color: white;
-    }
-    .my-today { 
-      font-weight: bold;
-      font-size: 140%; 
-      color: orange;
-    }
-
-  `;
 
   const today = startOfToday();
 
@@ -261,3 +239,24 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     </>
   );
 }
+
+const css = `
+
+.my-selected:not([disabled]) { 
+  font-weight: bold; 
+  border: 2px solid black;
+  color: black;
+  background-color: magenta;
+}
+.my-selected:hover:not([disabled]) { 
+  border-color: purple;
+  color: magenta;
+  background-color: white;
+}
+.my-today { 
+  font-weight: bold;
+  font-size: 140%; 
+  color: orange;
+}
+
+`;
