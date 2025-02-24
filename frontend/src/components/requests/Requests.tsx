@@ -64,6 +64,7 @@ const GET_ORDERS = gql`
           node {
             orderStatus
             physId
+            returnNotes
             physicalobject{
               invNumInternal
               invNumExternal
@@ -99,12 +100,14 @@ mutation UpdateOrderStatus(
     $physicalObjects: [String]!,
     $returnDate: Date,
     $status: String
+    $returnNotes : String
   ) {
     updateOrderStatus(
       orderId: $orderId,
       physicalObjects: $physicalObjects,
       returnDate: $returnDate,
       status: $status
+      returnNotes: $returnNotes
     ) {
       ok
       infoText
@@ -146,6 +149,7 @@ export function Requests() {
   const [selectedOrg, setSelectedOrg] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [popupText, setPopupText] = useState("");
+  const [returnNotes, setReturnNotes] = useState<string>("");
   const [currentRequest, setCurrentRequest] = useState<Quest | null>(null);
   const [currentStatus, setCurrentStatus] = useState("");
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
@@ -159,8 +163,9 @@ export function Requests() {
 const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
-  const showConfirmationPopup = (request: Quest, status: string) => {
+  const showConfirmationPopup = (request: Quest, status: string, returnNote: string) => {
     setCurrentRequest(request);
+    setReturnNotes(returnNote);
     switch (status) {
       case "requested":
         setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
@@ -280,6 +285,7 @@ useEffect(() => {
       organizationName: order.organization.name,
       canEditRequests: canEditRequests,
       showButtons: showButtons,
+      returnNotes: order.physicalobjects.edges[0].node.returnNotes
 
   };
 });
@@ -293,11 +299,11 @@ useEffect(() => {
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
 
         if (showCustomerOrders) {
-          return isCustomer && request.customerId === UserInfoDispatcher.id;
+          return isCustomer && request.userid === UserInfoDispatcher.id;
         }
 
         if (isCustomer) {
-          return request.customerId === UserInfoDispatcher.id;
+          return request.userid === UserInfoDispatcher.id;
         }
         if (isWatcher)
           return ["confirmed", "lended"].includes(request.status);
@@ -350,6 +356,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "accepted",
+            returnNotes: returnNotes,
           },
         });
   
@@ -373,6 +380,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "rejected",
+            returnNotes: returnNotes,
           },
         });
   
@@ -398,6 +406,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "picked",
+            returnNotes: returnNotes,
           },
         });
   
@@ -421,6 +430,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate: returnDate,
             status: 'returned',
+            returnNotes: returnNotes,
           },
         });
   
@@ -435,7 +445,7 @@ useEffect(() => {
     };
 
 
-    const reset = async (request : Quest) => {
+    const reset = async (request : Quest, returnNote : string) => {
       try {
         const returnDate = null;
 
@@ -445,6 +455,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "pending",
+            returnNotes: returnNotes,
           },
         });
   
@@ -646,22 +657,22 @@ useEffect(() => {
                     <div>
                     
                     {request.status === "requested" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Anfrage bestätigen
                         </button>
                     )}
                     {request.status === "requested" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder")}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder", request.returnNotes)}>
                             Anfrage ablehnen
                         </button>
                     )}
                     {request.status === "confirmed" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Verleihen
                         </button>
                     )}
                     {request.status === "lended" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Zurückgegeben
                         </button>
                     )}
@@ -671,7 +682,7 @@ useEffect(() => {
                         </button>
                     )}
 
-                        <button style={buttonStyle} onClick={() => reset(request)}>
+                        <button style={buttonStyle} onClick={() => reset(request, request.returnNotes)}>
                             Zurücksetzen
                         </button>
                         
@@ -706,6 +717,18 @@ useEffect(() => {
                       Ich bestätige die Aktion
                       </label>
                     </div>
+                    {currentStatus === "lended" && (
+                      <div>
+                        <label htmlFor="returnNotes">Rückgabebemerkungen</label>
+                        <textarea
+                          id="returnNotes"
+                          value={returnNotes}
+                          onChange={(e) => setReturnNotes(e.target.value)}
+                          placeholder="Optional: Geben Sie hier Rückgabebemerkungen ein"
+                          rows={4}
+                        />
+                      </div>
+                    )}
                      <div>
                         <button 
                         style={buttonStyle} 
