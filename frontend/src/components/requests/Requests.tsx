@@ -82,7 +82,7 @@ const GET_ORDERS = gql`
             email
             firstName
             lastName
-            id
+            userId
           }
         }
       }
@@ -267,7 +267,7 @@ useEffect(() => {
       id: order.orderId,
       name: username, 
       email: useremail, 
-      userid: order.users?.edges[0]?.node?.id || null,
+      userid: order.users?.edges[0]?.node?.userId || null,
       deposit: order.deposit,
       products: order.physicalobjects.edges.map((edge: any) => ({
           id: edge.node.physId,
