@@ -4,19 +4,21 @@ import { AddGroupItem, Group } from "../models/group.model";
 import { InventoryItem } from "../models/InventoryItem.model";
 
 const ADD_GROUP_MUTATION = gql`
-    mutation AddGroup($name: String!, $physicalObjects: [String!]!) {
-        createGroup(name: $name, physicalobjects: $physicalObjects) {
+    mutation AddGroup($name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!) {
+        createGroup(name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures) {
             ok,
             infoText
         }
     }
 `;
 
-type AddGroupResponse = GQLResponse;
+export type AddGroupResponse = GQLResponse;
 
 export interface AddGroupVars {
     name: string,
-    physicalObjects: string[]
+    description: string,
+    physicalObjects: string[],
+    pictures: string[]
 }
 
 export function useAddGroupMutation() {
@@ -26,20 +28,22 @@ export function useAddGroupMutation() {
 }
 
 const EDIT_GROUP_MUTATION = gql`
-    mutation EditGroup($groupId: String!, $name: String!, $physicalObjects: [String!]!) {
-        updateGroup(groupId: $groupId, name: $name, physicalobjects: $physicalObjects) {
+    mutation EditGroup($groupId: String!, $name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!) {
+        updateGroup(groupId: $groupId, name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures) {
             ok,
             infoText
         }
     }
 `;
 
-type EditGroupResponse = GQLResponse;
+export type EditGroupResponse = GQLResponse;
 
 export interface EditGroupVars {
     groupId: string,
     name: string,
-    physicalObjects: string[]
+    description: string,
+    physicalObjects: string[],
+    pictures: string[]
 }
 
 export function useEditGroupMutation() {
@@ -233,6 +237,7 @@ const GET_GROUP_BY_ID_QUERY = gql`
 query GetGroupById($groupId: String!) {
   filterGroups(groupId: $groupId) {
     name,
+    description
     physicalobjects {
     	edges {
             node {
@@ -254,6 +259,7 @@ query GetGroupById($groupId: String!) {
 
 interface GetGroupByIdResponse {
     name: string;
+    description: string;
     physicalobjects: {
         edges: {
             node: {
@@ -284,6 +290,7 @@ export function useGetAddGroupItemByIdQuery(groupId: string) {
 
         const group: AddGroupItem = {
             name: flattenedResponse.name,
+            description: flattenedResponse.description,
             physicalObjectIds: flattenedResponse.physicalobjects.map(val => val.physId),
             pictures: flattenedResponse.pictures.map(pic => { return { type: 'remote', fileId: pic.fileId, path: pic.path } })
         }
