@@ -95,6 +95,7 @@ query GetAllGroups {
       organizationId,
       name
     }
+    description
   }
 }
 `;
@@ -121,6 +122,7 @@ interface GroupsResponse {
         organizationId: string;
         name: string;
     }
+    description: string;
 }
 
 export type PreviewGroup2 = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
@@ -139,7 +141,7 @@ export function useGetAllGroupsQuery() {
                 deposit: 0,//TODO DEPOSIT helper
                 storageLocation: "group",
                 defects: "group",
-                description: "Gruppe / group",//TODO description
+                description: flattenedResponse.description,
                 images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
                 category: "Gruppe / group",//TODO Kategorie
                 organizationId: groupResponse.organization.organizationId,

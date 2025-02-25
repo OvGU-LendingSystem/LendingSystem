@@ -113,6 +113,12 @@ export function Inventory(): JSX.Element {
   const { data: orgs, error: e3} = useGetAllOrganizations();
   const { data: groups, error: e2} = useGetAllGroupsQuery();
   const products = products_tmp.concat(groups);
+  products.sort(function(a, b){
+      if (a.name<b.name) return -1;
+      if (a.name>b.name) return 1;
+      return 0;
+    }
+  );
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
