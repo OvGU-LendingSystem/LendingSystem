@@ -15,6 +15,23 @@ mutation Login($email: String!, $password: String!) {
 }
 `;
 
+const REGISTER_MUTATION = gql`
+mutation Register($firstName: String!, $lastName: String!, $email: String!, $address: String!, $postalCode: String!, $city: String!, $password: String!) {
+  updateUser(input: {
+    firstName: $firstName,
+    lastName: $lastName,
+    email: $email,
+    address: $address,
+    postalCode: $postalCode,
+    city: $city,
+    password: $password
+  }) {
+    success
+    message
+  }
+}
+`;
+
 export function Login(props: LoginProps) {
   const setLoginAction = useLoginStatusDispatcher();
   const [isLogin, setIsLogin] = useState(true);
@@ -29,6 +46,7 @@ export function Login(props: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+  const [registerUser] = useMutation(REGISTER_MUTATION);
 
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -58,7 +76,7 @@ export function Login(props: LoginProps) {
 
 
 
-  const handleRegister = (event: React.FormEvent) => {
+  const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!first_name || !name || !email || !address || !postalCode || !city || !password || !repeatPassword) {
       setErrorMessage('Alle Felder müssen ausgefüllt werden!');
@@ -70,13 +88,29 @@ export function Login(props: LoginProps) {
       return;
     }
 
+    try {
+      const { data } = await registerUser({
+        variables: {
+          firstName: first_name,
+          lastName: name,
+          email,
+          address,
+          postalCode,
+          city,
+          password
+        }
+      });
 
-    console.log('Register First Name:', first_name);
-    console.log('Register Name:', name);
-    console.log('Register Email:', email);
-    console.log('Register Address:', address);
-    console.log('Register Postal Code:', postalCode);
-    console.log('Register City:', city);
+      if (data?.updateUser?.success) {
+        setErrorMessage('');
+        alert('Registrierung erfolgreich! Bitte logge dich ein.');
+        setIsLogin(true);
+      } else {
+        setErrorMessage(data?.updateUser?.message || 'Registrierung fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Registrierung. Bitte versuche es später erneut.');
+    }
   };
 
   const toggleForm = () => {
