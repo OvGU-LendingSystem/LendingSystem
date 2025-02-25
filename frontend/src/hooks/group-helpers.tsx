@@ -1,6 +1,7 @@
 import { gql } from "@apollo/client";
 import { flattenEdges, GQLResponse, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { AddGroupItem, Group } from "../models/group.model";
+import { InventoryItem } from "../models/InventoryItem.model";
 
 const ADD_GROUP_MUTATION = gql`
     mutation AddGroup($name: String!, $physicalObjects: [String!]!) {
@@ -69,6 +70,92 @@ export function useDeleteGroupMutation() {
 }
 
 // -------------------------------------------------------------------------------------------------
+
+const GET_ALL_GROUPS_QUERY = gql`
+query GetAllGroups {
+  filterGroups{
+    groupId,
+    name,
+    physicalobjects {
+    	edges {
+            node {
+                name
+            }
+        }
+    },
+    pictures(first: 1) {
+      edges {
+        node {
+          fileId,
+          path
+        }
+      }
+    }
+    organization{
+      organizationId,
+      name
+    }
+  }
+}
+`;
+
+interface GroupsResponse {
+    groupId: string;
+    name: string;
+    physicalobjects: {
+        edges: {
+            node: {
+                name: string;
+            }
+        }[]
+    };
+    pictures: {
+        edges: {
+            node: {
+                fileId: string;
+                path: string;
+            }
+        }[]
+    };
+    organization: {
+        organizationId: string;
+        name: string;
+    }
+}
+
+export type PreviewGroup2 = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
+
+export function useGetAllGroupsQuery() {
+    const mapToGroup = (val: GroupsResponse[]) => {
+        return val.map((groupResponse) => {
+            const flattenedPhysicalObjects = flattenEdges<{ name: string }, 'physicalobjects', GroupsResponse>(groupResponse, 'physicalobjects');
+            const flattenedResponse = flattenEdges<{ fileId: string, path: string }, 'pictures', typeof flattenedPhysicalObjects>(flattenedPhysicalObjects, 'pictures');
+            const group: InventoryItem = {
+                physId: "group " + flattenedResponse.groupId,
+                name: flattenedResponse.name, 
+                inventoryNumberInternal: -1,
+                inventoryNumberExternal: -1,
+                borrowable: true,
+                deposit: 0,//TODO DEPOSIT helper
+                storageLocation: "group",
+                defects: "group",
+                description: "Gruppe / group",//TODO description
+                images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
+                category: "Gruppe / group",//TODO Kategorie
+                organizationId: groupResponse.organization.organizationId,
+                organization: groupResponse.organization.name
+
+                /*groupId: flattenedResponse.groupId,
+                name: flattenedResponse.name,
+                pictures: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
+                pysicalObjectNames: flattenedResponse.physicalobjects.map((val) => val.name)*/
+            };
+            return group;
+        });
+    };
+
+    return useSuspenseQueryWithResponseMapped<GroupsResponse[], InventoryItem[]>(GET_ALL_GROUPS_QUERY, 'filterGroups', {}, mapToGroup);
+}
 
 const GET_GROUPS_QUERY = gql`
 query GetGroups($name: String, $orgIds: [String!]!) {
