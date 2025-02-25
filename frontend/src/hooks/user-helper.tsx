@@ -43,11 +43,8 @@ query GetUser($userId: String!) {
 `;
 
 const LOGOUT = gql`
-  mutation Logout {
+  mutation logout {
     logout {
-      ok
-      infoText
-      userId
     }
   }
 `;
