@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate} from "react-router-dom";
 import { useUserInfo } from '../../context/LoginStatusContext';
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useGetAllOrganizations } from '../../hooks/organization-helper';
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -143,6 +144,7 @@ export function Requests() {
 
   const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
   const [DeleteOrder] = useMutation(DELETE_ORDER);
+  const { data: orgs, error: e3} = useGetAllOrganizations();
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [dropdownOrgFilterVisible, setDropdownOrgFilterVisible] = useState<boolean>(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -154,16 +156,29 @@ export function Requests() {
   const [currentStatus, setCurrentStatus] = useState("");
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
+  const [isDelete, setisDelete] = useState(false);
 
   
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownOrgFilterRef = useRef<HTMLDivElement>(null);
-const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
+  const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
-  const showConfirmationPopup = (request: Quest, status: string, returnNote: string) => {
+  const showConfirmationPopup = (request: Quest, status: string, returnNote: string, toDelete?: boolean) => {
+    if (toDelete === undefined){
+      toDelete = false;
+      setisDelete(false);
+    }
+
+    if (toDelete === true){
+      setisDelete(true);
+      setCurrentRequest(request);
+      setPopupText("Bist du dir sicher, dass du die Order wirklich endgültig löschen möchtest?")
+      return setShowModal(true);
+    }
+
     setCurrentRequest(request);
     setReturnNotes(returnNote);
     switch (status) {
@@ -299,9 +314,6 @@ useEffect(() => {
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
         const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
 
-        console.log(request.userid);
-        console.log(UserInfoDispatcher.id);
-
         if (showCustomerOrders) {
           return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
@@ -400,8 +412,6 @@ useEffect(() => {
     const lended = async (request : Quest) => {
       try {
         const returnDate = null;
-        console.log(request.id);
-        console.log(request.products.map(product=>product.id));
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -571,22 +581,17 @@ useEffect(() => {
                   </div>
                 )}
               </div>
-              <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownRef}>
+              <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownOrgFilterRef}>
                 <button
                   style={dropdownButtonStyle}
                   onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
-                  ref={buttonRef}
+                  ref={buttonOrgFilterRef}
                 >
                   Filter Organisationen
                 </button>
                 {dropdownOrgFilterVisible && (
                   <div style={dropdownContentStyle}>
-                    {[
-                      { id: '00000000-0000-0000-0000-000000000003', name: 'Stark Industries' },
-                      { id: '1376ac52-85f7-4720-9aaa-b8bccd667aeb', name: 'X-Men' },
-                      { id: '69590f30-0959-406d-a9b5-3fefbda28fb4', name: 'Avengers' },
-                      { id: 'c9c5feb9-01ff-45de-ba44-c0b38e268170', name: 'root_organization' },
-                    ].map((org) => (
+                    {orgs.map((org) => (
                       <label key={org.id} style={checkboxLabelStyle}>
                         <input
                           type="checkbox"
@@ -745,7 +750,10 @@ useEffect(() => {
                      <div>
                         <button 
                         style={buttonStyle} 
-                        onClick={handleConfirm}
+                        onClick={() => {
+                          if (isDelete) handleDelete(currentRequest!);
+                          handleConfirm;
+                          }}
                         disabled={!checkBoxChecked}
                         >
                             Bestätigen
