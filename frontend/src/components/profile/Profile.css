@@ -1,13 +1,13 @@
-.profile-container {
+.profile-container5 {
   margin: 20px;
   font-family: Arial, sans-serif;
 }
 
-.profile-details {
+.profile-details5 {
   margin-left: 20px;
 }
 
-.edit-button, .logout-button {
+.edit-button5, .logout-button5 {
   margin-left: 0px;
   padding: 5px 10px;
   cursor: pointer;
@@ -21,7 +21,7 @@
   background-color: #0056b3;
 }
 
-.modal22 {
+.modal222 {
   position: fixed;
   top: 0;
   left: 0;
@@ -34,7 +34,7 @@
   z-index: 1000;
 }
 
-.modal-content22 {
+.modal-content222 {
   background: white;
   padding: 20px;
   border-radius: 8px;

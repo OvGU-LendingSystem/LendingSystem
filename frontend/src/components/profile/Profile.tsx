@@ -85,9 +85,9 @@ export function Profile() {
   }
 
   return (
-    <div className="profile-container">
+    <div className="profile-container5">
       <h2>Nutzereinstellungen</h2>
-      <div className="profile-details">
+      <div className="profile-details5">
         <p style={{ marginBottom: '20px' }}>
           Vorname: {loginStatus.user?.firstName || ""}
         </p>
@@ -100,28 +100,28 @@ export function Profile() {
   ? loginStatus.user.organizationInfoList[0].rights.join(", ")
   : loginStatus.user.organizationInfoList[0].rights || "keine Rechte"
             : "keine Organisation"}
-          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button">
+          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button5">
             Rechte zuweisen
           </button>
         </p>
         <p>
           E-Mail: {loginStatus.user?.email || " "}
-          <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button">
+          <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button5">
             ✎
           </button>
         </p>
         <p>
           Adresse: {"Keine Adresse angegeben"}
-          <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button">
+          <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button5">
             ✎
           </button>
         </p>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+        <button onClick={handleLogout} className="logout-button5">Logout</button>
       </div>
 
       {isModalOpen && (
-        <div className="modal22">
-          <div className="modal-content22">
+        <div className="modal222">
+          <div className="modal-content222">
             <h3>{editField === "email" ? "Email" : "Adresse"} Bearbeiten</h3>
             {editField === "email" ? (
               <label>
@@ -152,8 +152,8 @@ export function Profile() {
       )}
 
       {isRoleModalOpen && (
-        <div className="modal22">
-          <div className="modal-content22">
+        <div className="modal222">
+          <div className="modal-content222">
             <h3>Rechte zuweisen</h3>
             <label>
               E-Mail des Nutzers:
