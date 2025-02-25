@@ -471,10 +471,10 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                     }}>
                         <div>
                             <h3>{physicalObject.name}</h3>
-                            <p>{"Beschreibung " + physicalObject.description}</p>
-                            <p>{"Intenre Inventarnummer " + physicalObject.invNumInternal}</p>
-                            <p>{"Extenre Inventarnummer " + physicalObject.invNumExternal}</p>
-                            <p>{"Leihgebühr" + physicalObject.deposit}</p>
+                            <p>{"Beschreibung: " + physicalObject.description}</p>
+                            <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
+                            <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
+                            <p>{"Leihgebühr: " + physicalObject.deposit}</p>
                            {/* <p>Status:</p>
                             <select 
                                 value={selectedStatus || ''} 
@@ -627,7 +627,7 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
 
     useEffect(() => {
       const updateAvailableObjects = async () => {
-          if (fromDate && tillDate && data) {
+          if (fromDate && tillDate) {
               const available = await filterAvailableObjects(data, fromDate, tillDate);
               setAvailableObjects(available);
           } else {
@@ -635,7 +635,7 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
           }
       };
       updateAvailableObjects();
-  }, [data, fromDate, tillDate]);
+  }, [fromDate, tillDate]);
 
     const updateItems = (id: string, checked: boolean) => {
         if (!checked) {
