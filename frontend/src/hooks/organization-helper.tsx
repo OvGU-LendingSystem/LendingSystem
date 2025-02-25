@@ -2,10 +2,10 @@ import { gql } from "@apollo/client";
 import { useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { Organization } from "../models/organization.model";
 
-const GET_ORGANIZATION_BY_ID_QUERY =gql`
-query GetOrgById($id: String!) {
-  filterOrganizations(organizationId: $id) {
-    id: organizationId
+const GET_ALL_ORGANIZATIONS =gql`
+query GetAllOrganizations {
+  filterOrganizations{
+    organizationId
     name
     location
     agb{
@@ -32,6 +32,35 @@ interface GetOrgByIdResponse {
     }[]
 }
 
+export function useGetAllOrganizations() {
+    const mapToOrganization = (val: GetOrgByIdResponse[]) => {
+        return val.map((orgResponse): Organization => ({ 
+            id: orgResponse.id, 
+            name: orgResponse.name, 
+            location: orgResponse.location, 
+            agb: orgResponse.agb[0]?.edges?.node?.path ?? "/agb.pdf" 
+        }));
+    };
+
+    return useSuspenseQueryWithResponseMapped<GetOrgByIdResponse[], Organization[]>(GET_ALL_ORGANIZATIONS, 'filterOrganizations', {}, mapToOrganization);
+}
+
+const GET_ORGANIZATION_BY_ID_QUERY =gql`
+query GetOrgById($id: String!) {
+  filterOrganizations(organizationId: $id) {
+    id: organizationId
+    name
+    location
+    agb{
+        edges {
+            node{
+                path
+            }
+        }
+    }
+  }
+}
+`;
 
 export function useGetOrganizationByIdQuery(orgId: string) {
     const mapToGroup = (response: GetOrgByIdResponse[]): Organization => {
