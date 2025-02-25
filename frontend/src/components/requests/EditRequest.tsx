@@ -237,7 +237,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     
     const orgId = [data.filterOrders[0].organization.organizationId];
-    console.log(orgId);
 
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
@@ -475,18 +474,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
                             <p>{"Leihgebühr: " + physicalObject.deposit}</p>
-                           {/* <p>Status:</p>
-                            <select 
-                                value={selectedStatus || ''} 
-                                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                                style={{ marginLeft: "10px" }}
-                            >
-                                {Object.values(OrderStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {status}
-                                    </option>
-                                ))}
-                            </select>*/}
                         </div>
                     </div>
                 ))
