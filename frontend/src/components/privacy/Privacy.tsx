@@ -4,7 +4,7 @@ import { useQuery, gql, useMutation,} from '@apollo/client';
 //TODO
 const GET_PRIVACY = gql`
     query GetPrivacy {
-        getImprint
+        getPrivacyPolicy
     }
 `;
 
@@ -15,7 +15,7 @@ export function PrivacyScreen() {
     if (!loading && privacy!=null){  
     
         return (
-            <div style={{margin: '20px'}} dangerouslySetInnerHTML={{__html: privacy.getImprint}}></div>
+            <div style={{margin: '20px'}} dangerouslySetInnerHTML={{__html: privacy.getPrivacyPolicy}}></div>
         )
     }
 

@@ -4,7 +4,7 @@ import { useQuery, gql, useMutation,} from '@apollo/client';
 //TODO
 const GET_CONTACT = gql`
     query GetContact {
-        getImprint
+        getContactInformation
     }
 `;
 
@@ -15,7 +15,7 @@ export function ContactScreen() {
     if (!loading && contact!=null){     
     
         return (
-            <div style={{margin: '20px'}} dangerouslySetInnerHTML={{__html: contact.getImprint}}></div>
+            <div style={{margin: '20px'}} dangerouslySetInnerHTML={{__html: contact.getContactInformation}}></div>
         )
     }
 
