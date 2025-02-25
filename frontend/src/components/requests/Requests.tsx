@@ -512,85 +512,95 @@ useEffect(() => {
             </div>
 
             {/*<DisplayLocations /> */}
-            <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
-            <button
-              style={dropdownButtonStyle}
-              onClick={() => setDropdownVisible(!dropdownVisible)}
-              ref={buttonRef}
-            >
-              Filter Anfragenstatus
-            </button>
-            {dropdownVisible && (
-              <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('requested')}
-                    onChange={() => handleCategoryChange('requested')}
-                  />
-                  Angefragt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('confirmed')}
-                    onChange={() => handleCategoryChange('confirmed')}
-                  />
-                  Bestätigt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('lended')}
-                    onChange={() => handleCategoryChange('lended')}
-                  />
-                  Verliehen
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('rejected')}
-                    onChange={() => handleCategoryChange('rejected')}
-                  />
-                  Abgelehnt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('returned')}
-                    onChange={() => handleCategoryChange('returned')}
-                  />
-                  Zurückgegeben
-                </label>
+            <div style={{ padding: '20px' }}>
+              <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+                <button
+                  style={dropdownButtonStyle}
+                  onClick={() => setDropdownVisible(!dropdownVisible)}
+                  ref={buttonRef}
+                >
+                  Filter Anfragenstatus
+                </button>
+                {dropdownVisible && (
+                  <div style={dropdownContentStyle}>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('requested')}
+                        onChange={() => handleCategoryChange('requested')}
+                      />
+                      Angefragt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('confirmed')}
+                        onChange={() => handleCategoryChange('confirmed')}
+                      />
+                      Bestätigt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('lended')}
+                        onChange={() => handleCategoryChange('lended')}
+                      />
+                      Verliehen
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('rejected')}
+                        onChange={() => handleCategoryChange('rejected')}
+                      />
+                      Abgelehnt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('returned')}
+                        onChange={() => handleCategoryChange('returned')}
+                      />
+                      Zurückgegeben
+                    </label>
+                  </div>
+                )}
               </div>
-            )}
-            <button
-              style={dropdownButtonStyle}
-              onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
-              ref={buttonRef}
-            >
-              Filter Organisationen
-            </button>
-            {dropdownOrgFilterVisible && (
-      <div style={dropdownContentStyle}>
-        {[
-          { id: '00000000-0000-0000-0000-000000000003', name: 'Stark Industries' },
-          { id: '1376ac52-85f7-4720-9aaa-b8bccd667aeb', name: 'X-Men' },
-          { id: '69590f30-0959-406d-a9b5-3fefbda28fb4', name: 'Avengers' },
-          { id: 'c9c5feb9-01ff-45de-ba44-c0b38e268170', name: 'root_organization' },
-        ].map((org) => (
-          <label key={org.id} style={checkboxLabelStyle}>
-            <input
-              type="checkbox"
-              checked={selectedOrg.includes(org.id)}
-              onChange={() => handleOrgChange(org.id)}
-            />
-            {org.name}
-          </label>
-        ))}
-      </div>
-    )}
-          </div>
+              <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownRef}>
+                <button
+                  style={dropdownButtonStyle}
+                  onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
+                  ref={buttonRef}
+                >
+                  Filter Organisationen
+                </button>
+                {dropdownOrgFilterVisible && (
+                  <div style={dropdownContentStyle}>
+                    {[
+                      { id: '00000000-0000-0000-0000-000000000003', name: 'Stark Industries' },
+                      { id: '1376ac52-85f7-4720-9aaa-b8bccd667aeb', name: 'X-Men' },
+                      { id: '69590f30-0959-406d-a9b5-3fefbda28fb4', name: 'Avengers' },
+                      { id: 'c9c5feb9-01ff-45de-ba44-c0b38e268170', name: 'root_organization' },
+                    ].map((org) => (
+                      <label key={org.id} style={checkboxLabelStyle}>
+                        <input
+                          type="checkbox"
+                          style={{  marginRight: "10px", width: "auto"}}
+                          checked={selectedOrg.includes(org.id)}
+                          onChange={() => handleOrgChange(org.id)}
+                        />
+                        {org.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
                 {request.status === "requested" && (
@@ -825,7 +835,6 @@ const dropdownContentStyle: React.CSSProperties = {
   };
   
 const checkboxLabelStyle: React.CSSProperties = {
-    display: 'block',
     marginBottom: '10px',
   };
 

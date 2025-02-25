@@ -278,7 +278,7 @@ export function Inventory(): JSX.Element {
                   <h3>{product.name}</h3>
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
-                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit} €</div>
+                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
