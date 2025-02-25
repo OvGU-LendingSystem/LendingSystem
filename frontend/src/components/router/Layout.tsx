@@ -106,12 +106,16 @@ export function Layout() {
           <li>
             <Link to="/">Home</Link>
           </li>
-          <li>
-            <Link to="/requests">Anfragen</Link>
-          </li>
-          <li>
-            <Link to="/internal/inventory">Internes Inventar</Link>
-          </li>
+          {loginStatus.loggedIn && 
+            (<li>
+              <Link to='/requests'>Anfragen</Link>
+            </li>)
+          }   
+          {loginStatus.loggedIn &&
+            (<li>
+              <Link to='/internal/inventory'>Internes Inventar</Link>
+            </li>)
+          }
           <li>
             {loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : "Nicht eingeloggt"}
           </li>

@@ -6,6 +6,8 @@ import { useCart, useCartDispatcher } from '../../context/CartContext';
 import { useQuery, gql } from '@apollo/client';
 import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
+import { useGetAllGroupsQuery } from '../../hooks/group-helpers';
+import { useGetAllOrganizations } from '../../hooks/organization-helper';
 
 var products: Product[] = [
   /*{
@@ -106,8 +108,11 @@ export function Inventory(): JSX.Element {
   const itemsInCartDispatcher = useCartDispatcher();
 
   // Fetching physical objects
-  const { data: products, error } = useGetPhysicalObjects();
+  const { data: products_tmp, error } = useGetPhysicalObjects();
   const { data: tags, error: e } = useGetTagsQuery();
+  const { data: orgs, error: e3} = useGetAllOrganizations();
+  const { data: groups, error: e2} = useGetAllGroupsQuery();
+  const products = products_tmp.concat(groups);
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -116,13 +121,17 @@ export function Inventory(): JSX.Element {
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
+  const [dropdownVisible2, setDropdownVisible2] = useState<boolean>(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef2 = useRef<HTMLDivElement>(null);
 
   
 
-  console.log(products);
+  //console.log(products);
+  //console.log(groups);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -136,6 +145,19 @@ export function Inventory(): JSX.Element {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [dropdownRef]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef2.current && !dropdownRef2.current.contains(event.target as Node)) {
+        setDropdownVisible2(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef2]);
 
   const openModal = (product: any) => {
     setSelectedProduct(product);
@@ -166,9 +188,19 @@ export function Inventory(): JSX.Element {
         : [...prevCategories, category]
     );
   };
+  const handleOrganizationChange = (org: string) => {
+    setSelectedOrganizations(prevOrganizations =>
+      prevOrganizations.includes(org)
+        ? prevOrganizations.filter(c => c !== org)
+        : [...prevOrganizations, org]
+    );
+  };
 
   const filteredProducts = products?.filter(product =>
-    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategories.includes(product.category) || selectedCategories.length==0)}
+    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
+      && (selectedCategories.includes(product.category) || selectedCategories.length==0)
+      && (selectedOrganizations.includes(product.organization) || selectedOrganizations.length==0)
+    }
   );
 
   if (error) return <p>Error loading products: {error.message}</p>;
@@ -189,7 +221,7 @@ export function Inventory(): JSX.Element {
               style={dropdownButtonStyle}
               onClick={() => setDropdownVisible(!dropdownVisible)}
             >
-              Filter
+              Filter nach Kategorien
             </button>
             {dropdownVisible && (
               <div style={dropdownContentStyle}>
@@ -203,6 +235,32 @@ export function Inventory(): JSX.Element {
                       onChange={() => handleCategoryChange(ele.tag)}
                     />
                     <label htmlFor={ele.id}>{ele.tag}</label>
+                    
+                    
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownRef2}>
+            <button
+              style={dropdownButtonStyle}
+              onClick={() => setDropdownVisible2(!dropdownVisible2)}
+            >
+              Filter nach Organisationen
+            </button>
+            {dropdownVisible2 && (
+              <div style={dropdownContentStyle}>
+                { orgs.map((ele) => (
+                  <div style={checkboxLabelStyle}>
+                    <input
+                      id={ele.id}
+                      type="checkbox"
+                      style={{  marginRight: "10px", width: "auto"}}
+                      checked={selectedOrganizations.includes(ele.name)}
+                      onChange={() => handleOrganizationChange(ele.name)}
+                    />
+                    <label htmlFor={ele.id}>{ele.name}</label>
                     
                     
                   </div>

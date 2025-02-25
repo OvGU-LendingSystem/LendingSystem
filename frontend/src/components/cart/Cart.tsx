@@ -160,7 +160,7 @@ export function Cart() {
     }
     
     return (
-      <div>Bitte einloggen Seite.</div>
+      <div style={{marginTop: '10px'}}>Wenn Sie auf den Warenkorb zugreifen wollen, müssen Sie sich einloggen.</div>
     );
 
 }

@@ -9,10 +9,14 @@ const GET_IMPRESSUM = gql`
 
 export function ImpressumScreen() {
 
-    const {data: impressum} = useQuery(GET_IMPRESSUM);
-    console.log(impressum);
+    const {data: impressum, loading} = useQuery(GET_IMPRESSUM);
     
-    return (
-        <div dangerouslySetInnerHTML={impressum.getImprint}></div>
-    )
+    if (!loading && impressum!=null){ 
+    
+        return (
+            <div style={{margin: '20px'}} dangerouslySetInnerHTML={{__html: impressum.getImprint}}></div>
+        )
+    }
+
+    return <div>loading</div>
 }
