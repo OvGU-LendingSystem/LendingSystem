@@ -52,6 +52,24 @@ const LOGOUT = gql`
   }
 `;
 
+const UPDATE_USER_RIGHTS = gql`
+  mutation UpdateUserRights($email: String!, $rights: [String!]!) {
+    updateUserRights(email: $email, rights: $rights) {
+      ok
+      infoText
+    }
+  }
+`;
+
+export interface UpdateUserRightsResponse {
+  ok: boolean;
+  infoText: string;
+}
+
+export function useUpdateUserRights() {
+  return useMutationWithResponse<UpdateUserRightsResponse>(UPDATE_USER_RIGHTS, "updateUserRights");
+}
+
 export interface LogoutResponse {
   ok: boolean;
   infoText: string;
