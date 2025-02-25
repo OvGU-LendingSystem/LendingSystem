@@ -10,6 +10,7 @@ export interface Group {
 
 export interface AddGroupItem {
     name: string;
+    description: string;
     pictures: ImageResource[];
     physicalObjectIds: string[];
 }
