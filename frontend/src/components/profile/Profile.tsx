@@ -61,7 +61,6 @@ export function Profile() {
       const response = await updateUserRightsMutation({
         variables: {
           email,
-          organizationId,
           rights: [selectedRole],
         },
       });

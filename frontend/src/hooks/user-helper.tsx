@@ -53,8 +53,8 @@ const LOGOUT = gql`
 `;
 
 const UPDATE_USER_RIGHTS = gql`
-  mutation UpdateUserRights($email: String!, $rights: [String!]!) {
-    updateUserRights(email: $email, rights: $rights) {
+  mutation update_user_rights($email: String!, $rights: [String!]!) {
+    update_user_rights(email: $email, rights: $rights) {
       ok
       infoText
     }
