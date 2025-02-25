@@ -8,7 +8,7 @@ import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
 import { Suspense, useCallback, useState } from 'react';
 import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
-import { ItemPredicate, MultiSelect } from '@blueprintjs/select';
+import { ItemPredicate, ItemRenderer, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
 import { Tag } from '../../models/tag.model';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
@@ -182,6 +182,20 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
     const removeTag = useCallback((idx: number) => {
         helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]);
     }, [helper, field, field.value]);
+
+    const tagRenderer: ItemRenderer<Tag> = (tag, props) => {
+        if (!props.modifiers.matchesPredicate) {
+            return null;
+        }
+
+        return (
+            <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)}
+                shouldDismissPopover={false} text={tag.tag}
+                active={props.modifiers.active} disabled={props.modifiers.disabled}
+                key={tag.tag} label={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
+                ref={props.ref} />
+        );
+    }
     
     return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
         onItemSelect={(selectedTag, e) => {
@@ -206,8 +220,8 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         createNewItemPosition='first'
         itemsEqual={areTagsEqual}
         itemPredicate={filterTags}
-        tagRenderer={(tag) => <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)} shouldDismissPopover={false} text={tag.tag} />}
-        itemRenderer={(tag) => <p>{tag.tag}</p>}
+        tagRenderer={(tag) => <p>{tag.tag}</p>}
+        itemRenderer={tagRenderer}
         tagInputProps={{
             onRemove: (node, idx) => removeTag(idx),
             tagProps: { minimal: true }
