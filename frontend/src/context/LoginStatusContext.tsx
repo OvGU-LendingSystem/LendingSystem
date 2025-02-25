@@ -1,6 +1,6 @@
 import { Dispatch, ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { LoginStatus } from "../models/login-status.model";
-import { useCheckSession, useGetUserLazy } from "../hooks/user-helper";
+import { useCheckSession, useGetUserLazy, useLogout } from "../hooks/user-helper";
 
 interface LoginStatusDispatcherAction {
     type: 'login' | 'logout' | 'update';
@@ -16,6 +16,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const [ shouldCheck, setShouldCheck ] = useState(0);
     const [ visible, setVisible ] = useState<boolean>(!document.hidden);
     const [ loaded, setLoaded ] = useState<boolean>(false);
+    const [logoutMutation] = useLogout();
     
     useEffect(() => {
         let id: number;
@@ -70,8 +71,13 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const handleLoginStatusAction = async (action: LoginStatusDispatcherAction) => {
         if (action.type === "logout") {
             try {
+                const response = await logoutMutation();
                 setLoginStatus({ loggedIn: false });
-                //reset session check trigger
+                if (response.success) {
+                    setLoginStatus({ loggedIn: false });
+                } else {
+                    console.error("Logout failed:", response);
+                }
                 setShouldCheck((prev) => prev + 1);
             } catch (error) {
                 console.error("Logout failed:", error);

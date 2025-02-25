@@ -42,6 +42,25 @@ query GetUser($userId: String!) {
 }
 `;
 
+const LOGOUT = gql`
+  mutation Logout {
+    logout {
+      ok
+      infoText
+      userId
+    }
+  }
+`;
+
+export interface LogoutResponse {
+  ok: boolean;
+  infoText: string;
+}
+
+export function useLogout() {
+  return useMutationWithResponse<LogoutResponse>(LOGOUT, "logout");
+}
+
 export interface SessionSuccess {
     ok: true;
     infoText: string;
