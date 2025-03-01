@@ -6,7 +6,7 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
 import { ItemPredicate, ItemRenderer, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
@@ -155,16 +155,6 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
     );
 }
 
-const filterTags: ItemPredicate<Tag> = (query, tag, idx, exactMatch) => {
-    const lowerQuery = query.trim().toLowerCase();
-    const lowerTag = tag.tag.trim().toLowerCase();
-    if (exactMatch) {
-        return lowerQuery === lowerTag;
-    }
-
-    return lowerTag.includes(lowerQuery);
-}
-
 function FormikTagInput({ fieldName }: { fieldName: string }) {
     const [ field, meta, helper ] = useField<Tag[]>(fieldName);
     const tagsQuery = useGetTagsQuery();
@@ -198,20 +188,7 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
     }
     
     return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
-        onItemSelect={(selectedTag, e) => {
-            if (tagIsSelected(selectedTag)) {
-                const tagIdx = field.value.findIndex((val) => areTagsEqual(val, selectedTag));
-                removeTag(tagIdx);
-            } else {
-                helper.setValue([...field.value, selectedTag]);
-            }
-            e?.stopPropagation();
-            e?.preventDefault();
-        }}
-        onItemsPaste={(tags) => {
-            helper.setValue([...field.value, ...tags]);
-        }}
-        onClear={() => helper.setValue([])}
+        onItemSelect={(selectedTag) => helper.setValue([...field.value, selectedTag])}
         createNewItemFromQuery={(query) => ({ tag: query })}
         createNewItemRenderer={(query, active, click) => <MenuItem icon='add'
             text={`neuen Tag "${query}" erstellen`} active={active}
@@ -223,10 +200,9 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         tagRenderer={(tag) => <p>{tag.tag}</p>}
         itemRenderer={tagRenderer}
         tagInputProps={{
-            onRemove: (node, idx) => removeTag(idx),
+            onRemove: (node, idx) => helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]),
             tagProps: { minimal: true }
-        }}
-        placeholder='Auswählen...' />
+        }} />
 }
 
 function LoadingScreen() {
