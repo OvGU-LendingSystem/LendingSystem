@@ -239,6 +239,7 @@ export function useGetPhysicalObjects() {
                 category: flattenedVal.tags.edges[0]?.node?.name ?? "",
                 organizationId: flattenedVal.organization.organizationId,
                 organization: flattenedVal.organization.name,
+                physicalObjects: undefined,
             };
             return res;
         });

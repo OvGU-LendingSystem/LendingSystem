@@ -13,68 +13,19 @@ import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 import { useQuery, gql, useMutation,} from '@apollo/client';
 import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 import { ALL } from "dns";
+import { InventoryItemInCart } from "../../models/InventoryItem.model";
+import { User } from "../../models/user.model";
+import { useCreateOrder } from "../../hooks/order-helper";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
 type AGBPopUpProbs = {
     trigger : boolean,
     setTrigger : any,
-    products: Product[],
+    allProducts: InventoryItemInCart[][],
+    products: InventoryItemInCart[],
+    deposit: number,
 }
-
-const CREATE_ORDER = gql`
-mutation createOrder(
-    $deposit: Int,
-    $fromDate: Date!,
-    $physicalObjects: [String]!,
-    $tilDate: Date
-  ) {
-    createOrder(
-      deposit: $deposit,
-      fromDate: $fromDate,
-      physicalObjects: $physicalObjects,
-      tilDate: $tilDate
-    ) {
-      ok
-      infoText
-    }
-  }
-`;
-
-const UPDATE_ORDER = gql`
-mutation updateOrder(
-    $deposit: Int,
-    $fromDate: Date!,
-    $orderId: String!,
-    $tilDate: Date,
-    $users: [String]
-  ) {
-    updateOrder(
-      deposit: $deposit,
-      fromDate: $fromDate,
-      orderId: $orderId,
-      tilDate: $tilDate,
-      users: $users
-    ) {
-      ok
-      infoText
-    }
-  }
-`;
-
-const GET_MAX_DEPOSIT = gql`
-    mutation deposit (
-            $organizationId: String,
-            $userRight: String
-        ) {
-        getMaxDeposit (
-            organizationId: $organizationId,
-            userRight: $userRight
-        ) {
-            maxDeposit
-        }
-    }
-`;
 
 /**
  * 
@@ -89,84 +40,27 @@ const [isChecked, setIsChecked] = useState(false);
 const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
-const [CreateOrder] = useMutation(CREATE_ORDER);
-const [UpdateOrder] = useMutation(UPDATE_ORDER);
-const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
 const status = useLoginStatus();
-const user = useUserInfo();
+
+
+const [createOrder, {data: resp, loading, error}] = useCreateOrder();
 
 const handleCreateOrder = async () => {
-    try {
-        const fromDate: Date[] = [];
-        const tilDate: Date[] = [];
-        const productsDividedByDate: Product[][] = [];
-        const deposit: number[] = [];
+    const ids = props.products.map(item => {
+        return item.physId;
+    })
+    createOrder({variables: {
+        deposit: props.deposit,
+        fromDate: props.products[0].startDate,
+        tillDate: props.products[0].endDate,
+        physicalobjects: ids,
+    }});
 
-        props.products.forEach(item => {
-            let x = false;
-            for (let i=0; i<fromDate.length; i++){
-                if (fromDate[i] == item.startDate && tilDate[i] == item.endDate){
-                    productsDividedByDate[i].push(item);
-                    deposit[i] += item.price;
-                    x = true;
-                    break;
-                }
-            }
-            if (!x){
-                const ind = fromDate.length;
-                
-                if (item.startDate==undefined) throw new Error('undefined startDate');
-                fromDate.push(item.startDate);
-                if (item.endDate==undefined) throw new Error('undefined endDate');
-                tilDate.push(item.endDate);
-                productsDividedByDate.push([]);
-                productsDividedByDate[ind].push(item);
-                deposit.push(item.price);
-            }
-        });
-
-        
-
-        for (let i=0; i<deposit.length; i++){
-            //Rechte aus useUserInfo und Minimum bilden
-            
-            var maxD = 1000000;
-
-            const userInfoResult = user.organizationInfoList.map(async org => {
-                const { data } = await GetMaxDeposit({
-                    variables:{
-                        organizationId: props.products[0].organizationId,
-                        userRight: org.rights
-                    },
-                });
-                if(data.maxDeposit<maxD) maxD=data.maxDeposit;
-            });
-            Promise.allSettled(userInfoResult);
-
-            if (deposit[i]>maxD)
-                deposit[i] = maxD;
-        }
-
-
-        for (let i=0; i<fromDate.length; i++){
-            const { data } = await CreateOrder({
-                variables: {
-                  deposit: deposit[i],
-                  fromDate: fromDate[i],
-                  physicalObjects: productsDividedByDate[i].map(product => product.id),
-                  tilDate : tilDate[i],
-                },
-              });
-        }
-
-        
-  
-   } catch (error) {
-     console.error('Error confirming order:', error);
-   }
+    const ind = props.allProducts.indexOf(props.products);
+    props.allProducts.splice(ind, 1);
 };
 
 useEffect(() => {
@@ -224,6 +118,7 @@ return (
                         <input
                             type="checkbox"
                             id="agreeCheckbox"
+                            style={{  marginRight: "10px", width: "auto"}}
                             checked={isChecked}
                             onChange={handleCheckboxChange}
                         />
@@ -236,7 +131,7 @@ return (
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >
-                    Akzeptiern
+                    Akzeptieren
                 </button>
                 <button
                     onClick={() => {props.setTrigger(false)}}>
