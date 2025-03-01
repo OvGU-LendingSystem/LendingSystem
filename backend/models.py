@@ -4,7 +4,7 @@ import uuid
 import graphene
 import json
 
-from config import db
+from config import db, engine
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
@@ -46,7 +46,15 @@ physicalobject_tag = Table (
     Base.metadata,
     Column('phys_id',           ForeignKey('physicalobject.phys_id'),       primary_key=True),
     Column('tag_id',            ForeignKey('tag.tag_id'),                   primary_key=True),
-    extend_existing = True,
+    extend_existing = True
+)
+
+group_tag = Table (
+    'group_tag',
+    Base.metadata,
+    Column('group_id',          ForeignKey('group.group_id'),                primary_key=True),
+    Column('tag_id',            ForeignKey('tag.tag_id'),                    primary_key=True),
+    extend_existing = True
 )
 
 user_order = Table (
@@ -60,8 +68,8 @@ user_order = Table (
 group_physicalobject = Table (
     'group_physicalobject',
     Base.metadata,
-    Column('group_id',      ForeignKey('group.group_id'),                   primary_key=True),
-    Column('phys_id',       ForeignKey('physicalobject.phys_id'),           primary_key=True),
+    Column('group_id',          ForeignKey('group.group_id'),               primary_key=True),
+    Column('phys_id',           ForeignKey('physicalobject.phys_id'),       primary_key=True),
     extend_existing = True,
 )
 
@@ -123,6 +131,7 @@ class Tag(Base):
     name                = Column(String(60),    unique = True, nullable = False)
 
     physicalobjects     = relationship("PhysicalObject", secondary = physicalobject_tag, back_populates = "tags")
+    groups              = relationship("Group", secondary = group_tag, back_populates = "tags")
 
     def __repr__(self):
         return "Tag ID: " + str(self.tag_id) + "; Name: " + self.name
@@ -268,6 +277,7 @@ class Group(Base):
     physicalobjects     = relationship("PhysicalObject", secondary = group_physicalobject, back_populates = "groups")
     pictures            = relationship("File",                                             back_populates = "group")
     organization        = relationship("Organization",                                     back_populates = "groups")
+    tags                = relationship("Tag",           secondary = group_tag,             back_populates = "groups")
 
 class Organization(Base):
     """

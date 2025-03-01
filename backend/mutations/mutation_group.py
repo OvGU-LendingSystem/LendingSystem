@@ -5,7 +5,7 @@ import traceback
 from authorization_check import is_authorised, reject_message
 from config import db
 from models import userRights
-from schema import Group, GroupModel, OrganizationModel, PhysicalObjectModel, FileModel
+from schema import Group, GroupModel, OrganizationModel, PhysicalObjectModel, FileModel, TagModel
 
 ##################################
 # Mutations for Groups           #
@@ -23,6 +23,7 @@ class create_group(graphene.Mutation):
 
         pictures        = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
+        tags            = graphene.List(graphene.String)
 
 
     group       = graphene.Field(lambda: Group)
@@ -31,7 +32,7 @@ class create_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, name, organization_id, description=None, pictures=None, physicalobjects=None):
+    def mutate(self, info, name, organization_id, description=None, pictures=None, physicalobjects=None, tags=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -68,6 +69,10 @@ class create_group(graphene.Mutation):
                 
                 group.physicalobjects = db_physicalobjects
 
+            if tags:
+                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+                group.tags = db_tags
+
             db.add(group)
 
             db.commit()
@@ -90,6 +95,7 @@ class update_group(graphene.Mutation):
 
         physicalobjects = graphene.List(graphene.String)
         pictures        = graphene.List(graphene.String)
+        tags            = graphene.List(graphene.String)
 
     group       = graphene.Field(lambda: Group)
     ok          = graphene.Boolean()
@@ -97,7 +103,7 @@ class update_group(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, group_id, name=None, physicalobjects=None, pictures=None):
+    def mutate(self, info, group_id, name=None, physicalobjects=None, pictures=None, tags=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -132,6 +138,12 @@ class update_group(graphene.Mutation):
             if pictures:
                 db_pictures = db.query(FileModel).filter(FileModel.pic_id.in_(pictures)).all()
                 group.pictures = db_pictures
+
+            if tags:
+                print(tags)
+                db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
+                print(db_tags)
+                group.tags = db_tags
 
             db.commit()
             return create_group(ok=True, info_text="Gruppe erfolgreich aktualisiert.", group=group, status_code=200)
