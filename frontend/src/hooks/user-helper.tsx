@@ -45,15 +45,47 @@ query GetUser($userId: String!) {
 const LOGOUT = gql`
   mutation logout {
     logout {
+    ok
+    infotext
     }
   }
 `;
 
 const UPDATE_USER_RIGHTS = gql`
-  mutation update_user_rights($email: String!, $rights: [String!]!) {
-    update_user_rights(email: $email, rights: $rights) {
+  mutation updateUserRights($email: String!, $rights: [String!]!) {
+    updateUserRights(email: $email, rights: $rights) {
       ok
       infoText
+    }
+  }
+`;
+
+const CREATE_USER = gql`
+  mutation createUser($city: String,
+  $country: String,
+  $email: String!,
+  $firstName: String!,
+  $houseNumber: Int,
+  $lastName: String!,
+  $matricleNumber: Int,
+  $password: String!,
+  $phoneNumber: Int,
+  $postcode: Int,
+  $street: String) {
+  createUser(city: $city,
+  country: $country,
+  email: $email,
+  firstName: $firstName,
+  houseNumer: $houseNumber,
+  lastName: $lastName,
+  matricleNumber: $matricleNumber,
+  password: $password,
+  phoneNumber: $phoneNumber,
+  postcode: $postcode,
+  street: $street){
+      ok
+    infoText
+    statusCode
     }
   }
 `;
