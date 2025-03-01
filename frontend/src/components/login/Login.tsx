@@ -179,23 +179,33 @@ export function Login(props: LoginProps) {
           <p>Kein Konto? <button type="button" onClick={toggleForm}>Registrieren</button></p>
         </form>
       ) : (
-        <form className="login-form" onSubmit={handleRegister}>
-          <h2>Registrieren</h2>
-          <div style={{width:'380px'}} className="form-group"><label>Vorname</label><input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>E-Mail-Adresse</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Straße</label><input type="text" value={street} onChange={(e) => setStreet(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Hausnummer</label><input type="text" value={houseNumber} onChange={(e) => setHouseNumber(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Ort</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Postleitzahl</label><input type="text" value={postcode} onChange={(e) => setPostcode(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Matrikelnummer</label><input type="text" value={matricleNumber} onChange={(e) => setMatricleNumber(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Telefonnummer</label><input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Passwort</label><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-          <div style={{width:'380px'}} className="form-group"><label>Passwort wiederholen</label><input type={showPassword ? "text" : "password"} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} required /></div>
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
-          <button type="submit" className="submit-button">Registrieren</button>
-          <p>Bereits registriert? <button type="button" onClick={toggleForm}>Zum Login</button></p>
-        </form>
+<form className="register-form" onSubmit={handleRegister}>
+  <h2>Registrieren</h2>
+  <div className="form-grid">
+    <div className="form-column" style={{marginRight:"20px"}}>
+      <div className="form-group"><label>Vorname</label><input type="text" value={first_name} onChange={(e) => setFirstName(e.target.value)} required /></div>
+      <div className="form-group"><label>Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></div>
+      <div className="form-group"><label>E-Mail-Adresse</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+      <div className="form-group"><label>Straße</label><input type="text" value={street} onChange={(e) => setStreet(e.target.value)} required /></div>
+      <div className="form-group"><label>Hausnummer</label><input type="text" value={houseNumber} onChange={(e) => setHouseNumber(e.target.value)} required /></div>
+      <div className="form-group"><label>Passwort</label><input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+    </div>
+
+    <div className="form-column" style={{marginRight:"20px"}}>
+      <div className="form-group"><label>Ort</label><input type="text" value={city} onChange={(e) => setCity(e.target.value)} required /></div>
+      <div className="form-group"><label>Postleitzahl</label><input type="text" value={postcode} onChange={(e) => setPostcode(e.target.value)} required /></div>
+      <div className="form-group"><label>Land</label><input type="text" value={country} onChange={(e) => setCountry(e.target.value)} required /></div>
+      <div className="form-group"><label>Matrikelnummer</label><input type="text" value={matricleNumber} onChange={(e) => setMatricleNumber(e.target.value)} required /></div>
+      <div className="form-group"><label>Telefonnummer</label><input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required /></div>
+      <div className="form-group"><label>Passwort wiederholen</label><input type={showPassword ? "text" : "password"} value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} required /></div>
+    </div>
+  </div>
+
+  {errorMessage && <p className="error-message">{errorMessage}</p>}
+  <button type="submit" className="submit-button">Registrieren</button>
+  <p>Bereits registriert? <button type="button" onClick={toggleForm}>Zum Login</button></p>
+</form>
+
       )}
     </div>
   );
