@@ -121,10 +121,10 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                                 <FormikInput fieldName='inventoryNumberExternal' getValue={(val) => val?.toString() ?? ''} modifier={(e) => { console.error(e); return e.target.valueAsNumber}} type="number" id="inventory_number_external" />
                                 
                                 <label htmlFor="storage">Lagerort</label>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' /*options={storagePlaces}*/ options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
 
                                 <div></div>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' /*options={storagePlaces2}*/ options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
 
                                 <label htmlFor="deposit">Kaution</label>
                                 <FormikInput fieldName='deposit' after={<div className='currency-placeholder'>€</div>} className='deposit-input' type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required modifier={updateDeposit} getValue={getDeposit} />
@@ -145,7 +145,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
                     <FormikFileSelector name='manuals' title='Anleitungen' />
 
-                    <Button type="submit" intent='primary'>{label}</Button>
+                    <Button intent='primary' onClick={() => props.submitForm()}>{label}</Button>
                 </Form>
                 }
                 </>
@@ -182,7 +182,7 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
             <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)}
                 shouldDismissPopover={false} text={tag.tag}
                 active={props.modifiers.active} disabled={props.modifiers.disabled}
-                key={tag.tag} label={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
+                key={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
                 ref={props.ref} />
         );
     }
@@ -197,12 +197,14 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         createNewItemPosition='first'
         itemsEqual={areTagsEqual}
         itemPredicate={filterTags}
-        tagRenderer={(tag) => <p>{tag.tag}</p>}
+        tagRenderer={(tag) => tag.tag}
         itemRenderer={tagRenderer}
         tagInputProps={{
             onRemove: (node, idx) => helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]),
             tagProps: { minimal: true }
-        }} />
+        }}
+        resetOnSelect
+        placeholder='Auswählen...' />
 }
 
 function LoadingScreen() {

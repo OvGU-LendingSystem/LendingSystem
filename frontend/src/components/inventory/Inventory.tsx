@@ -113,6 +113,12 @@ export function Inventory(): JSX.Element {
   const { data: orgs, error: e3} = useGetAllOrganizations();
   const { data: groups, error: e2} = useGetAllGroupsQuery();
   const products = products_tmp.concat(groups);
+  products.sort(function(a, b){
+      if (a.name<b.name) return -1;
+      if (a.name>b.name) return 1;
+      return 0;
+    }
+  );
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -278,7 +284,7 @@ export function Inventory(): JSX.Element {
                   <h3>{product.name}</h3>
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
-                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit} €</div>
+                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>

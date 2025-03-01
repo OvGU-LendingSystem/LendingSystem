@@ -164,8 +164,19 @@ export function OrderItem({ order }: { order: Order }) {
             <p>Ausleihe von {order.user.firstName} {order.user.lastName}</p>
             <p>Enthält:</p>
             <ul>
-                {order.physicalObjects.map((object) => <li key={object.physId}>{object.name}</li>)}
+                {order.physicalObjects.map((object) => <li style={{color: getColor(object.orderStatus)}} key={object.physId}>{object.name}</li>)}
             </ul>
         </>
     );
+}
+
+const getColor = (status: string) => {
+    switch (status) {
+        case 'ACCEPTED':
+            return 'green';
+        case 'REJECTED':
+            return 'red';
+        default:
+            return 'yellow';
+    }
 }
