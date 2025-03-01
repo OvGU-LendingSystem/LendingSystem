@@ -1,12 +1,13 @@
 import { Dispatch, ReactNode, createContext, useContext } from "react";
 import { useLocalStorageWithReducer } from "../hooks/use-local-storage";
+import { InventoryItemInCart } from "../models/InventoryItem.model";
 
 interface CartDispatcherAction {
-    item: Product;
+    item: InventoryItemInCart;
     type: 'add' | 'remove' | 'edit';
 }
 
-export const CartContext = createContext<Product[]>([]);
+export const CartContext = createContext<InventoryItemInCart[]>([]);
 export const CartDispatcherContext = createContext<Dispatch<CartDispatcherAction>>(() => {});
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -20,11 +21,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
 }
 
-const cartActionReducer = (items: Product[], action: CartDispatcherAction) => {
+const cartActionReducer = (items: InventoryItemInCart[], action: CartDispatcherAction) => {
     switch (action.type) {
         case "add": return [ ...items, action.item ];
-        case "remove": return items.filter(item => item.id !== action.item.id);
-        case "edit": return items.map(x => x.id === action.item.id ? action.item : x);
+        case "remove": return items.filter(item => item.physId !== action.item.physId);
+        case "edit": return items.map(x => x.physId === action.item.physId ? action.item : x);
     }
 }
 

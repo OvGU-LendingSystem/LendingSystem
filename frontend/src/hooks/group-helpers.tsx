@@ -83,7 +83,35 @@ query GetAllGroups {
     physicalobjects {
     	edges {
             node {
+                physId,
+                name,
+                invNumInternal,
+                invNumExternal,
+                borrowable,
+                deposit,
+                storageLocation,
+                faults,
+                description,
+                pictures(first: 1) {
+                edges {
+                    node {
+                    fileId,
+                    path
+                    }
+                }
+                },
+                tags{
+                edges{
+                    node{
+                    tagId,
+                    name
+                    }
+                }
+                },
+                organization{
+                organizationId,
                 name
+                }
             }
         }
     },
@@ -110,7 +138,36 @@ interface GroupsResponse {
     physicalobjects: {
         edges: {
             node: {
+                physId: string;
                 name: string;
+                invNumInternal: number;
+                invNumExternal: number;
+                borrowable: boolean;
+                deposit: number;
+                storageLocation: string;
+                faults: string;
+                description: string;
+                pictures: {
+                edges: {
+                    node: {
+                    fileId: string,
+                    path: string
+                    }
+                }[]
+                };
+                tags: {
+                    edges: {
+                        node:{
+                            tagId: string,
+                            name: string
+                        }
+                    }[]
+                };
+                organization: {
+                    organizationId: string,
+                    name: string
+                }
+
             }
         }[]
     };
@@ -134,27 +191,74 @@ export type PreviewGroup2 = Omit<Group, 'physicalObjects'> & { pysicalObjectName
 export function useGetAllGroupsQuery() {
     const mapToGroup = (val: GroupsResponse[]) => {
         return val.map((groupResponse) => {
-            const flattenedPhysicalObjects = flattenEdges<{ name: string }, 'physicalobjects', GroupsResponse>(groupResponse, 'physicalobjects');
+            const flattenedPhysicalObjects = flattenEdges<{ physId: string;
+                name: string;
+                invNumInternal: number;
+                invNumExternal: number;
+                borrowable: boolean;
+                deposit: number;
+                storageLocation: string;
+                faults: string;
+                description: string;
+                pictures: {
+                  edges: {
+                    node: {
+                      fileId: string,
+                      path: string
+                    }
+                  }[]
+                };
+                tags: {
+                    edges: {
+                        node:{
+                            tagId: string,
+                            name: string
+                        }
+                    }[]
+                };
+                organization: {
+                    organizationId: string,
+                    name: string
+                } }, 'physicalobjects', GroupsResponse>(groupResponse, 'physicalobjects');
             const flattenedResponse = flattenEdges<{ fileId: string, path: string }, 'pictures', typeof flattenedPhysicalObjects>(flattenedPhysicalObjects, 'pictures');
+            var sum=0;
+            flattenedPhysicalObjects.physicalobjects.forEach(obj => {
+                sum+=obj.deposit;
+            });
+            const phyObj = flattenedPhysicalObjects.physicalobjects.map((obj) =>{
+                const res: InventoryItem = {
+                    physId: obj.physId,
+                    name: obj.name,
+                    inventoryNumberExternal: obj.invNumExternal,
+                    inventoryNumberInternal: obj.invNumInternal,    
+                    storageLocation: obj.storageLocation,
+                    defects: obj.faults,
+                    borrowable: obj.borrowable,
+                    deposit: obj.deposit,
+                    description: obj.description,
+                    images: obj.pictures.edges.map((pic) => {return { type: 'remote', ...pic.node }}),
+                    category: obj.tags.edges[0]?.node?.name ?? "",
+                    organizationId: obj.organization.organizationId,
+                    organization: obj.organization.name,
+                    physicalObjects: undefined,
+                };
+                return res; 
+            });
             const group: InventoryItem = {
                 physId: "group " + flattenedResponse.groupId,
                 name: flattenedResponse.name, 
                 inventoryNumberInternal: -1,
                 inventoryNumberExternal: -1,
                 borrowable: true,
-                deposit: 0,//TODO DEPOSIT helper
+                deposit: sum,//TODO DEPOSIT helper
                 storageLocation: "group",
                 defects: "group",
                 description: flattenedResponse.description,
                 images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
                 category: "Gruppe / group",//TODO Kategorie
                 organizationId: groupResponse.organization.organizationId,
-                organization: groupResponse.organization.name
-
-                /*groupId: flattenedResponse.groupId,
-                name: flattenedResponse.name,
-                pictures: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
-                pysicalObjectNames: flattenedResponse.physicalobjects.map((val) => val.name)*/
+                organization: groupResponse.organization.name,
+                physicalObjects: phyObj,
             };
             return group;
         });

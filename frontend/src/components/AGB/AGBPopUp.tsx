@@ -13,68 +13,16 @@ import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
 import { useQuery, gql, useMutation,} from '@apollo/client';
 import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 import { ALL } from "dns";
+import { InventoryItemInCart } from "../../models/InventoryItem.model";
+import { User } from "../../models/user.model";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
 type AGBPopUpProbs = {
     trigger : boolean,
     setTrigger : any,
-    products: Product[],
+    products: InventoryItemInCart[],
 }
-
-const CREATE_ORDER = gql`
-mutation createOrder(
-    $deposit: Int,
-    $fromDate: Date!,
-    $physicalObjects: [String]!,
-    $tilDate: Date
-  ) {
-    createOrder(
-      deposit: $deposit,
-      fromDate: $fromDate,
-      physicalObjects: $physicalObjects,
-      tilDate: $tilDate
-    ) {
-      ok
-      infoText
-    }
-  }
-`;
-
-const UPDATE_ORDER = gql`
-mutation updateOrder(
-    $deposit: Int,
-    $fromDate: Date!,
-    $orderId: String!,
-    $tilDate: Date,
-    $users: [String]
-  ) {
-    updateOrder(
-      deposit: $deposit,
-      fromDate: $fromDate,
-      orderId: $orderId,
-      tilDate: $tilDate,
-      users: $users
-    ) {
-      ok
-      infoText
-    }
-  }
-`;
-
-const GET_MAX_DEPOSIT = gql`
-    mutation deposit (
-            $organizationId: String,
-            $userRight: String
-        ) {
-        getMaxDeposit (
-            organizationId: $organizationId,
-            userRight: $userRight
-        ) {
-            maxDeposit
-        }
-    }
-`;
 
 /**
  * 
@@ -89,20 +37,18 @@ const [isChecked, setIsChecked] = useState(false);
 const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
-const [CreateOrder] = useMutation(CREATE_ORDER);
-const [UpdateOrder] = useMutation(UPDATE_ORDER);
-const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
 const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
 const status = useLoginStatus();
-const user = useUserInfo();
+//const user = useUserInfo();
+
 
 const handleCreateOrder = async () => {
     try {
         const fromDate: Date[] = [];
         const tilDate: Date[] = [];
-        const productsDividedByDate: Product[][] = [];
+        const productsDividedByDate: InventoryItemInCart[][] = [];
         const deposit: number[] = [];
 
         props.products.forEach(item => {
@@ -110,7 +56,7 @@ const handleCreateOrder = async () => {
             for (let i=0; i<fromDate.length; i++){
                 if (fromDate[i] == item.startDate && tilDate[i] == item.endDate){
                     productsDividedByDate[i].push(item);
-                    deposit[i] += item.price;
+                    deposit[i] += item.deposit;
                     x = true;
                     break;
                 }
@@ -124,7 +70,7 @@ const handleCreateOrder = async () => {
                 tilDate.push(item.endDate);
                 productsDividedByDate.push([]);
                 productsDividedByDate[ind].push(item);
-                deposit.push(item.price);
+                deposit.push(item.deposit);
             }
         });
 
@@ -135,34 +81,9 @@ const handleCreateOrder = async () => {
             
             var maxD = 1000000;
 
-            const userInfoResult = user.organizationInfoList.map(async org => {
-                const { data } = await GetMaxDeposit({
-                    variables:{
-                        organizationId: props.products[0].organizationId,
-                        userRight: org.rights
-                    },
-                });
-                if(data.maxDeposit<maxD) maxD=data.maxDeposit;
-            });
-            Promise.allSettled(userInfoResult);
-
             if (deposit[i]>maxD)
                 deposit[i] = maxD;
         }
-
-
-        for (let i=0; i<fromDate.length; i++){
-            const { data } = await CreateOrder({
-                variables: {
-                  deposit: deposit[i],
-                  fromDate: fromDate[i],
-                  physicalObjects: productsDividedByDate[i].map(product => product.id),
-                  tilDate : tilDate[i],
-                },
-              });
-        }
-
-        
   
    } catch (error) {
      console.error('Error confirming order:', error);

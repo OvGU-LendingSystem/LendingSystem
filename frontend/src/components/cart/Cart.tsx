@@ -7,11 +7,10 @@ import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 
-//APOLLO STUFF ZUM TESTEN
-
 import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
 import { Spinner } from "@blueprintjs/core";
+import { InventoryItemInCart } from "../../models/InventoryItem.model";
 
 
 export function Cart() {
@@ -23,7 +22,7 @@ export function Cart() {
       return 0;
     }
   );
-  const itemsInCart: Product[][] = [];
+  const itemsInCart: InventoryItemInCart[][] = [];
   if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
   let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   itemsInCartUnsorted.forEach(item => {
@@ -44,12 +43,12 @@ export function Cart() {
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<InventoryItemInCart | null>(null);
     const [amount, setAmount] = useState<number>(1);
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
 
-    var productNew: Product;
+    var productNew: InventoryItemInCart;
 
      useEffect(() => {
        if (selectedProduct) {
@@ -58,7 +57,7 @@ export function Cart() {
        }
    }, [selectedProduct]);
 
-    const openModal = (product: Product) => {
+    const openModal = (product: InventoryItemInCart) => {
         setSelectedProduct(product);
         setStartDate(product.startDate ?? null);
         setEndDate(product.endDate ?? null);
@@ -83,7 +82,7 @@ export function Cart() {
      }
     };
 
-    if (loginDispatcher.loggedIn){
+    //if (loginDispatcher.loggedIn){
       return (
           
           <div>
@@ -94,15 +93,15 @@ export function Cart() {
                   {itemsInCart.map((item) => (
                     <div style={aroundProductCardStyle}>
                     {item.map((product) => (
-                      <div key={product.id} style={productCardStyle}>
-                      <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+                      <div key={product.physId} style={productCardStyle}>
+                      <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                       <div style={productInfoStyle}>
                         <h3>{product.name}</h3>
                         
                         <div style={descriptionStyle}>
                           <div style={descriptionContentStyle}>{product.description}</div>
                         </div>
-                        <div style={priceStyle}>{product.price/100} €</div>
+                        <div style={priceStyle}>Leihgebühr: {product.deposit/100} €</div>
                         <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
                         <div>Organistation: {product.organization}</div>
 
@@ -157,11 +156,11 @@ export function Cart() {
               </div>
           </div>
       );
-    }
+    //}
     
-    return (
+    /*return (
       <div style={{marginTop: '10px'}}>Wenn Sie auf den Warenkorb zugreifen wollen, müssen Sie sich einloggen.</div>
-    );
+    );*/
 
 }
 
