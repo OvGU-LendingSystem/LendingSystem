@@ -6,7 +6,7 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
 import { ItemPredicate, ItemRenderer, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
@@ -196,7 +196,7 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         }
         createNewItemPosition='first'
         itemsEqual={areTagsEqual}
-        itemPredicate={filterTags}
+        //itemPredicate={filterTags} TODO
         tagRenderer={(tag) => tag.tag}
         itemRenderer={tagRenderer}
         tagInputProps={{
