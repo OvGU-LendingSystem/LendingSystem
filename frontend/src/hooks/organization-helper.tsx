@@ -34,12 +34,13 @@ interface GetOrgByIdResponse {
 
 export function useGetAllOrganizations() {
     const mapToOrganization = (val: GetOrgByIdResponse[]) => {
-        return val.map((orgResponse): Organization => ({ 
+        var res =  val.map((orgResponse): Organization => ({ 
             id: orgResponse.id, 
             name: orgResponse.name, 
             location: orgResponse.location, 
             agb: orgResponse.agb[0]?.edges?.node?.path ?? "/agb.pdf" 
         }));
+        return res.filter((org) => org.name!='root_organization');
     };
 
     return useSuspenseQueryWithResponseMapped<GetOrgByIdResponse[], Organization[]>(GET_ALL_ORGANIZATIONS, 'filterOrganizations', {}, mapToOrganization);

@@ -4,7 +4,7 @@ import traceback
 
 from authorization_check import is_authorised, reject_message
 from models import db, userRights
-from schema import Tag, TagModel, PhysicalObjectModel
+from schema import GroupModel, PhysicalObjectModel, Tag, TagModel
 
 ##################################
 # Mutations for Tags             #
@@ -17,7 +17,9 @@ class create_tag(graphene.Mutation):
 
     class Arguments:
         name            = graphene.String(required=True)
+
         physicalobjects = graphene.List(graphene.String)
+        groups          = graphene.List(graphene.String)
 
     tag         = graphene.Field(lambda: Tag)
     ok          = graphene.Boolean()
@@ -25,7 +27,7 @@ class create_tag(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, name, physicalobjects=None):
+    def mutate(self, info, name, physicalobjects=None, groups=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -44,6 +46,10 @@ class create_tag(graphene.Mutation):
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 tag.physicalobjects = db_physicalobjects
+
+            if groups:
+                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
+                tag.groups = db_groups
 
             db.add(tag)
 
@@ -65,7 +71,9 @@ class update_tag(graphene.Mutation):
     class Arguments:
         tag_id          = graphene.String(required=True)
         name            = graphene.String()
+
         physicalobjects = graphene.List(graphene.String)
+        groups          = graphene.List(graphene.String)
 
     tag         = graphene.Field(lambda: Tag)
     ok          = graphene.Boolean()
@@ -73,7 +81,7 @@ class update_tag(graphene.Mutation):
     status_code = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, tag_id, name=None, physicalobjects=None):
+    def mutate(self, info, tag_id, name=None, physicalobjects=None, groups=None):
         # Check if user is authorised
         try:
             session_user_id = session['user_id']
@@ -90,10 +98,16 @@ class update_tag(graphene.Mutation):
 
             if not tag:
                 return update_tag(ok=False, info_text="Tag \"" + name + "\" nicht gefunden.", status_code=404)
+            
             if physicalobjects:
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 tag.physicalobjects = db_physicalobjects
+
+            if groups:
+                db_groups = db.query(GroupModel).filter(GroupModel.group_id.in_(groups)).all()
+                tag.groups = db_groups
+            
             if name:
                 tag.name = name
 

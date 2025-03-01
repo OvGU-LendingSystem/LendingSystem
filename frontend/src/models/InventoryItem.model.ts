@@ -7,7 +7,7 @@ export interface InventoryItem {
     inventoryNumberInternal?: number;
     inventoryNumberExternal?: number;
     borrowable: boolean;
-    deposit?: number;
+    deposit: number;
     storageLocation: string;
     defects: string;
     description: string;

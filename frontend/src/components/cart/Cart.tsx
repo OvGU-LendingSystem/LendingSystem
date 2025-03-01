@@ -102,7 +102,7 @@ export function Cart() {
                         <div style={descriptionStyle}>
                           <div style={descriptionContentStyle}>{product.description}</div>
                         </div>
-                        <div style={priceStyle}>{product.price}</div>
+                        <div style={priceStyle}>{product.price/100} €</div>
                         <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
                         <div>Organistation: {product.organization}</div>
 

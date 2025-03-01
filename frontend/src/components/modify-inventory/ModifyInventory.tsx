@@ -6,7 +6,7 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
 import { ItemPredicate, ItemRenderer, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
@@ -121,10 +121,10 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                                 <FormikInput fieldName='inventoryNumberExternal' getValue={(val) => val?.toString() ?? ''} modifier={(e) => { console.error(e); return e.target.valueAsNumber}} type="number" id="inventory_number_external" />
                                 
                                 <label htmlFor="storage">Lagerort</label>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' /*options={storagePlaces}*/ options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
 
                                 <div></div>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' /*options={storagePlaces2}*/ options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
 
                                 <label htmlFor="deposit">Kaution</label>
                                 <FormikInput fieldName='deposit' after={<div className='currency-placeholder'>€</div>} className='deposit-input' type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required modifier={updateDeposit} getValue={getDeposit} />
@@ -145,7 +145,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
                     <FormikFileSelector name='manuals' title='Anleitungen' />
 
-                    <Button type="submit" intent='primary'>{label}</Button>
+                    <Button intent='primary' onClick={() => props.submitForm()}>{label}</Button>
                 </Form>
                 }
                 </>
@@ -153,16 +153,6 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
             </Formik>
         </div>
     );
-}
-
-const filterTags: ItemPredicate<Tag> = (query, tag, idx, exactMatch) => {
-    const lowerQuery = query.trim().toLowerCase();
-    const lowerTag = tag.tag.trim().toLowerCase();
-    if (exactMatch) {
-        return lowerQuery === lowerTag;
-    }
-
-    return lowerTag.includes(lowerQuery);
 }
 
 function FormikTagInput({ fieldName }: { fieldName: string }) {
@@ -192,26 +182,13 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
             <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)}
                 shouldDismissPopover={false} text={tag.tag}
                 active={props.modifiers.active} disabled={props.modifiers.disabled}
-                key={tag.tag} label={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
+                key={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
                 ref={props.ref} />
         );
     }
     
     return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
-        onItemSelect={(selectedTag, e) => {
-            if (tagIsSelected(selectedTag)) {
-                const tagIdx = field.value.findIndex((val) => areTagsEqual(val, selectedTag));
-                removeTag(tagIdx);
-            } else {
-                helper.setValue([...field.value, selectedTag]);
-            }
-            e?.stopPropagation();
-            e?.preventDefault();
-        }}
-        onItemsPaste={(tags) => {
-            helper.setValue([...field.value, ...tags]);
-        }}
-        onClear={() => helper.setValue([])}
+        onItemSelect={(selectedTag) => helper.setValue([...field.value, selectedTag])}
         createNewItemFromQuery={(query) => ({ tag: query })}
         createNewItemRenderer={(query, active, click) => <MenuItem icon='add'
             text={`neuen Tag "${query}" erstellen`} active={active}
@@ -220,12 +197,13 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         createNewItemPosition='first'
         itemsEqual={areTagsEqual}
         itemPredicate={filterTags}
-        tagRenderer={(tag) => <p>{tag.tag}</p>}
+        tagRenderer={(tag) => tag.tag}
         itemRenderer={tagRenderer}
         tagInputProps={{
-            onRemove: (node, idx) => removeTag(idx),
+            onRemove: (node, idx) => helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]),
             tagProps: { minimal: true }
         }}
+        resetOnSelect
         placeholder='Auswählen...' />
 }
 
