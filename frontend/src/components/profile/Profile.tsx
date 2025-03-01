@@ -111,10 +111,13 @@ export function Profile() {
           </button>
         </p>
         <p>
-          Adresse: {"Keine Adresse angegeben"}
+          Adresse: {(loginStatus.user?.street && loginStatus.user?.houseNumber + ", " + loginStatus.user?.city && loginStatus.user?.postcode)|| " "}
           <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button5">
             ✎
           </button>
+        </p>
+        <p style={{ marginBottom: '20px' }}>
+          Matrikelnummer: {loginStatus.user?.matricleNumber || ""}
         </p>
         <button onClick={handleLogout} className="logout-button5">Logout</button>
       </div>
