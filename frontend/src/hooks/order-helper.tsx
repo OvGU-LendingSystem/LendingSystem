@@ -1,5 +1,27 @@
-import { gql } from "@apollo/client";
+import { gql, useMutation } from "@apollo/client";
 import { flattenEdges, useSuspenseQueryWithResponseMapped } from "./response-helper";
+
+const CREATE_ORDER = gql`
+mutation CreateOrder(
+    $deposit: Int,
+    $fromDate: DateTime!,
+    $tillDate: DateTime!,
+    $physicalobjects: [String]!){
+    
+    createOrder(deposit: $deposit, fromDate: $fromDate, tillDate: $tillDate, physicalobjects: $physicalobjects){
+        ok
+        infoText
+        order
+        statusCode
+    }
+    
+}
+`;
+
+export function useCreateOrder() {
+    return useMutation(CREATE_ORDER);
+}
+
 
 const GET_ORDER = gql`
 query All($fromDay: Date, $tillDay: Date) {

@@ -15,13 +15,16 @@ import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 import { ALL } from "dns";
 import { InventoryItemInCart } from "../../models/InventoryItem.model";
 import { User } from "../../models/user.model";
+import { useCreateOrder } from "../../hooks/order-helper";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
 type AGBPopUpProbs = {
     trigger : boolean,
     setTrigger : any,
+    allProducts: InventoryItemInCart[][],
     products: InventoryItemInCart[],
+    deposit: number,
 }
 
 /**
@@ -41,53 +44,23 @@ const zoomPluginInstance = zoomPlugin();
 const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
 
 const status = useLoginStatus();
-//const user = useUserInfo();
 
+
+const [createOrder, {data: resp, loading, error}] = useCreateOrder();
 
 const handleCreateOrder = async () => {
-    try {
-        const fromDate: Date[] = [];
-        const tilDate: Date[] = [];
-        const productsDividedByDate: InventoryItemInCart[][] = [];
-        const deposit: number[] = [];
+    const ids = props.products.map(item => {
+        return item.physId;
+    })
+    createOrder({variables: {
+        deposit: props.deposit,
+        fromDate: props.products[0].startDate,
+        tillDate: props.products[0].endDate,
+        physicalobjects: ids,
+    }});
 
-        props.products.forEach(item => {
-            let x = false;
-            for (let i=0; i<fromDate.length; i++){
-                if (fromDate[i] == item.startDate && tilDate[i] == item.endDate){
-                    productsDividedByDate[i].push(item);
-                    deposit[i] += item.deposit;
-                    x = true;
-                    break;
-                }
-            }
-            if (!x){
-                const ind = fromDate.length;
-                
-                if (item.startDate==undefined) throw new Error('undefined startDate');
-                fromDate.push(item.startDate);
-                if (item.endDate==undefined) throw new Error('undefined endDate');
-                tilDate.push(item.endDate);
-                productsDividedByDate.push([]);
-                productsDividedByDate[ind].push(item);
-                deposit.push(item.deposit);
-            }
-        });
-
-        
-
-        for (let i=0; i<deposit.length; i++){
-            //Rechte aus useUserInfo und Minimum bilden
-            
-            var maxD = 1000000;
-
-            if (deposit[i]>maxD)
-                deposit[i] = maxD;
-        }
-  
-   } catch (error) {
-     console.error('Error confirming order:', error);
-   }
+    const ind = props.allProducts.indexOf(props.products);
+    props.allProducts.splice(ind, 1);
 };
 
 useEffect(() => {
@@ -145,6 +118,7 @@ return (
                         <input
                             type="checkbox"
                             id="agreeCheckbox"
+                            style={{  marginRight: "10px", width: "auto"}}
                             checked={isChecked}
                             onChange={handleCheckboxChange}
                         />
@@ -157,7 +131,7 @@ return (
                          props.setTrigger(false);}}
                     disabled={!(Close&&isChecked)}
                 >
-                    Akzeptiern
+                    Akzeptieren
                 </button>
                 <button
                     onClick={() => {props.setTrigger(false)}}>

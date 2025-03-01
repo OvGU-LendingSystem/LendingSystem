@@ -5,39 +5,71 @@ import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
-import { useLoginStatus } from "../../context/LoginStatusContext";
+import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 
 import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
 import { Spinner } from "@blueprintjs/core";
 import { InventoryItemInCart } from "../../models/InventoryItem.model";
+import { useGetDepositForCart } from "../../hooks/deposit-helpers";
+import { isTemplateMiddle } from "typescript";
 
 
 export function Cart() {
+  const [getMaxDeposit, {data: deposit, loading, error}] = useGetDepositForCart();
+  const user = useUserInfo();
   const itemsInCartUnsorted = useCart();
-  console.log(itemsInCartUnsorted);
   itemsInCartUnsorted.sort(function(a, b){
       if (a.organization<b.organization) return -1;
       if (a.organization>b.organization) return 1;
+      if (a.organization==b.organization){
+        if (a.startDate<b.startDate) return -1;
+        if (a.startDate>b.startDate) return 1;
+        if (a.startDate==b.startDate){
+          if (a.endDate<b.endDate) return -1;
+          if (a.endDate>b.endDate) return 1;
+        }
+      }
       return 0;
     }
   );
+  const depositForOrg: number[] = [];
   const itemsInCart: InventoryItemInCart[][] = [];
-  if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
+  if (itemsInCartUnsorted.length>0){
+    itemsInCart.push([]);
+    depositForOrg.push(0);
+    const r = user.organizationInfoList.find(org => org.id==itemsInCartUnsorted[0].organizationId);
+    getMaxDeposit({variables: {organizationId: itemsInCartUnsorted[0].organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+    //console.log(deposit);
+  }
   let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
+  let firstStartDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].startDate: "";
+  let firstEndDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].endDate: "";
+  let maxD = itemsInCartUnsorted.length>0&&deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxDeposit.maxDeposit : 100000;
   itemsInCartUnsorted.forEach(item => {
     const ind = itemsInCart.length-1;
-    if (item.organization == firstOrg){
+    if (item.organization == firstOrg && item.startDate.toString() == firstStartDate.toString() && item.endDate.toString() == firstEndDate.toString()){
       itemsInCart[ind].push(item);
+      depositForOrg[ind] += item.deposit;
+      if (depositForOrg[ind]>maxD) depositForOrg[ind]=maxD;
     }
     else{
+      const r = user.organizationInfoList.find(org => org.id==item.organizationId);
+      getMaxDeposit({variables: {organizationId: item.organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+      maxD = deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxdeposit.maxDeposit : 100000;
+      //maxD =  10;
       itemsInCart.push([]);
+      depositForOrg.push(0);
       itemsInCart[ind+1].push(item);
+      depositForOrg[ind+1] += item.deposit;
+      if (depositForOrg[ind+1]>maxD) depositForOrg[ind+1]=maxD;
       firstOrg = item.organization;
+      firstStartDate = item.startDate;
+      firstEndDate = item.endDate;
     }
   });
   //const itemsInCart = itemsInCartUnsorted;
-  //console.log(itemsInCart);
+  console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
   const loginDispatcher = useLoginStatus();
 
@@ -82,7 +114,9 @@ export function Cart() {
      }
     };
 
-    //if (loginDispatcher.loggedIn){
+    
+
+    if (!loading){
       return (
           
           <div>
@@ -116,8 +150,10 @@ export function Cart() {
                     </div>
                     ))}
 
-                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
-                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
+                      <div style={priceStyle}>Leihgebühr: {depositForOrg[itemsInCart.indexOf(item)]/100} €</div>
+                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} >Abschicken</button>
+                      
+                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item} deposit={depositForOrg[itemsInCart.indexOf(item)]} allProducts={itemsInCart}/></Suspense>}
                       {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
                     </div>
                   
@@ -156,11 +192,11 @@ export function Cart() {
               </div>
           </div>
       );
-    //}
+    }
     
-    /*return (
-      <div style={{marginTop: '10px'}}>Wenn Sie auf den Warenkorb zugreifen wollen, müssen Sie sich einloggen.</div>
-    );*/
+    return (
+      <div style={{marginTop: '10px'}}>loading..</div>
+    );
 
 }
 
