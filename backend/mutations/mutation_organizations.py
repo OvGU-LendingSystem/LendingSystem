@@ -306,7 +306,7 @@ class update_user_rights(graphene.Mutation):
     class Arguments:
         organization_id = graphene.String(required=True)
         user_id         = graphene.String(required=True)
-        new_rights      = graphene.Int(required=True) or graphene.String(required=True)
+        new_rights      = graphene.String(required=True)
 
     organization    = graphene.Field(lambda: Organization)
     ok              = graphene.Boolean()
