@@ -18,6 +18,15 @@ enum OrderStatus {
     RETURNED = 'RETURNED',
 }
 
+enum Rights {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN',
+  INVENTORY_ADMIN = 'INVENTORY_ADMIN',
+  MEMBER = 'MEMBER',
+  CUSTOMER = 'CUSTOMER',
+  WATCHER = 'WATCHER',
+}
+
 const statusTranslations: { [key in OrderStatus]: string } = {
   [OrderStatus.PENDING]: 'Ausstehend',
   [OrderStatus.ACCEPTED]: 'Akzeptiert',
@@ -55,7 +64,15 @@ const EDIT_ORDER = gql`
             email
             firstName
             lastName
-            id
+            userId
+            organizations {
+              edges {
+                node {
+                  organizationId
+                  rights
+                }
+              }
+            }
           }
         }
       }
@@ -105,16 +122,47 @@ mutation UpdateOrder(
     $orderId: String!,
     $fromDate: Date!,
     $tillDate: Date!,
+    $deposit: Int!
   ) {
     updateOrder(
       orderId: $orderId,
       fromDate: $fromDate,
       tillDate: $tillDate,
+      deposit: $deposit,
     ) {
       ok
       infoText
     }
   }
+`;
+
+const UPDATE_ORDER_DEPOSIT = gql`
+mutation UpdateOrder(
+    $orderId: String!,
+    $deposit: Int!
+  ) {
+    updateOrder(
+      orderId: $orderId,
+      deposit: $deposit,
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const GET_MAX_DEPOSIT = gql`
+    mutation deposit (
+            $organizationId: String,
+            $userRight: String
+        ) {
+        getMaxDeposit (
+            organizationId: $organizationId,
+            userRight: $userRight
+        ) {
+            maxDeposit
+        }
+    }
 `;
 
 
@@ -202,7 +250,15 @@ interface FilterOrdersData {
                     email: string;
                     firstName: string;
                     lastName: string;
-                    id: string;
+                    userId: string;
+                    organizations: {
+                      edges: {
+                        node: {
+                          organizationId: string;
+                          rights: Rights;
+                        }
+                      }[];
+                    };
                 }
             }[];
         };
@@ -232,12 +288,13 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [DeleteOrder] = useMutation(DELETE_ORDER);
     const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
     const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
+    const [UpdateOrderDeposit] = useMutation(UPDATE_ORDER_DEPOSIT);
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
     const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
+    const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
     
     const orgId = [data.filterOrders[0].organization.organizationId];
-    console.log(orgId);
 
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
@@ -264,12 +321,44 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
 
     const {fromDate, tillDate, physicalobjects} = data.filterOrders[0];
+    const organizations = data.filterOrders[0]?.users?.edges[0]?.node?.organizations?.edges || [];
+    
 
     const physicalObjectsEdges = physicalobjects?.edges || [];
     const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
     const notInBoth_Remove = physicalObjectIds.filter( (id) => !selectedObjectIds.includes(id))
     const notInBoth_Add = selectedObjectIds.filter( (id) => !physicalObjectIds.includes(id))
 
+
+
+    const handleAllRequests = async () => {
+      try {
+
+        if (selectedObjectIds.length === 0) {
+          await handleDelete();
+          return;
+        }
+
+        if(notInBoth_Add.length !== 0){
+        await handleAddObject();
+        }
+
+        if(notInBoth_Remove.length !== 0){
+        await handleRemoveObject();
+        }
+
+        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
+          await handleChangeDate();
+        }
+
+        if (selectedStatus) {
+          await handleEditRequest();
+        }
+        
+      } catch(error) {
+        console.error('Error while handling requests:', error);
+      }
+    }
 
     const handleRemoveObject = async () => {
       try {
@@ -309,35 +398,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         } catch (error) {
           console.error('Error confirming order:', error);
         }
-    }
-
-    const handleAllRequests = async () => {
-      try {
-
-        if (selectedObjectIds.length === 0) {
-          await handleDelete();
-          return;
-        }
-
-        if(notInBoth_Add.length !== 0){
-        await handleAddObject();
-        }
-
-        if(notInBoth_Remove.length !== 0){
-        await handleRemoveObject();
-        }
-
-        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
-          await handleChangeDate();
-        }
-
-        if (selectedStatus) {
-          await handleEditRequest();
-        }
-        
-      } catch(error) {
-        console.error('Error while handling requests:', error);
-      }
     }
 
 
@@ -475,18 +535,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
                             <p>{"Leihgebühr: " + physicalObject.deposit}</p>
-                           {/* <p>Status:</p>
-                            <select 
-                                value={selectedStatus || ''} 
-                                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                                style={{ marginLeft: "10px" }}
-                            >
-                                {Object.values(OrderStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {status}
-                                    </option>
-                                ))}
-                            </select>*/}
                         </div>
                     </div>
                 ))
