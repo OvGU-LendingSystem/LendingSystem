@@ -760,7 +760,7 @@ useEffect(() => {
                         style={buttonStyle} 
                         onClick={() => {
                           if (isDelete) handleDelete(currentRequest!);
-                          handleConfirm;
+                          handleConfirm();
                           }}
                         disabled={!checkBoxChecked}
                         >
