@@ -79,9 +79,12 @@ export function Layout() {
             </li>)
           }   
           {loginStatus.loggedIn &&
-            (<li>
+            (<div><li>
               <Link to='/internal/inventory'>Internes Inventar</Link>
-            </li>)
+            </li>
+            <li>
+            <Link to='/internal/calendar'>Interner Kalender</Link>
+            </li></div>)
           }
           <li>
             { loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : 'Nicht eingeloggt' }

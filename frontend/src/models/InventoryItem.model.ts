@@ -16,6 +16,9 @@ export interface InventoryItem {
     organizationId: string;
     organization: string;
     physicalObjects?: InventoryItem[];
+    lendingComment?: string;
+    returnComment?: string;
+    manualPath?: string;
 }
 
 export interface InventoryItemInCart {
