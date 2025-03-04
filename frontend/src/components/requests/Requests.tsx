@@ -134,7 +134,7 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["pending", "accepted", "picked"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['pending', 'accepted', 'picked']);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
