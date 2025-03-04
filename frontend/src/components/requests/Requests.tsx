@@ -134,7 +134,7 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["requested", "confirmed", "lended"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["pending", "accepted", "picked"]);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
@@ -652,7 +652,7 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + request.deposit/100 + "€"}</div>
+                        <div>{"Ausleihgebühr: " + (request.deposit / 100).toFixed(2) + "€"}</div>
                         <hr/>
                     </div>
 
