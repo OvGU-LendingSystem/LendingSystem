@@ -419,9 +419,9 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
           if (depositSum > maxDeposit){
             depositSum = maxDeposit
           }
-      }
-
+      } else {
         var depositSum = updatedDeposit;
+      }
 
         const { data } = await UpdateOrderDeposit({
           variables: {
@@ -645,7 +645,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
             )}
             <button onClick={() => handleGoBack()}> Zurück</button>
 
-            <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
+            <SelectObjectsOverlay currentlyInOrderPhysicalObjects={physicalObjectIds} showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
                 selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} organizationId={orgId} fromDate={startDate} tillDate={endDate} />
 
             {showModal && (
@@ -709,6 +709,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
 // selectedObjects Overlay + Add Objects
 
 interface SelectObjectsOverlayProps {
+    currentlyInOrderPhysicalObjects: string[],
     showOverlay: boolean;
     close: () => void;
     selectedItemIds: string[];
@@ -718,7 +719,7 @@ interface SelectObjectsOverlayProps {
     tillDate : Date | null;
 }
 
-function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId, fromDate, tillDate }: SelectObjectsOverlayProps) {
+function SelectObjectsOverlay({ currentlyInOrderPhysicalObjects, showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId, fromDate, tillDate }: SelectObjectsOverlayProps) {
     const IS_PHYSICAL_OBJECT_AVAILABLE = gql`
     mutation isPhysicalObjectAvailable(
         $endDate: Date!,
@@ -772,10 +773,15 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
       const availableObjects = [];
   
       for (const object of objects) {
-          const isAvailable = await checkObjectAvailability(object.id, fromDate, tillDate);
-          if (isAvailable) {
-              availableObjects.push(object);
-          }
+        var isAvailable = currentlyInOrderPhysicalObjects.includes(object.id);
+
+        if (!isAvailable) {
+          isAvailable = await checkObjectAvailability(object.id, fromDate, tillDate);
+        }
+
+        if (isAvailable) {
+          availableObjects.push(object);
+        }
       }
       return availableObjects;
   };
