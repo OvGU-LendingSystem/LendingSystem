@@ -27,11 +27,11 @@ const statusOrder = {
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
   switch (orderStatus) {
       case OrderStatus.PENDING:
-          return 'requested';
+          return 'pending';
       case OrderStatus.ACCEPTED:
-          return 'confirmed';
+          return 'accepted';
       case OrderStatus.PICKED:
-          return 'lended';
+          return 'picked';
       case OrderStatus.REJECTED:
           return 'rejected'; 
       case OrderStatus.RETURNED:
@@ -134,7 +134,7 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["pending", "accepted", "picked"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['pending', 'accepted', 'picked']);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
@@ -183,17 +183,17 @@ export function Requests() {
     setCurrentRequest(request);
     setReturnNotes(returnNote);
     switch (status) {
-      case "requested":
+      case "pending":
         setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
-        setCurrentStatus("requested");
+        setCurrentStatus("pending");
         break;
-      case "confirmed":
+      case "accepted":
         setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
-        setCurrentStatus("confirmed");
+        setCurrentStatus("accepted");
         break;
-      case "lended":
+      case "picked":
         setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
-        setCurrentStatus("lended");
+        setCurrentStatus("picked");
         break;
         case "rejectOrder":
           setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
@@ -209,13 +209,13 @@ export function Requests() {
     if (!currentRequest) return;
 
     switch (currentStatus) {
-      case "requested":
+      case "pending":
         await confirmed(currentRequest);
         break;
-      case "confirmed":
+      case "accepted":
         await lended(currentRequest);
         break;
-      case "lended":
+      case "picked":
         await returned(currentRequest);
         break;
       case "reject":
@@ -323,7 +323,7 @@ useEffect(() => {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
         if (isWatcher)
-          return ["confirmed", "lended"].includes(request.status);
+          return ["accepted", "picked"].includes(request.status);
         const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
         return categoryMatch && organizationMatch;
       })
@@ -540,8 +540,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('requested')}
-                        onChange={() => handleCategoryChange('requested')}
+                        checked={selectedCategories.includes('pending')}
+                        onChange={() => handleCategoryChange('pending')}
                       />
                       Angefragt
                     </label>
@@ -549,8 +549,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('confirmed')}
-                        onChange={() => handleCategoryChange('confirmed')}
+                        checked={selectedCategories.includes('accepted')}
+                        onChange={() => handleCategoryChange('accepted')}
                       />
                       Bestätigt
                     </label>
@@ -558,8 +558,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('lended')}
-                        onChange={() => handleCategoryChange('lended')}
+                        checked={selectedCategories.includes('picked')}
+                        onChange={() => handleCategoryChange('picked')}
                       />
                       Verliehen
                     </label>
@@ -611,21 +611,21 @@ useEffect(() => {
             </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
-                {request.status === "requested" && (
+                {request.status === "pending" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Angefragt
                     </div>
                 </div>
                 )}
-                {request.status === "confirmed" && (
+                {request.status === "accepted" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Bestätigt
                     </div>
                 </div>
                 )}
-                {request.status === "lended" && (
+                {request.status === "picked" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Verliehen
@@ -677,22 +677,22 @@ useEffect(() => {
                     {request.showButtons && (  
                     <div>
                     
-                    {request.status === "requested" && (
+                    {request.status === "pending" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Anfrage bestätigen
                         </button>
                     )}
-                    {request.status === "requested" && (
+                    {request.status === "pending" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder", request.returnNotes)}>
                             Anfrage ablehnen
                         </button>
                     )}
-                    {request.status === "confirmed" && (
+                    {request.status === "accepted" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Verleihen
                         </button>
                     )}
-                    {request.status === "lended" && (
+                    {request.status === "picked" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Zurückgegeben
                         </button>
@@ -710,7 +710,7 @@ useEffect(() => {
                     </div>
                     )}
 
-                    {!request.showButtons && request.status === "requested" &&(
+                    {!request.showButtons && request.status === "pending" &&(
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
                           Löschen
                         </button>                        
@@ -745,7 +745,7 @@ useEffect(() => {
                       Ich bestätige die Aktion
                       </label>
                     </div>
-                    {currentStatus === "lended" && (
+                    {currentStatus === "picked" && (
                       <div>
                         <label htmlFor="returnNotes">Rückgabebemerkungen</label>
                         <textarea
