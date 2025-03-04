@@ -54,8 +54,8 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 const GET_ORDERS = gql`
-  query getOrdersByOrganizations($organizationIds: [String!]){
-    filterOrders(organizations: $organizationIds) {
+  query getOrdersByOrganizations($organizationIds: [String!], $status: [String!]){
+    filterOrders(organizations: $organizationIds, orderStatus: $status) {
       orderId
       fromDate
       tillDate
@@ -100,7 +100,7 @@ mutation UpdateOrderStatus(
     $orderId: String!,
     $physicalObjects: [String]!,
     $returnDate: Date,
-    $status: String
+    $status: String,
     $returnNotes : String
   ) {
     updateOrderStatus(
@@ -134,11 +134,13 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["requested", "confirmed", "lended"]);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
     variables: {
       organizationIds: UserOrgids,
+      status: selectedCategories,
     },
   });
 
@@ -147,7 +149,6 @@ export function Requests() {
   const { data: orgs, error: e3} = useGetAllOrganizations();
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [dropdownOrgFilterVisible, setDropdownOrgFilterVisible] = useState<boolean>(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [popupText, setPopupText] = useState("");
@@ -355,8 +356,8 @@ useEffect(() => {
     const handleOrgChange = (orgId: string) => {
       setSelectedOrg((prevOrg) =>
         prevOrg.includes(orgId)
-          ? prevOrg.filter((id) => id !== orgId) // Entfernen, wenn bereits ausgewählt
-          : [...prevOrg, orgId] // Hinzufügen, wenn noch nicht ausgewählt
+          ? prevOrg.filter((id) => id !== orgId) 
+          : [...prevOrg, orgId]
       );
     };
 
@@ -501,8 +502,9 @@ useEffect(() => {
 
 
 
-    const edit = (orderID: string, product: Product) => {
-      navigate(`/requests/edit/${orderID}`);
+    const edit = (orderID: string, product: Product, isUser?: boolean) => {
+      if(isUser === undefined) isUser=false;
+      navigate(`/requests/edit/${orderID}`, {state: {isItUser: isUser}});
   };
 
     return (
@@ -596,8 +598,8 @@ useEffect(() => {
                         <input
                           type="checkbox"
                           style={{  marginRight: "10px", width: "auto"}}
-                          checked={selectedOrg.includes(org.id)}
-                          onChange={() => handleOrgChange(org.id)}
+                          checked={selectedOrg.includes(org.name)}
+                          onChange={() => handleOrgChange(org.name)}
                         />
                         {org.name}
                       </label>
@@ -650,7 +652,7 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + request.deposit}</div>
+                        <div>{"Ausleihgebühr: " + request.deposit/100 + "€"}</div>
                         <hr/>
                     </div>
 
@@ -707,11 +709,17 @@ useEffect(() => {
                     </div>
                     )}
 
-                    {!request.showButtons && (
-                        <button style={buttonStyle} onClick={() => handleDelete(request)}>
+                    {!request.showButtons && request.status === "requested" &&(
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
                           Löschen
-                        </button>
+                        </button>                        
                         )}
+
+                    {!request.showButtons &&(   
+                        <button style={buttonStyle} onClick={() => edit(request.id, request, true)}>
+                          Request Information
+                        </button>
+                    )}
 
                 </div>
             
