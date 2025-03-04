@@ -125,6 +125,7 @@ export function Inventory(): JSX.Element {
       }
       closeModal();
     }
+    console.log(itemsInCart);
   };
 
   const handleCategoryChange = (category: string) => {
@@ -236,9 +237,11 @@ export function Inventory(): JSX.Element {
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
                 <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
                 {product.manualPath!="" && 
-                    <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
-                      Anleitung
-                    </button>
+                    <div>
+                      <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
+                        Anleitung
+                      </button>
+                    </div>
                 } 
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
