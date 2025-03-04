@@ -171,7 +171,7 @@ export function Login(props: LoginProps) {
             <label htmlFor="login-password">Passwort</label>
             <div className="password-container">
               <input style={{width:'380px'}} type={showPassword ? "text" : "password"} id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              <span className="password-toggle" onClick={toggleShowPassword}>{showPassword ? <FaEye /> : <FaEyeSlash />}</span>
+              <span className="password-toggle" style={{marginTop:"8px"}} onClick={toggleShowPassword}>{showPassword ? <FaEye /> : <FaEyeSlash />}</span>
             </div>
           </div>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
