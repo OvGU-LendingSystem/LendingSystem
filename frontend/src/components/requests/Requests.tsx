@@ -518,6 +518,7 @@ useEffect(() => {
                   type="checkbox"
                   checked={showCustomerOrders}
                   onChange={() => setShowCustomerOrders(!showCustomerOrders)}
+                  style={{  marginRight: "10px", width: "auto"}}
                 />
               Customer
             </label>
@@ -739,6 +740,7 @@ useEffect(() => {
                           type="checkbox"
                           checked={checkBoxChecked}
                           onChange={() => setCheckBoxChecked(!checkBoxChecked)}
+                          style={{  marginRight: "10px", width: "auto"}}
                         />
                       Ich bestätige die Aktion
                       </label>
