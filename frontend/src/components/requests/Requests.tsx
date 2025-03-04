@@ -27,11 +27,11 @@ const statusOrder = {
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
   switch (orderStatus) {
       case OrderStatus.PENDING:
-          return 'requested';
+          return 'pending';
       case OrderStatus.ACCEPTED:
-          return 'confirmed';
+          return 'accepted';
       case OrderStatus.PICKED:
-          return 'lended';
+          return 'picked';
       case OrderStatus.REJECTED:
           return 'rejected'; 
       case OrderStatus.RETURNED:
@@ -54,8 +54,8 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 const GET_ORDERS = gql`
-  query getOrdersByOrganizations($organizationIds: [String!]){
-    filterOrders(organizations: $organizationIds) {
+  query getOrdersByOrganizations($organizationIds: [String!], $status: [String!]){
+    filterOrders(organizations: $organizationIds, orderStatus: $status) {
       orderId
       fromDate
       tillDate
@@ -100,7 +100,7 @@ mutation UpdateOrderStatus(
     $orderId: String!,
     $physicalObjects: [String]!,
     $returnDate: Date,
-    $status: String
+    $status: String,
     $returnNotes : String
   ) {
     updateOrderStatus(
@@ -134,11 +134,13 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['pending', 'accepted', 'picked']);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
     variables: {
       organizationIds: UserOrgids,
+      status: selectedCategories,
     },
   });
 
@@ -147,7 +149,6 @@ export function Requests() {
   const { data: orgs, error: e3} = useGetAllOrganizations();
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [dropdownOrgFilterVisible, setDropdownOrgFilterVisible] = useState<boolean>(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [popupText, setPopupText] = useState("");
@@ -182,17 +183,17 @@ export function Requests() {
     setCurrentRequest(request);
     setReturnNotes(returnNote);
     switch (status) {
-      case "requested":
+      case "pending":
         setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
-        setCurrentStatus("requested");
+        setCurrentStatus("pending");
         break;
-      case "confirmed":
+      case "accepted":
         setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
-        setCurrentStatus("confirmed");
+        setCurrentStatus("accepted");
         break;
-      case "lended":
+      case "picked":
         setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
-        setCurrentStatus("lended");
+        setCurrentStatus("picked");
         break;
         case "rejectOrder":
           setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
@@ -208,13 +209,13 @@ export function Requests() {
     if (!currentRequest) return;
 
     switch (currentStatus) {
-      case "requested":
+      case "pending":
         await confirmed(currentRequest);
         break;
-      case "confirmed":
+      case "accepted":
         await lended(currentRequest);
         break;
-      case "lended":
+      case "picked":
         await returned(currentRequest);
         break;
       case "reject":
@@ -322,7 +323,7 @@ useEffect(() => {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
         if (isWatcher)
-          return ["confirmed", "lended"].includes(request.status);
+          return ["accepted", "picked"].includes(request.status);
         const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
         return categoryMatch && organizationMatch;
       })
@@ -355,8 +356,8 @@ useEffect(() => {
     const handleOrgChange = (orgId: string) => {
       setSelectedOrg((prevOrg) =>
         prevOrg.includes(orgId)
-          ? prevOrg.filter((id) => id !== orgId) // Entfernen, wenn bereits ausgewählt
-          : [...prevOrg, orgId] // Hinzufügen, wenn noch nicht ausgewählt
+          ? prevOrg.filter((id) => id !== orgId) 
+          : [...prevOrg, orgId]
       );
     };
 
@@ -501,8 +502,9 @@ useEffect(() => {
 
 
 
-    const edit = (orderID: string, product: Product) => {
-      navigate(`/requests/edit/${orderID}`);
+    const edit = (orderID: string, product: Product, isUser?: boolean) => {
+      if(isUser === undefined) isUser=false;
+      navigate(`/requests/edit/${orderID}`, {state: {isItUser: isUser}});
   };
 
     return (
@@ -516,6 +518,7 @@ useEffect(() => {
                   type="checkbox"
                   checked={showCustomerOrders}
                   onChange={() => setShowCustomerOrders(!showCustomerOrders)}
+                  style={{  marginRight: "10px", width: "auto"}}
                 />
               Customer
             </label>
@@ -537,8 +540,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('requested')}
-                        onChange={() => handleCategoryChange('requested')}
+                        checked={selectedCategories.includes('pending')}
+                        onChange={() => handleCategoryChange('pending')}
                       />
                       Angefragt
                     </label>
@@ -546,8 +549,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('confirmed')}
-                        onChange={() => handleCategoryChange('confirmed')}
+                        checked={selectedCategories.includes('accepted')}
+                        onChange={() => handleCategoryChange('accepted')}
                       />
                       Bestätigt
                     </label>
@@ -555,8 +558,8 @@ useEffect(() => {
                       <input
                         type="checkbox"
                         style={{  marginRight: "10px", width: "auto"}}
-                        checked={selectedCategories.includes('lended')}
-                        onChange={() => handleCategoryChange('lended')}
+                        checked={selectedCategories.includes('picked')}
+                        onChange={() => handleCategoryChange('picked')}
                       />
                       Verliehen
                     </label>
@@ -596,8 +599,8 @@ useEffect(() => {
                         <input
                           type="checkbox"
                           style={{  marginRight: "10px", width: "auto"}}
-                          checked={selectedOrg.includes(org.id)}
-                          onChange={() => handleOrgChange(org.id)}
+                          checked={selectedOrg.includes(org.name)}
+                          onChange={() => handleOrgChange(org.name)}
                         />
                         {org.name}
                       </label>
@@ -608,21 +611,21 @@ useEffect(() => {
             </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
-                {request.status === "requested" && (
+                {request.status === "pending" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Angefragt
                     </div>
                 </div>
                 )}
-                {request.status === "confirmed" && (
+                {request.status === "accepted" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Bestätigt
                     </div>
                 </div>
                 )}
-                {request.status === "lended" && (
+                {request.status === "picked" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Verliehen
@@ -650,7 +653,7 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + request.deposit}</div>
+                        <div>{"Ausleihgebühr: " + (request.deposit / 100).toFixed(2) + "€"}</div>
                         <hr/>
                     </div>
 
@@ -674,22 +677,22 @@ useEffect(() => {
                     {request.showButtons && (  
                     <div>
                     
-                    {request.status === "requested" && (
+                    {request.status === "pending" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Anfrage bestätigen
                         </button>
                     )}
-                    {request.status === "requested" && (
+                    {request.status === "pending" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder", request.returnNotes)}>
                             Anfrage ablehnen
                         </button>
                     )}
-                    {request.status === "confirmed" && (
+                    {request.status === "accepted" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Verleihen
                         </button>
                     )}
-                    {request.status === "lended" && (
+                    {request.status === "picked" && (
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Zurückgegeben
                         </button>
@@ -707,11 +710,17 @@ useEffect(() => {
                     </div>
                     )}
 
-                    {!request.showButtons && (
-                        <button style={buttonStyle} onClick={() => handleDelete(request)}>
+                    {!request.showButtons && request.status === "pending" &&(
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
                           Löschen
-                        </button>
+                        </button>                        
                         )}
+
+                    {!request.showButtons &&(   
+                        <button style={buttonStyle} onClick={() => edit(request.id, request, true)}>
+                          Request Information
+                        </button>
+                    )}
 
                 </div>
             
@@ -731,11 +740,12 @@ useEffect(() => {
                           type="checkbox"
                           checked={checkBoxChecked}
                           onChange={() => setCheckBoxChecked(!checkBoxChecked)}
+                          style={{  marginRight: "10px", width: "auto"}}
                         />
                       Ich bestätige die Aktion
                       </label>
                     </div>
-                    {currentStatus === "lended" && (
+                    {currentStatus === "picked" && (
                       <div>
                         <label htmlFor="returnNotes">Rückgabebemerkungen</label>
                         <textarea

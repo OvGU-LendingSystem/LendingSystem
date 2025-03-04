@@ -35,39 +35,49 @@ export function Cart() {
   );
   const depositForOrg: number[] = [];
   const itemsInCart: InventoryItemInCart[][] = [];
-  if (itemsInCartUnsorted.length>0){
-    itemsInCart.push([]);
-    depositForOrg.push(0);
-    const r = user.organizationInfoList.find(org => org.id==itemsInCartUnsorted[0].organizationId);
-    getMaxDeposit({variables: {organizationId: itemsInCartUnsorted[0].organizationId, userRight: r?.rights ?? "CUSTOMER"}});
-    //console.log(deposit);
-  }
+  useEffect(() => {
+    if (itemsInCartUnsorted.length>0){
+      itemsInCart.push([]);
+      depositForOrg.push(0);
+      //const r = {rights: "CUSTOMER"};
+      const r = user.organizationInfoList.find(org => org.id==itemsInCartUnsorted[0].organizationId);
+      getMaxDeposit({variables: {organizationId: itemsInCartUnsorted[0].organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+      
+      //console.log(deposit);
+    }
+  }, []); 
+  console.log(itemsInCart);
   let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   let firstStartDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].startDate: "";
   let firstEndDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].endDate: "";
   let maxD = itemsInCartUnsorted.length>0&&deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxDeposit.maxDeposit : 100000;
-  itemsInCartUnsorted.forEach(item => {
-    const ind = itemsInCart.length-1;
-    if (item.organization == firstOrg && item.startDate.toString() == firstStartDate.toString() && item.endDate.toString() == firstEndDate.toString()){
-      itemsInCart[ind].push(item);
-      depositForOrg[ind] += item.deposit;
-      if (depositForOrg[ind]>maxD) depositForOrg[ind]=maxD;
-    }
-    else{
-      const r = user.organizationInfoList.find(org => org.id==item.organizationId);
-      getMaxDeposit({variables: {organizationId: item.organizationId, userRight: r?.rights ?? "CUSTOMER"}});
-      maxD = deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxdeposit.maxDeposit : 100000;
-      //maxD =  10;
-      itemsInCart.push([]);
-      depositForOrg.push(0);
-      itemsInCart[ind+1].push(item);
-      depositForOrg[ind+1] += item.deposit;
-      if (depositForOrg[ind+1]>maxD) depositForOrg[ind+1]=maxD;
-      firstOrg = item.organization;
-      firstStartDate = item.startDate;
-      firstEndDate = item.endDate;
-    }
-  });
+  useEffect(() => {
+    itemsInCartUnsorted.forEach(item => {
+      const ind = itemsInCart.length-1;
+      if (item.organization == firstOrg && item.startDate.toString() == firstStartDate.toString() && item.endDate.toString() == firstEndDate.toString()){
+        itemsInCart[ind].push(item);
+        depositForOrg[ind] += item.deposit;
+        if (depositForOrg[ind]>maxD) depositForOrg[ind]=maxD;
+      }
+      else{
+        //const r = {rights: "CUSTOMER"};
+        const r = user.organizationInfoList.find(org => org.id==item.organizationId);
+        getMaxDeposit({variables: {organizationId: item.organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+        
+        maxD = deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxdeposit.maxDeposit : 100000;
+        //maxD =  10;
+        itemsInCart.push([]);
+        depositForOrg.push(0);
+        itemsInCart[ind+1].push(item);
+        depositForOrg[ind+1] += item.deposit;
+        if (depositForOrg[ind+1]>maxD) depositForOrg[ind+1]=maxD;
+        firstOrg = item.organization;
+        firstStartDate = item.startDate;
+        firstEndDate = item.endDate;
+      }
+    });
+  }, []);
+  
   //const itemsInCart = itemsInCartUnsorted;
   console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
@@ -128,7 +138,7 @@ export function Cart() {
                     <div style={aroundProductCardStyle}>
                     {item.map((product) => (
                       <div key={product.physId} style={productCardStyle}>
-                      <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                      <img src={'/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                       <div style={productInfoStyle}>
                         <h3>{product.name}</h3>
                         

@@ -8,101 +8,12 @@ import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
 import { useGetAllGroupsQuery } from '../../hooks/group-helpers';
 import { useGetAllOrganizations } from '../../hooks/organization-helper';
-import { group } from 'console';
+import { Console, group } from 'console';
 import { InventoryItem } from '../../models/InventoryItem.model';
 
-var products: Product[] = [
-  /*{
-    id: 1,
-    name: 'Maus',
-    description: 'Beschreibung für Objekt 1',
-    price: 10,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik',
-    organisation: 'FARAFIN'
-  },
-  {
-    id: 2,
-    name: 'Maus2',
-    description: 'Beschreibung für Objekt 2',
-    price: 20,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik',
-    organisation: 'FARAFIN'
-  },
-  {
-    id: 3,
-    name: 'Tastatur',
-    description: 'Beschreibung für Objekt 3',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office',
-    organisation: 'FARAMATH'
-  },
-  {
-    id: 4,
-    name: 'Tastatur2',
-    description: 'Beschreibung für Objekt 4',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office',
-    organisation: 'STURA'
-  },
-  {
-    id: 5,
-    name: 'Beamer',
-    description: 'Beschreibung für Objekt 5',
-    price: 50,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Electronik',
-    organisation: 'FARAFIN'
-  },*/
-];
-
-/*const GET_PRODUCTS = gql`
-  query {
-    filterPhyiscalObjects {
-      physId
-      fromDate
-      tillDate
-      physicalobjects {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-      users {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    }
-  }
-`;
-
-
-function DisplayInventory() {
-  const { loading, error, data } = useQuery(GET_PRODUCTS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  console.log(data);
-
-  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
-    {
-      id: orderId,
-      name: users,
-      email: users,
-      products: physicalobjects,
-      status: ""
-    }
-  ));
-  return <div></div>;
-}*/
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import packageJson from '../../../package.json';
 
 
 export function Inventory(): JSX.Element {
@@ -121,6 +32,7 @@ export function Inventory(): JSX.Element {
       return 0;
     }
   );
+  console.log(products);
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
@@ -132,13 +44,18 @@ export function Inventory(): JSX.Element {
   const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [dropdownVisible2, setDropdownVisible2] = useState<boolean>(false);
+  const [showManual, setShowManual] = useState<boolean>(false);
+  const [selectedManualPath, setSelectedManualPath] = useState<string>("");
+
+  const textRef = useRef<HTMLDivElement>(null);
+  const zoomPluginInstance = zoomPlugin();
+
+  const { ZoomIn, ZoomOut } = zoomPluginInstance;
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownRef2 = useRef<HTMLDivElement>(null);
 
-  
-
-  //console.log(products);
+  const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -176,6 +93,18 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
+  const openManual = (path: string | undefined) => {
+    if (path!=undefined){
+      setSelectedManualPath(path);
+      setShowManual(true);
+    }
+  };
+
+  const closeManual = () => {
+    setShowManual(false);
+    setSelectedManualPath("");
+  };
+
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
       console.log(selectedProduct);
@@ -196,6 +125,7 @@ export function Inventory(): JSX.Element {
       }
       closeModal();
     }
+    console.log(itemsInCart);
   };
 
   const handleCategoryChange = (category: string) => {
@@ -289,19 +219,30 @@ export function Inventory(): JSX.Element {
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
             <div key={product.physId} style={productCardStyle}>
-              <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              }
+              <img src={'http://192.168.178.169/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <div style={descriptionStyle}>
-                  <h3>{product.name}</h3>
+                    {product.physId.substring(0, 5)=="group" &&
+                        <h3>{product.name} (Gruppe)</h3>
+                    }
+                    {product.physId.substring(0, 5)!="group" &&
+                        <h3>{product.name}</h3>
+                    }
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
-                {product.physId.substring(0, 5)=="group" &&
-                    <div>Gruppe</div>
-                }
+                
                 <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
                 <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
-                
+                {product.manualPath!="" && 
+                    <div>
+                      <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
+                        Anleitung
+                      </button>
+                    </div>
+                } 
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
@@ -323,6 +264,35 @@ export function Inventory(): JSX.Element {
               <button onClick={closeModal} style={{ marginLeft: '10px' }}>
                 Schließen
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showManual && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h2>Anleitung</h2>
+            <div 
+                    ref={textRef} 
+                    style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                >
+              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                    <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                </Worker>
+
+            </div>
+            <div>
+              <button
+                  onClick={closeManual}>
+                  Zurück
+              </button>
+              <ZoomIn>
+              {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+              </ZoomIn>
+              <ZoomOut>
+              {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+              </ZoomOut>
             </div>
           </div>
         </div>
@@ -446,4 +416,8 @@ const inputContainerStyle: React.CSSProperties = {
 
 const buttonContainerStyle: React.CSSProperties = {
   textAlign: 'right',
+};
+
+const linkStyle: React.CSSProperties = {
+  
 };
