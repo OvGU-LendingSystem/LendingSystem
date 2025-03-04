@@ -594,7 +594,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                             <p>{"Beschreibung: " + physicalObject.description}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
-                            <p>{"Leihgebühr: " + (physicalObject.deposit?? 0 / 100) + "€" }</p>
+                            <p>{"Leihgebühr: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
                         </div>
                     </div>
                 ))
@@ -609,7 +609,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 borderRadius: "5px"
             }}>
                 <h3>Deposit Information</h3>
-                <p>Current Deposit: {data.filterOrders[0].deposit / 100 +"€"}</p>
+                <p>Current Deposit: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
                 {!isUser && (
                   <input
                       type="number"
