@@ -128,7 +128,7 @@ export function Cart() {
                     <div style={aroundProductCardStyle}>
                     {item.map((product) => (
                       <div key={product.physId} style={productCardStyle}>
-                      <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                      <img src={'/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                       <div style={productInfoStyle}>
                         <h3>{product.name}</h3>
                         
