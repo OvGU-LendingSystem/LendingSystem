@@ -111,6 +111,14 @@ query GetAllGroups {
                 organization{
                 organizationId,
                 name
+                },
+              	manual{
+                  edges{
+                    node{
+                      path,
+                      manualId
+                    }
+                  }
                 }
             }
         }
@@ -127,7 +135,15 @@ query GetAllGroups {
       organizationId,
       name
     }
-    description
+    description,
+    tags{
+      edges{
+        node{
+          tagId,
+          name
+        }
+      }
+    }
   }
 }
 `;
@@ -166,6 +182,14 @@ interface GroupsResponse {
                 organization: {
                     organizationId: string,
                     name: string
+                };
+                manual: {
+                    edges: {
+                        node:{
+                            manualId: string,
+                            path: string
+                        }
+                    }[]
                 }
 
             }
@@ -184,6 +208,14 @@ interface GroupsResponse {
         name: string;
     }
     description: string;
+    tags: {
+        edges: {
+            node: {
+                tagId: string,
+                name: string
+            }
+        }[]
+    }
 }
 
 export type PreviewGroup2 = Omit<Group, 'physicalObjects'> & { pysicalObjectNames: string[] };
@@ -219,7 +251,16 @@ export function useGetAllGroupsQuery() {
                 organization: {
                     organizationId: string,
                     name: string
-                } }, 'physicalobjects', GroupsResponse>(groupResponse, 'physicalobjects');
+                };
+                manual: {
+                    edges: {
+                        node:{
+                            manualId: string,
+                            path: string
+                        }
+                    }[]
+                }
+            }, 'physicalobjects', GroupsResponse>(groupResponse, 'physicalobjects');
             const flattenedResponse = flattenEdges<{ fileId: string, path: string }, 'pictures', typeof flattenedPhysicalObjects>(flattenedPhysicalObjects, 'pictures');
             var sum=0;
             flattenedPhysicalObjects.physicalobjects.forEach(obj => {
@@ -241,6 +282,7 @@ export function useGetAllGroupsQuery() {
                     organizationId: obj.organization.organizationId,
                     organization: obj.organization.name,
                     physicalObjects: undefined,
+                    manualPath: obj.manual.edges[0]?.node.path ?? ""
                 };
                 return res; 
             });
@@ -255,10 +297,11 @@ export function useGetAllGroupsQuery() {
                 defects: "group",
                 description: flattenedResponse.description,
                 images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
-                category: "Gruppe / group",//TODO Kategorie
+                category: groupResponse.tags.edges[0]?.node.name ?? "",//TODO Kategorie
                 organizationId: groupResponse.organization.organizationId,
                 organization: groupResponse.organization.name,
                 physicalObjects: phyObj,
+                manualPath: ""
             };
             return group;
         });
