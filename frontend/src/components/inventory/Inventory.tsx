@@ -8,6 +8,8 @@ import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
 import { useGetAllGroupsQuery } from '../../hooks/group-helpers';
 import { useGetAllOrganizations } from '../../hooks/organization-helper';
+import { group } from 'console';
+import { InventoryItem } from '../../models/InventoryItem.model';
 
 var products: Product[] = [
   /*{
@@ -121,7 +123,7 @@ export function Inventory(): JSX.Element {
   );
 
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [amount, setAmount] = useState<number>(1);
@@ -137,7 +139,6 @@ export function Inventory(): JSX.Element {
   
 
   //console.log(products);
-  //console.log(groups);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -177,12 +178,22 @@ export function Inventory(): JSX.Element {
 
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
-      console.log("HELLO TEST");
       console.log(selectedProduct);
-      itemsInCartDispatcher({
-        type: 'add',
-        item: { ...selectedProduct, startDate, endDate, amount }
-      });
+      if (selectedProduct.physId.substring(0, 5)=="group" && selectedProduct.physicalObjects!=undefined){
+          console.log("GRUPPE");
+          selectedProduct.physicalObjects.forEach(obj => {
+            itemsInCartDispatcher({
+              type: 'add',
+              item: { ...obj, startDate, endDate, amount}
+            })
+        });
+      }
+      else {
+        itemsInCartDispatcher({
+          type: 'add',
+          item: { ...selectedProduct, startDate, endDate, amount }
+        });
+      }
       closeModal();
     }
   };
@@ -284,8 +295,13 @@ export function Inventory(): JSX.Element {
                   <h3>{product.name}</h3>
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
+                {product.physId.substring(0, 5)=="group" &&
+                    <div>Gruppe</div>
+                }
                 <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
+                <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
+                
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
