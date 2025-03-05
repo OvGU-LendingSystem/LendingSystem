@@ -15,10 +15,13 @@ import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
 import packageJson from '../../../package.json';
 
+import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
+
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
+  console.log(itemsInCart);
 
   // Fetching physical objects
   const { data: products_tmp, error } = useGetPhysicalObjects();
@@ -38,6 +41,7 @@ export function Inventory(): JSX.Element {
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [physicalObjectIds, setPhysicalobjectIds] = useState<string[]>([]);
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -86,6 +90,9 @@ export function Inventory(): JSX.Element {
   const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
+    var ids = [];
+    ids.push(product.physId);
+    setPhysicalobjectIds(ids);
   };
 
   const closeModal = () => {
@@ -147,6 +154,7 @@ export function Inventory(): JSX.Element {
     {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
       && (selectedCategories.includes(product.category) || selectedCategories.length==0)
       && (selectedOrganizations.includes(product.organization) || selectedOrganizations.length==0)
+      && !(itemsInCart.map(obj => obj.physId).includes(product.physId))
     }
   );
 
@@ -254,19 +262,20 @@ export function Inventory(): JSX.Element {
         
       </div>
 
+      
+
       {showModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <h2>Objekt hinzufügen</h2>
-            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
-            <div style={buttonContainerStyle}>
-              <button onClick={addToCart}>Hinzufügen</button>
-              <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Schließen
-              </button>
+          <div style={modalOverlayStyle}>
+            <div style={modalContentStyle}>
+              <h2>Objekt hinzufügen</h2>
+              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+
+              <div style={buttonContainerStyle}>
+                <button onClick={addToCart}>Hinzufügen</button>
+                <button onClick={closeModal} style={{ marginLeft: '10px' }}> Schließen </button>
+              </div>
             </div>
           </div>
-        </div>
       )}
 
       {showManual && (
