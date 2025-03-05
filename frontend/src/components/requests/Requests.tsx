@@ -745,7 +745,7 @@ useEffect(() => {
                       Ich bestätige die Aktion
                       </label>
                     </div>
-                    {currentStatus === "picked" && (
+                    {currentStatus === "picked" && !isDelete && (
                       <div>
                         <label htmlFor="returnNotes">Rückgabebemerkungen</label>
                         <textarea
@@ -761,8 +761,11 @@ useEffect(() => {
                         <button 
                         style={buttonStyle} 
                         onClick={() => {
-                          if (isDelete) handleDelete(currentRequest!);
-                          handleConfirm();
+                          if (isDelete) { 
+                            handleDelete(currentRequest!);
+                          } else {
+                            handleConfirm();
+                          }
                           }}
                         disabled={!checkBoxChecked}
                         >
