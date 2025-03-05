@@ -402,7 +402,8 @@ query GetGroupById($groupId: String!) {
           path
         }
       }
-    }
+    },
+    organizationId
   }
 }
 `;
@@ -424,7 +425,8 @@ interface GetGroupByIdResponse {
                 path: string;
             }
         }[]
-    }
+    },
+    organizationId: string
 }
 
 export function useGetAddGroupItemByIdQuery(groupId: string) {
@@ -442,7 +444,8 @@ export function useGetAddGroupItemByIdQuery(groupId: string) {
             name: flattenedResponse.name,
             description: flattenedResponse.description,
             physicalObjectIds: flattenedResponse.physicalobjects.map(val => val.physId),
-            pictures: flattenedResponse.pictures.map(pic => { return { type: 'remote', fileId: pic.fileId, path: pic.path } })
+            pictures: flattenedResponse.pictures.map(pic => { return { type: 'remote', fileId: pic.fileId, path: pic.path } }),
+            orgId: flattenedResponse.organizationId
         }
         
         return group;
