@@ -246,11 +246,11 @@ const css = `
   font-weight: bold; 
   border: 2px solid black;
   color: black;
-  background-color: magenta;
+  background-color: darkcyan;
 }
 .my-selected:hover:not([disabled]) { 
-  border-color: purple;
-  color: magenta;
+  border-color: black;
+  color: darkcyan;
   background-color: white;
 }
 .my-today { 
