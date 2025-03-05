@@ -1,7 +1,7 @@
 import React, { useState,useEffect,useRef } from 'react';
-import { ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql } from '@apollo/client';
+import {useQuery, gql } from '@apollo/client';
 import 'react-day-picker/dist/style.css'
-import { DateRange, DayPicker, Matcher } from 'react-day-picker';
+import { DateRange, DayPicker } from 'react-day-picker';
 import { addDays, format, startOfToday } from 'date-fns';
 
 interface Dates {
@@ -21,7 +21,7 @@ type CalendarProbs = {
   physicalobjects : string[];
 }
 
-const GET_DATES = gql(/* GraphQL */ `
+const GET_DATES = gql(`
 query {
     filterOrders {
       fromDate
