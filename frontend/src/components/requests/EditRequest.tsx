@@ -9,7 +9,6 @@ import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
-import { updateDecorator } from 'typescript';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -391,7 +390,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const handleOrderDepositChange = async () => {
       try {
 
-        if (originalDeposit !== updatedDeposit){
+        if (originalDeposit === updatedDeposit){
 
           const userOrganizations = organizations.filter(
             (org) => org.node.organizationId === organizationId

@@ -177,32 +177,32 @@ export function Requests() {
       setisDelete(true);
       setCurrentRequest(request);
       setPopupText("Bist du dir sicher, dass du die Order wirklich endgültig löschen möchtest?")
-      return setShowModal(true);
-    }
-
-    setCurrentRequest(request);
-    setReturnNotes(returnNote);
-    switch (status) {
-      case "pending":
-        setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
-        setCurrentStatus("pending");
-        break;
-      case "accepted":
-        setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
-        setCurrentStatus("accepted");
-        break;
-      case "picked":
-        setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
-        setCurrentStatus("picked");
-        break;
-        case "rejectOrder":
-          setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
-          setCurrentStatus("reject");
+      setShowModal(true);
+    } else {
+      setCurrentRequest(request);
+      setReturnNotes(returnNote);
+      switch (status) {
+        case "pending":
+          setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
+          setCurrentStatus("pending");
           break;
-      default:
-        setPopupText("");
+        case "accepted":
+          setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
+          setCurrentStatus("accepted");
+          break;
+        case "picked":
+          setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
+          setCurrentStatus("picked");
+          break;
+          case "rejectOrder":
+            setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
+            setCurrentStatus("reject");
+            break;
+        default:
+          setPopupText("");
+      }
+      setShowModal(true);
     }
-    setShowModal(true);
   };
 
   const handleConfirm = async () => {
@@ -324,7 +324,7 @@ useEffect(() => {
         }
         if (isWatcher)
           return ["accepted", "picked"].includes(request.status);
-        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
+        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
         return categoryMatch && organizationMatch;
       })
       .sort((a, b) => {
@@ -745,7 +745,7 @@ useEffect(() => {
                       Ich bestätige die Aktion
                       </label>
                     </div>
-                    {currentStatus === "picked" && (
+                    {currentStatus === "picked" && !isDelete && (
                       <div>
                         <label htmlFor="returnNotes">Rückgabebemerkungen</label>
                         <textarea
@@ -761,8 +761,11 @@ useEffect(() => {
                         <button 
                         style={buttonStyle} 
                         onClick={() => {
-                          if (isDelete) handleDelete(currentRequest!);
-                          handleConfirm();
+                          if (isDelete) { 
+                            handleDelete(currentRequest!);
+                          } else {
+                            handleConfirm();
+                          }
                           }}
                         disabled={!checkBoxChecked}
                         >
