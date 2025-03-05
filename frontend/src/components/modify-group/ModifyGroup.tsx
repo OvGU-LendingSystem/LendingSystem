@@ -53,7 +53,7 @@ export function ModifyGroup<T>({ initialValue, label, onSubmit, ErrorScreen, onS
                                 <Button type="submit" fill={true} intent='primary'>{label}</Button>
                             </div>
                             <Suspense>
-                                <FormikSelectPhysicalObjects name='physicalObjectIds' />
+                                <FormikSelectPhysicalObjects name='physicalObjectIds' orgId={props.values.orgId} />
                             </Suspense>
                         </div>
                     </Form> }
@@ -64,16 +64,13 @@ export function ModifyGroup<T>({ initialValue, label, onSubmit, ErrorScreen, onS
     );
 }
 
-function FormikSelectPhysicalObjects({ name }: { name: string }) {
+function FormikSelectPhysicalObjects({ name, orgId }: { name: string, orgId: string }) {
     const [ props, meta, helper ] = useField<string[]>(name);
-    return <SelectPhysicalObjects selection={meta.value} setSelection={helper.setValue} />;
+    return <SelectPhysicalObjects selection={meta.value} setSelection={helper.setValue} orgId={orgId} />;
 }
 
-function SelectPhysicalObjects({ selection, setSelection }: { selection: string[], setSelection: (val: string[]) => void}) {
-    const orgs = useFilterUserOrganizationInfo(OrganizationRights.INVENTORY_ADMIN);
-    const orgIds = useMemo(() => orgs.map(org => org.id), [orgs]); // TODO only objects for group org
-
-    const { data } = useFilterPhysicalObjectsByName(orgIds);
+function SelectPhysicalObjects({ selection, setSelection, orgId }: { orgId: string, selection: string[], setSelection: (val: string[]) => void}) {
+    const { data } = useFilterPhysicalObjectsByName([orgId]);
     const items = useMemo(() => {
         return data.map((entry) => { return { ...entry, selected: -1 !== selection.findIndex(id => entry.id === id) } });
     }, [data, selection]);

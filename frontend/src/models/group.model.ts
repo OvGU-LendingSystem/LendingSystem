@@ -13,4 +13,5 @@ export interface AddGroupItem {
     description: string;
     pictures: ImageResource[];
     physicalObjectIds: string[];
+    orgId: string;
 }

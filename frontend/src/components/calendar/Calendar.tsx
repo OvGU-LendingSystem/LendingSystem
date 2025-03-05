@@ -174,11 +174,19 @@ export function OrderItem({ order }: { order: Order }) {
 
 const getColor = (status: string) => {
     switch (status) {
+        case 'PENDING':
+            return '#ffff00';
+        case 'RESERVED':
+            return '#ffff00';
         case 'ACCEPTED':
-            return 'green';
+            return '#00ff7f';
+        case 'PICKED':
+            return '#87cefa';
         case 'REJECTED':
-            return 'red';
+            return '#ff0000';
+        case 'RETURNED':
+            return '#ffa500'
         default:
-            return 'yellow';
+            return 'black';
     }
 }

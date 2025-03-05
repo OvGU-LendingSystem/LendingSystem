@@ -57,7 +57,7 @@ export function AddGroup() {
     }
 
     const initialValue: AddGroupItem = {
-        name: '', description: '', pictures: [], physicalObjectIds: []
+        name: '', description: '', pictures: [], physicalObjectIds: [], orgId: orgId
     }
 
     const submit = async (value: AddGroupItem): Promise<SubmitState<AddGroupRetryData>> => {
@@ -68,7 +68,7 @@ export function AddGroup() {
                 description: value.description,
                 pictures: images,
                 physicalObjects: value.physicalObjectIds,
-                organizationId: orgId
+                organizationId: value.orgId
             } });
         }
         if (!imageResult.success) {
