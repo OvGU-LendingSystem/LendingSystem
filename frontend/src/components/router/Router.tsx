@@ -34,7 +34,7 @@ export function Router() {
             <Route path='inventory'>
               <Route index element={<Inventory />} />
               <Route path="group">
-                <Route path="add" element={<AddGroup />} />
+                <Route path="add/:orgId" element={<AddGroup />} />
                 <Route path="edit/:groupId" element={<EditGroup />} />
               </Route>
               <Route path="add/:orgId" element={<AddInventory />} />
