@@ -2,12 +2,15 @@ import { useField } from 'formik';
 import './Input.css';
 import { useLayoutEffect, useState } from 'react';
 
-export function Input({ before, after, touched, ...inputProps }: InputProps) {
+export function Input({ before, after, touched, error, ...inputProps }: InputProps) {
     return (
-        <span className={`input--wrapper ${ touched ? 'touched' : 'untouched' }`}>
-            <span>{ before }</span>
-            <input {...inputProps} />
-            <span>{ after }</span>
+        <span className='input--outer'>
+            <span className={`input--wrapper ${ touched ? 'touched' : 'untouched' }`}>
+                <span>{ before }</span>
+                <input {...inputProps} />
+                <span>{ after }</span>
+            </span>
+            {error && <span className='input--error'>{error}</span> }
         </span>
     );
 }
@@ -25,13 +28,14 @@ export function FormikInput<T extends string | number>({ fieldName, modifier, ge
     }
     const getter = getValue ? getValue(field.value) : field.value;
 
-    return (<Input touched={meta.touched} {...props} {...field} onChange={onChange} value={getter} />);
+    return (<Input touched={meta.touched} {...props} {...field} error={meta.error} onChange={onChange} value={getter} />);
 }
 
 export interface InputProps extends React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> {
     before?: JSX.Element;
     after?: JSX.Element;
     touched: boolean;
+    error?: string;
 }
 
 export interface FormikInputProps<T> extends Omit<InputProps, 'touched'> {

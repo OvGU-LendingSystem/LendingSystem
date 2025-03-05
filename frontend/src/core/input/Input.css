@@ -20,6 +20,15 @@
     width: 100%;
 }
 
+.input--outer .input--error {
+    font-size: 10px;
+    color: red;
+}
+
+.input--outer:has(> .input--error) .input--wrapper {
+    border-color: red;
+}
+
 .custom-select--wrapper {
     display: flex;
     flex-direction: column;
