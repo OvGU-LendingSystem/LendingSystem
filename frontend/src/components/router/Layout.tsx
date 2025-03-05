@@ -5,6 +5,7 @@ import { Link, Outlet } from "react-router-dom";
 import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Footer } from "../footer/Footer";
+import { OrganizationRights } from "../../models/user.model";
 
 interface ModalProps {
   children: ReactNode;
@@ -71,19 +72,35 @@ export function Layout() {
       <nav className='nav-bar'>
         <ul>
           <li>
-            <Link to='/'>Home</Link>
+            <Link to='/' style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#006666")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onMouseDown={(e) => (e.currentTarget.style.backgroundColor="transparent")}
+            >Home</Link>
           </li>
           {loginStatus.loggedIn && 
             (<li>
-              <Link to='/requests'>Anfragen</Link>
+              <Link to='/requests' style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#006666")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onMouseDown={(e) => (e.currentTarget.style.backgroundColor="transparent")}
+              >Anfragen</Link>
             </li>)
           }   
-          {loginStatus.loggedIn &&
+          {loginStatus.loggedIn && !loginStatus.user.organizationInfoList.map(obj => obj.rights).includes(OrganizationRights.CUSTOMER) && !loginStatus.user.organizationInfoList.map(obj => obj.rights).includes(OrganizationRights.WATCHER) &&
             (<div><li>
-              <Link to='/internal/inventory'>Internes Inventar</Link>
+              <Link to='/internal/inventory' style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#006666")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onMouseDown={(e) => (e.currentTarget.style.backgroundColor="transparent")}
+              >Internes Inventar</Link>
             </li>
             <li>
-            <Link to='/internal/calendar'>Interner Kalender</Link>
+            <Link to='/internal/calendar' style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#006666")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              onMouseDown={(e) => (e.currentTarget.style.backgroundColor="transparent")}
+              >Interner Kalender</Link>
             </li></div>)
           }
           <li>
@@ -95,12 +112,13 @@ export function Layout() {
         </ul>
 
         <ul>
-          <li>
+          {!loginStatus.loggedIn &&
+          (<li>
             <button style={{ padding: "3px" }} onClick={handleLoginClick}>Login</button>
-          </li>
+          </li>)}
           <li>
-            <Link to='/cart'>
-              <MdOutlineShoppingBasket size={24} />
+            <Link to='/cart' style={linkStyle}>
+              <MdOutlineShoppingBasket size={24}/>
             </Link>
           </li>
         </ul>
@@ -117,3 +135,10 @@ export function Layout() {
     </div>
   );
 }
+
+const linkStyle: React.CSSProperties = {
+  outline: "none", 
+  boxShadow: "none",
+  padding: "8px",
+  borderRadius: "3px",
+};

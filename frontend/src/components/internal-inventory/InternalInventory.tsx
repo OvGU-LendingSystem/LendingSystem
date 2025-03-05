@@ -135,7 +135,11 @@ function AddPopoverList() {
                 orgs.map((orgInfo) => (<AddObjectForOrganizationMenuItem orgId={orgInfo.id} />))
             }
             </MenuItem>
-            <MenuItem text='Neue Gruppe hinzufügen' onClick={() => navigate('/inventory/group/add')} />
+            <MenuItem text='Neue Gruppe hinzufügen für '>
+            {
+                orgs.map((orgInfo) => (<AddGroupForOrganizationMenuItem orgId={orgInfo.id} />))
+            }
+            </MenuItem>
         </Menu>
     );
 }
@@ -146,6 +150,15 @@ function AddObjectForOrganizationMenuItem({ orgId }: { orgId: string }) {
 
     return (
         <MenuItem text={org.name} onClick={() => navigate(`/inventory/add/${org.id}`)} />
+    );
+}
+
+function AddGroupForOrganizationMenuItem({ orgId }: { orgId: string }) {
+    const navigate = useNavigate();
+    const { data: org } = useGetOrganizationByIdQuery(orgId);
+
+    return (
+        <MenuItem text={org.name} onClick={() => navigate(`/inventory/group/add/${org.id}`)} />
     );
 }
 
@@ -260,7 +273,6 @@ function InventoryOptionsOverlay({ id, onDeleteClick }: { id: string, onDeleteCl
     return (
         <Menu>
             <MenuItem text='Bearbeiten' onClick={() => navigate(`/inventory/edit/${id}`)} />
-            <MenuItem text='View history' />
             <MenuItem text='Löschen' onClick={onDeleteClick} />
         </Menu>
     );

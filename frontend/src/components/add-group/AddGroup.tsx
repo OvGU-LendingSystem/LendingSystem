@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AddGroupResponse, useAddGroupMutation } from "../../hooks/group-helpers";
 import { AddGroupItem } from "../../models/group.model";
 import { ModifyGroup } from "../modify-group/ModifyGroup";
@@ -47,9 +47,14 @@ export function AddGroup() {
     useTitle('Gruppe hinzufügen');
     
     const navigate = useNavigate();
+    const { orgId } = useParams();
     const toaster = useToaster();
     const [ addGroup ] = useAddGroupMutation();
     const updateFiles = useUpdateFiles();
+
+    if (!orgId) {
+        throw Error("No organization provided!");
+    }
 
     const initialValue: AddGroupItem = {
         name: '', description: '', pictures: [], physicalObjectIds: []
@@ -58,7 +63,13 @@ export function AddGroup() {
     const submit = async (value: AddGroupItem): Promise<SubmitState<AddGroupRetryData>> => {
         let [ imageResult, retryImages ] = await updateFiles([], value.pictures);
         const addGroupFn = async (images: string[]) => {
-            return await addGroup({ variables: { name: value.name, description: value.description, pictures: images, physicalObjects: value.physicalObjectIds } });
+            return await addGroup({ variables: { 
+                name: value.name,
+                description: value.description,
+                pictures: images,
+                physicalObjects: value.physicalObjectIds,
+                organizationId: orgId
+            } });
         }
         if (!imageResult.success) {
             return new SubmitState.Error({

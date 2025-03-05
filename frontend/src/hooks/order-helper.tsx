@@ -130,7 +130,8 @@ export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined
         variables: {
             fromDay: fromDay ? getApolloDateString(fromDay) : undefined,
             tillDay: tillDay ? getApolloDateString(tillDay) : undefined
-        }
+        },
+        fetchPolicy: 'network-only'
     }, mapToOrder);
 }
 

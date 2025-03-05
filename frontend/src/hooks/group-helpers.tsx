@@ -4,8 +4,8 @@ import { AddGroupItem, Group } from "../models/group.model";
 import { InventoryItem } from "../models/InventoryItem.model";
 
 const ADD_GROUP_MUTATION = gql`
-    mutation AddGroup($name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!) {
-        createGroup(name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures) {
+    mutation AddGroup($name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!, $organizationId: String!) {
+        createGroup(name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures, organizationId: $organizationId) {
             ok,
             infoText
         }
@@ -18,7 +18,8 @@ export interface AddGroupVars {
     name: string,
     description: string,
     physicalObjects: string[],
-    pictures: string[]
+    pictures: string[],
+    organizationId: string
 }
 
 export function useAddGroupMutation() {

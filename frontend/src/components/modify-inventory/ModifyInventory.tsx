@@ -101,7 +101,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
     return (
         <div className='form-input--wrapper'>
-            <Formik initialValues={initialValue} 
+            <Formik initialValues={initialValue} validate={validate}
                 onSubmit={submit}>{(props: FormikProps<AddInventoryItem>) => (
                 <>
                 { !props.isSubmitting && submitState && <ErrorScreen data={submitState.data} retry={() => props.submitForm()} /> }
@@ -145,7 +145,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
                     <FormikFileSelector name='manuals' title='Anleitungen' />
 
-                    <Button intent='primary' onClick={() => props.submitForm()}>{label}</Button>
+                    <Button intent='primary' onClick={async () => props.submitForm()}>{label}</Button>
                 </Form>
                 }
                 </>
@@ -228,6 +228,22 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
         }}
         resetOnSelect
         placeholder='Auswählen...' />
+}
+
+const validate = (values: AddInventoryItem) => {
+    const errors: any = {};
+
+    if (!values.name || values.name.trim() === '') {
+        errors.name = 'Name darf nicht leer sein!';
+    }
+    if (!values.inventoryNumberInternal) {
+        errors.inventoryNumberInternal = 'Interne Inventarnummer erforderlich!';
+    }
+    if (!values.inventoryNumberExternal) {
+        errors.inventoryNumberExternal = 'Externe Inventarnummer erforderlich!';
+    }
+
+    return errors;
 }
 
 function LoadingScreen() {
