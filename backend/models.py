@@ -26,6 +26,16 @@ class userRights(enum.Enum):
     customer            = 4 # können nur bestellen, abholen, zurückgeben
     watcher             = 5 # können nur gucken
 
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+
 class orderStatus(enum.Enum):
     """
     Enum for the status of an order

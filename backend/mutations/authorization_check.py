@@ -67,9 +67,13 @@ def check_for_phys_object(executive_user, required_rights, phys_id):
         raise VerificationError("physikalisches Object nicht gefunden")
     
     owner_organization = phys_obj.organization
-    user_relation = owner_organization.users.filter(UserModel.user_id == executive_user.user_id).first()
+    for user in owner_organization.users:
+        if user.user_id == executive_user.user_id:
+            print("User right: ", user.rights, "Required right: ", required_rights)
+            return user.rights < required_rights
 
-    return user_relation.user_rights > required_rights
+    print("User is not part of the organization")
+    return False
 
 def check_for_tag(executive_user, required_rights, tag_id):
     """
