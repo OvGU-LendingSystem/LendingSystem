@@ -1,5 +1,5 @@
 import './EditRequest.css';
-import { useNavigate, useParams  } from "react-router-dom";
+import { useNavigate, useParams, useLocation  } from "react-router-dom";
 import { useSuspenseQuery, gql, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
 import { Suspense, useState, useEffect } from "react";
@@ -16,6 +16,15 @@ enum OrderStatus {
     PICKED = 'PICKED',
     REJECTED = 'REJECTED',
     RETURNED = 'RETURNED',
+}
+
+enum Rights {
+  SYSTEM_ADMIN = 'SYSTEM_ADMIN',
+  ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN',
+  INVENTORY_ADMIN = 'INVENTORY_ADMIN',
+  MEMBER = 'MEMBER',
+  CUSTOMER = 'CUSTOMER',
+  WATCHER = 'WATCHER',
 }
 
 const statusTranslations: { [key in OrderStatus]: string } = {
@@ -55,7 +64,15 @@ const EDIT_ORDER = gql`
             email
             firstName
             lastName
-            id
+            userId
+            organizations {
+              edges {
+                node {
+                  organizationId
+                  rights
+                }
+              }
+            }
           }
         }
       }
@@ -105,16 +122,47 @@ mutation UpdateOrder(
     $orderId: String!,
     $fromDate: Date!,
     $tillDate: Date!,
+    $deposit: Int!
   ) {
     updateOrder(
       orderId: $orderId,
       fromDate: $fromDate,
       tillDate: $tillDate,
+      deposit: $deposit,
     ) {
       ok
       infoText
     }
   }
+`;
+
+const UPDATE_ORDER_DEPOSIT = gql`
+mutation UpdateOrder(
+    $orderId: String!,
+    $deposit: Int!
+  ) {
+    updateOrder(
+      orderId: $orderId,
+      deposit: $deposit,
+    ) {
+      ok
+      infoText
+    }
+  }
+`;
+
+const GET_MAX_DEPOSIT = gql`
+    mutation deposit (
+            $organizationId: String,
+            $userRight: String
+        ) {
+        getMaxDeposit (
+            organizationId: $organizationId,
+            userRight: $userRight
+        ) {
+            maxDeposit
+        }
+    }
 `;
 
 
@@ -154,6 +202,8 @@ export function EditRequest() {
     useTitle('Edit Request');
     const params = useParams<'orderId'>();
     const navigate = useNavigate();
+    const location = useLocation();
+    const {isItUser} = location.state || {};
 
     if (params['orderId'] === undefined) {
         navigate('/');
@@ -162,13 +212,14 @@ export function EditRequest() {
     
     return (
         <Suspense fallback={<p>Loading...</p>}>
-            <EditRequestScreen orderId={params['orderId']} />
+            <EditRequestScreen orderId={params['orderId']} isUser={isItUser} />
             </Suspense>  
     );
 }
 
 interface EditRequestProps {
     orderId: string;
+    isUser: boolean;
 }
 
 interface PhysicalObject {
@@ -202,7 +253,15 @@ interface FilterOrdersData {
                     email: string;
                     firstName: string;
                     lastName: string;
-                    id: string;
+                    userId: string;
+                    organizations: {
+                      edges: {
+                        node: {
+                          organizationId: string;
+                          rights: Rights;
+                        }
+                      }[];
+                    };
                 }
             }[];
         };
@@ -212,7 +271,7 @@ interface FilterOrdersData {
     }[];
 }
 
-function EditRequestScreen({ orderId }: EditRequestProps) {
+function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -232,13 +291,13 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
     const [DeleteOrder] = useMutation(DELETE_ORDER);
     const [UpdateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
     const [UpdateOrderDate] = useMutation(UPDATE_ORDER_DATE);
+    const [UpdateOrderDeposit] = useMutation(UPDATE_ORDER_DEPOSIT);
     const [removePhysicalObjectFromOrder] = useMutation(REMOVE_PHYSICAL_OBJECT_FROM_ORDER);
     const [addPhysicalObjectToOrder] = useMutation(ADD_PHYSICAL_OBJECT_TO_ORDER);
+    const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
-    
+    const [updatedDeposit, setUpdatedDeposit] = useState(data.filterOrders[0].deposit);
     const orgId = [data.filterOrders[0].organization.organizationId];
-    console.log(orgId);
-
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
       // Set the initial values for Date, selectedObjectIds and Status of the Order
@@ -264,12 +323,48 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
 
     const {fromDate, tillDate, physicalobjects} = data.filterOrders[0];
+    const organizations = data.filterOrders[0]?.users?.edges[0]?.node?.organizations?.edges || [];
+    const organizationId = data.filterOrders[0]?.organization.organizationId;    
+    const originalDeposit = data.filterOrders[0]?.deposit;
 
     const physicalObjectsEdges = physicalobjects?.edges || [];
     const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
     const notInBoth_Remove = physicalObjectIds.filter( (id) => !selectedObjectIds.includes(id))
     const notInBoth_Add = selectedObjectIds.filter( (id) => !physicalObjectIds.includes(id))
 
+
+
+    const handleAllRequests = async () => {
+      try {
+
+        if (selectedObjectIds.length === 0) {
+          await handleDelete();
+          return;
+        }
+
+        if(notInBoth_Add.length !== 0){
+        await handleAddObject();
+        }
+
+        if(notInBoth_Remove.length !== 0){
+        await handleRemoveObject();
+        }
+
+        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
+          await handleChangeDate();
+        }
+        
+
+        if (selectedStatus) {
+          await handleEditRequest();
+        }
+
+        handleOrderDepositChange();
+        
+      } catch(error) {
+        console.error('Error while handling requests:', error);
+      }
+    }
 
     const handleRemoveObject = async () => {
       try {
@@ -292,6 +387,53 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 
     };
 
+    const handleOrderDepositChange = async () => {
+      try {
+
+        if (originalDeposit === updatedDeposit){
+
+          const userOrganizations = organizations.filter(
+            (org) => org.node.organizationId === organizationId
+          );
+
+          var maxDeposit = 100000;
+
+          const userInfoResult = userOrganizations.map(async org => {
+            const { data } = await GetMaxDeposit({
+                variables:{
+                    organizationId: org.node.organizationId,
+                    userRight: org.node.rights
+                },
+            });
+            if(data.maxDeposit<maxDeposit) maxDeposit=data.maxDeposit;
+          });
+          await Promise.allSettled(userInfoResult);
+
+          const filteredPhysicalObjects = allPhysicalObjects?.filter((obj) =>
+              selectedObjectIds.includes(obj.id)
+          );
+
+          var depositSum = filteredPhysicalObjects.reduce((sum,obj) => sum + (obj.deposit?? 0), 0);
+
+          if (depositSum > maxDeposit){
+            depositSum = maxDeposit
+          }
+      } else {
+        var depositSum = updatedDeposit;
+      }
+
+        const { data } = await UpdateOrderDeposit({
+          variables: {
+            orderId: orderId,
+            deposit: depositSum 
+          },
+        });
+
+        } catch (error) {
+          console.error('Error confirming order:', error);
+        }
+    }
+
     const handleAddObject = async () => {
       try {
       
@@ -309,35 +451,6 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         } catch (error) {
           console.error('Error confirming order:', error);
         }
-    }
-
-    const handleAllRequests = async () => {
-      try {
-
-        if (selectedObjectIds.length === 0) {
-          await handleDelete();
-          return;
-        }
-
-        if(notInBoth_Add.length !== 0){
-        await handleAddObject();
-        }
-
-        if(notInBoth_Remove.length !== 0){
-        await handleRemoveObject();
-        }
-
-        if (!(new Date(tillDate).getTime() === new Date(endDate!).getTime()) || !(new Date(startDate!).getTime() === new Date(fromDate).getTime())){
-          await handleChangeDate();
-        }
-
-        if (selectedStatus) {
-          await handleEditRequest();
-        }
-        
-      } catch(error) {
-        console.error('Error while handling requests:', error);
-      }
     }
 
 
@@ -436,25 +549,31 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
         handleDelete();
     };
 
+    const handleDepositChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newDeposit = parseFloat(event.target.value);
+      setUpdatedDeposit(isNaN(newDeposit) ? 0 : newDeposit);
+    };
 
     return (
         <div style={{ padding: "20px" }}>
             <h1>Order Details</h1>
             <h2>Objekte:</h2>
-            <div>
-            <select
-                id="order-status"
-                value={selectedStatus || ''}
-                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                style={{ marginLeft: "10px", padding: "5px" }}
-            >
-              {Object.values(OrderStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {statusTranslations[status]}
-                                    </option>
-                ))}
-            </select>
-            </div>
+            {!isUser && (
+              <div>
+                <select
+                    id="order-status"
+                    value={selectedStatus || ''}
+                    onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                    style={{ marginLeft: "10px", padding: "5px" }}
+                >
+                  {Object.values(OrderStatus).map((status) => (
+                                        <option key={status} value={status}>
+                                            {statusTranslations[status]}
+                                        </option>
+                    ))}
+                </select>
+              </div>
+            )}
             {selectedObjectIds.length > 0 ? (
                 selectedObjectIds.flatMap((id) => {
                     const item = allPhysicalObjects.find((item) => item.id === id);
@@ -474,19 +593,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                             <p>{"Beschreibung: " + physicalObject.description}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
-                            <p>{"Leihgebühr: " + physicalObject.deposit}</p>
-                           {/* <p>Status:</p>
-                            <select 
-                                value={selectedStatus || ''} 
-                                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                                style={{ marginLeft: "10px" }}
-                            >
-                                {Object.values(OrderStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {status}
-                                    </option>
-                                ))}
-                            </select>*/}
+                            <p>{"Leihgebühr: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
                         </div>
                     </div>
                 ))
@@ -500,34 +607,44 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
                 margin: "10px 0",
                 borderRadius: "5px"
             }}>
-            <h3>Deposit Information</h3>
-            <p>Deposit: {data.filterOrders[0].deposit} </p>
+                <h3>Deposit Information</h3>
+                <p>Current Deposit: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
+                {!isUser && (
+                  <input
+                      type="number"
+                      value={updatedDeposit}
+                      onChange={handleDepositChange}
+                      style={{ padding: "5px", width: "100px" }}
+                  />
+                )}
             </div>
 
-
-            <div style={{
-                    border: "1px solid #ccc",
-                    padding: "10px",
-                    margin: "10px 0",
-                    borderRadius: "5px",
-                    display: 'flex',
-                    placeContent: 'center',
-                    cursor: 'pointer'
-                }}
-                onClick={() => setShowSelectOverlay(true)}>
-                <MdAdd size={36} />
-            </div>
+            {!isUser && (
+              <div style={{
+                      border: "1px solid #ccc",
+                      padding: "10px",
+                      margin: "10px 0",
+                      borderRadius: "5px",
+                      display: 'flex',
+                      placeContent: 'center',
+                      cursor: 'pointer'
+                  }}
+                  onClick={() => setShowSelectOverlay(true)}>
+                  <MdAdd size={36} />
+              </div>
+            )}
 
              
+            {!isUser && (
+              <div style={{ marginTop: "20px" }}>
+                  <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
+                  <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
+                  <button onClick={() => setShowDeletePopUp(true)}> Order löschen</button>
+              </div>
+            )}
+            <button onClick={() => handleGoBack()}> Zurück</button>
 
-            <div style={{ marginTop: "20px" }}>
-                <button onClick={() => setShowEditPopUp(true)} style={{ marginRight: "10px" }}>Bearbeiten abschließen</button>
-                <button onClick={openHandleChangeDate}>Ausleihzeit ändern</button>
-                <button onClick={() => setShowDeletePopUp(true)}> Order löschen</button>
-                <button onClick={() => handleGoBack()}> Zurück</button>
-            </div>
-
-            <SelectObjectsOverlay showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
+            <SelectObjectsOverlay currentlyInOrderPhysicalObjects={physicalObjectIds} showOverlay={showSelectOverlay} close={() => setShowSelectOverlay(false)}
                 selectedItemIds={selectedObjectIds} setSelectedItemIds={setSelectedObjectIds} organizationId={orgId} fromDate={startDate} tillDate={endDate} />
 
             {showModal && (
@@ -591,6 +708,7 @@ function EditRequestScreen({ orderId }: EditRequestProps) {
 // selectedObjects Overlay + Add Objects
 
 interface SelectObjectsOverlayProps {
+    currentlyInOrderPhysicalObjects: string[],
     showOverlay: boolean;
     close: () => void;
     selectedItemIds: string[];
@@ -600,7 +718,7 @@ interface SelectObjectsOverlayProps {
     tillDate : Date | null;
 }
 
-function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId, fromDate, tillDate }: SelectObjectsOverlayProps) {
+function SelectObjectsOverlay({ currentlyInOrderPhysicalObjects, showOverlay, close, selectedItemIds, setSelectedItemIds, organizationId, fromDate, tillDate }: SelectObjectsOverlayProps) {
     const IS_PHYSICAL_OBJECT_AVAILABLE = gql`
     mutation isPhysicalObjectAvailable(
         $endDate: Date!,
@@ -654,10 +772,15 @@ function SelectObjectsOverlay({ showOverlay, close, selectedItemIds, setSelected
       const availableObjects = [];
   
       for (const object of objects) {
-          const isAvailable = await checkObjectAvailability(object.id, fromDate, tillDate);
-          if (isAvailable) {
-              availableObjects.push(object);
-          }
+        var isAvailable = currentlyInOrderPhysicalObjects.includes(object.id);
+
+        if (!isAvailable) {
+          isAvailable = await checkObjectAvailability(object.id, fromDate, tillDate);
+        }
+
+        if (isAvailable) {
+          availableObjects.push(object);
+        }
       }
       return availableObjects;
   };

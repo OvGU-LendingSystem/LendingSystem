@@ -6,123 +6,60 @@ import { useCart, useCartDispatcher } from '../../context/CartContext';
 import { useQuery, gql } from '@apollo/client';
 import { useGetPhysicalObjects } from '../../hooks/pysical-object-helpers';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
+import { useGetAllGroupsQuery } from '../../hooks/group-helpers';
+import { useGetAllOrganizations } from '../../hooks/organization-helper';
+import { Console, group } from 'console';
+import { InventoryItem } from '../../models/InventoryItem.model';
 
-var products: Product[] = [
-  /*{
-    id: 1,
-    name: 'Maus',
-    description: 'Beschreibung für Objekt 1',
-    price: 10,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik',
-    organisation: 'FARAFIN'
-  },
-  {
-    id: 2,
-    name: 'Maus2',
-    description: 'Beschreibung für Objekt 2',
-    price: 20,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Elektronik',
-    organisation: 'FARAFIN'
-  },
-  {
-    id: 3,
-    name: 'Tastatur',
-    description: 'Beschreibung für Objekt 3',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office',
-    organisation: 'FARAMATH'
-  },
-  {
-    id: 4,
-    name: 'Tastatur2',
-    description: 'Beschreibung für Objekt 4',
-    price: 30,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Office',
-    organisation: 'STURA'
-  },
-  {
-    id: 5,
-    name: 'Beamer',
-    description: 'Beschreibung für Objekt 5',
-    price: 50,
-    imageUrl: 'https://via.placeholder.com/300',
-    category: 'Electronik',
-    organisation: 'FARAFIN'
-  },*/
-];
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import packageJson from '../../../package.json';
 
-/*const GET_PRODUCTS = gql`
-  query {
-    filterPhyiscalObjects {
-      physId
-      fromDate
-      tillDate
-      physicalobjects {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-      users {
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    }
-  }
-`;
-
-
-function DisplayInventory() {
-  const { loading, error, data } = useQuery(GET_PRODUCTS);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error : {error.message}</p>;
-
-  console.log(data);
-
-  products = data.filterOrders.map(({ orderId, fromDate, tillDate, physicalobjects, users }: { orderId: number, fromDate: any, tillDate: any, physicalobjects: any, users: any }) => (
-    {
-      id: orderId,
-      name: users,
-      email: users,
-      products: physicalobjects,
-      status: ""
-    }
-  ));
-  return <div></div>;
-}*/
+import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 
 
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
+  console.log(itemsInCart);
 
   // Fetching physical objects
-  const { data: products, error } = useGetPhysicalObjects();
+  const { data: products_tmp, error } = useGetPhysicalObjects();
   const { data: tags, error: e } = useGetTagsQuery();
+  const { data: orgs, error: e3} = useGetAllOrganizations();
+  const { data: groups, error: e2} = useGetAllGroupsQuery();
+  const products = products_tmp.concat(groups);
+  products.sort(function(a, b){
+      if (a.name<b.name) return -1;
+      if (a.name>b.name) return 1;
+      return 0;
+    }
+  );
+  console.log(products);
 
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [physicalObjectIds, setPhysicalobjectIds] = useState<string[]>([]);
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
+  const [dropdownVisible2, setDropdownVisible2] = useState<boolean>(false);
+  const [showManual, setShowManual] = useState<boolean>(false);
+  const [selectedManualPath, setSelectedManualPath] = useState<string>("");
+
+  const textRef = useRef<HTMLDivElement>(null);
+  const zoomPluginInstance = zoomPlugin();
+
+  const { ZoomIn, ZoomOut } = zoomPluginInstance;
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef2 = useRef<HTMLDivElement>(null);
 
-  
-
-  console.log(products);
+  const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -137,9 +74,25 @@ export function Inventory(): JSX.Element {
     };
   }, [dropdownRef]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef2.current && !dropdownRef2.current.contains(event.target as Node)) {
+        setDropdownVisible2(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef2]);
+
   const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
+    var ids = [];
+    ids.push(product.physId);
+    setPhysicalobjectIds(ids);
   };
 
   const closeModal = () => {
@@ -147,16 +100,39 @@ export function Inventory(): JSX.Element {
     setSelectedProduct(null);
   };
 
+  const openManual = (path: string | undefined) => {
+    if (path!=undefined){
+      setSelectedManualPath(path);
+      setShowManual(true);
+    }
+  };
+
+  const closeManual = () => {
+    setShowManual(false);
+    setSelectedManualPath("");
+  };
+
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
-      console.log("HELLO TEST");
       console.log(selectedProduct);
-      itemsInCartDispatcher({
-        type: 'add',
-        item: { ...selectedProduct, startDate, endDate, amount }
-      });
+      if (selectedProduct.physId.substring(0, 5)=="group" && selectedProduct.physicalObjects!=undefined){
+          console.log("GRUPPE");
+          selectedProduct.physicalObjects.forEach(obj => {
+            itemsInCartDispatcher({
+              type: 'add',
+              item: { ...obj, startDate, endDate, amount}
+            })
+        });
+      }
+      else {
+        itemsInCartDispatcher({
+          type: 'add',
+          item: { ...selectedProduct, startDate, endDate, amount }
+        });
+      }
       closeModal();
     }
+    console.log(itemsInCart);
   };
 
   const handleCategoryChange = (category: string) => {
@@ -166,9 +142,20 @@ export function Inventory(): JSX.Element {
         : [...prevCategories, category]
     );
   };
+  const handleOrganizationChange = (org: string) => {
+    setSelectedOrganizations(prevOrganizations =>
+      prevOrganizations.includes(org)
+        ? prevOrganizations.filter(c => c !== org)
+        : [...prevOrganizations, org]
+    );
+  };
 
   const filteredProducts = products?.filter(product =>
-    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) && (selectedCategories.includes(product.category) || selectedCategories.length==0)}
+    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
+      && (selectedCategories.includes(product.category) || selectedCategories.length==0)
+      && (selectedOrganizations.includes(product.organization) || selectedOrganizations.length==0)
+      && !(itemsInCart.map(obj => obj.physId).includes(product.physId))
+    }
   );
 
   if (error) return <p>Error loading products: {error.message}</p>;
@@ -189,7 +176,7 @@ export function Inventory(): JSX.Element {
               style={dropdownButtonStyle}
               onClick={() => setDropdownVisible(!dropdownVisible)}
             >
-              Filter
+              Filter nach Kategorien
             </button>
             {dropdownVisible && (
               <div style={dropdownContentStyle}>
@@ -210,18 +197,60 @@ export function Inventory(): JSX.Element {
               </div>
             )}
           </div>
+          <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownRef2}>
+            <button
+              style={dropdownButtonStyle}
+              onClick={() => setDropdownVisible2(!dropdownVisible2)}
+            >
+              Filter nach Organisationen
+            </button>
+            {dropdownVisible2 && (
+              <div style={dropdownContentStyle}>
+                { orgs.map((ele) => (
+                  <div style={checkboxLabelStyle}>
+                    <input
+                      id={ele.id}
+                      type="checkbox"
+                      style={{  marginRight: "10px", width: "auto"}}
+                      checked={selectedOrganizations.includes(ele.name)}
+                      onChange={() => handleOrganizationChange(ele.name)}
+                    />
+                    <label htmlFor={ele.id}>{ele.name}</label>
+                    
+                    
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
             <div key={product.physId} style={productCardStyle}>
-              <img src={product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              }
+              <img src={'http://192.168.178.169/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               <div style={productInfoStyle}>
                 <div style={descriptionStyle}>
-                  <h3>{product.name}</h3>
+                    {product.physId.substring(0, 5)=="group" &&
+                        <h3>{product.name} (Gruppe)</h3>
+                    }
+                    {product.physId.substring(0, 5)!="group" &&
+                        <h3>{product.name}</h3>
+                    }
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
-                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit} €</div>
+                
+                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
+                <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
+                {product.manualPath!="" && 
+                    <div>
+                      <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
+                        Anleitung
+                      </button>
+                    </div>
+                } 
 
                 <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
                   In den Warenkorb hinzufügen
@@ -233,16 +262,46 @@ export function Inventory(): JSX.Element {
         
       </div>
 
+      
+
       {showModal && (
+          <div style={modalOverlayStyle}>
+            <div style={modalContentStyle}>
+              <h2>Objekt hinzufügen</h2>
+              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+
+              <div style={buttonContainerStyle}>
+                <button onClick={addToCart}>Hinzufügen</button>
+                <button onClick={closeModal} style={{ marginLeft: '10px' }}> Schließen </button>
+              </div>
+            </div>
+          </div>
+      )}
+
+      {showManual && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
-            <h2>Objekt hinzufügen</h2>
-            <Calendar fromDate={startDate} tillDate={endDate} setStartDate={setStartDate} setEndDate={setEndDate} />
-            <div style={buttonContainerStyle}>
-              <button onClick={addToCart}>Hinzufügen</button>
-              <button onClick={closeModal} style={{ marginLeft: '10px' }}>
-                Schließen
+            <h2>Anleitung</h2>
+            <div 
+                    ref={textRef} 
+                    style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                >
+              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                    <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                </Worker>
+
+            </div>
+            <div>
+              <button
+                  onClick={closeManual}>
+                  Zurück
               </button>
+              <ZoomIn>
+              {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+              </ZoomIn>
+              <ZoomOut>
+              {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+              </ZoomOut>
             </div>
           </div>
         </div>
@@ -366,4 +425,8 @@ const inputContainerStyle: React.CSSProperties = {
 
 const buttonContainerStyle: React.CSSProperties = {
   textAlign: 'right',
+};
+
+const linkStyle: React.CSSProperties = {
+  
 };

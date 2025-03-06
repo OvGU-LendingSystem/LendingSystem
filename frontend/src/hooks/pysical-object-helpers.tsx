@@ -165,6 +165,8 @@ query GetPhysicalObjects {
     storageLocation,
     faults,
     description,
+    lendingComment,
+    returnComment,
     pictures(first: 1) {
       edges {
         node {
@@ -184,6 +186,14 @@ query GetPhysicalObjects {
     organization{
       organizationId,
       name
+    },
+    manual{
+      edges{
+        node{
+          manualId,
+          path
+        }
+      }
     }
   }
 }
@@ -199,6 +209,8 @@ interface GetPhysicalObjectsResponse {
     storageLocation: string;
     faults: string;
     description: string;
+    lendingComment: string;
+    returnComment: string;
     pictures: {
       edges: {
         node: {
@@ -218,6 +230,14 @@ interface GetPhysicalObjectsResponse {
     organization: {
         organizationId: string,
         name: string
+    };
+    manual: {
+        edges: {
+            node:{
+                manualId: string,
+                path: string
+            }
+        }[]
     }
 }
 
@@ -239,6 +259,10 @@ export function useGetPhysicalObjects() {
                 category: flattenedVal.tags.edges[0]?.node?.name ?? "",
                 organizationId: flattenedVal.organization.organizationId,
                 organization: flattenedVal.organization.name,
+                physicalObjects: undefined,
+                lendingComment: flattenedVal.lendingComment,
+                returnComment: flattenedVal.returnComment,
+                manualPath: flattenedVal.manual.edges[0]?.node.path || ""
             };
             return res;
         });

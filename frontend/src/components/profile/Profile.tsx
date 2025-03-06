@@ -5,6 +5,7 @@ import { Orders } from "./orders";
 import { Login } from "../login/Login";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
+import { useUpdateUserRights } from "../../hooks/user-helper";
 import './Profile.css';
 
 const CHECK_EMAIL_EXISTENCE = gql`
@@ -14,6 +15,7 @@ const CHECK_EMAIL_EXISTENCE = gql`
     }
   }
 `;
+
 
 export function Profile() {
   const navigate = useNavigate();
@@ -28,6 +30,8 @@ export function Profile() {
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("User");
   const setLoginAction = useLoginStatusDispatcher();
+  const [updateUserRightsMutation] = useUpdateUserRights();
+
 
   const handleLogout = () => {
     setLoginAction({ type: "logout" });
@@ -45,15 +49,34 @@ export function Profile() {
     skip: !roleEmail, // Only run when there's an email input
   });
 
-  const handleAssignRole = () => {
-    if (loading) return; // Prevent clicking while checking
+  const handleAssignRole = async () => {
+    if (loading) return;
 
-    if (error || !data?.checkEmailExists?.exists) {
-      alert("Diese E-Mail existiert nicht!");
-      return;
+
+    const organizationId = loginStatus.loggedIn
+    ? loginStatus.user?.organizationInfoList?.[0]?.id
+    : undefined;
+
+    try {
+      const response = await updateUserRightsMutation({
+        variables: {
+          email,
+          rights: [selectedRole],
+        },
+      });
+
+      if (response.success) {
+        console.log(`Role ${selectedRole} successfully assigned to ${roleEmail}`);
+        alert(`Rolle "${selectedRole}" erfolgreich zugewiesen!`);
+      } else {
+        console.error("Failed to assign role:", response);
+        alert(`Fehler: ${response.info}`);
+      }
+    } catch (error) {
+      console.error("Error assigning role:", error);
+      alert("Fehler beim Zuweisen der Rolle.");
     }
 
-    console.log(`Assigning ${selectedRole} role to ${roleEmail}`);
     setRoleModalOpen(false);
   };
 
@@ -62,9 +85,9 @@ export function Profile() {
   }
 
   return (
-    <div className="profile-container">
+    <div className="profile-container5">
       <h2>Nutzereinstellungen</h2>
-      <div className="profile-details">
+      <div className="profile-details5">
         <p style={{ marginBottom: '20px' }}>
           Vorname: {loginStatus.user?.firstName || ""}
         </p>
@@ -73,30 +96,35 @@ export function Profile() {
         </p>
         <p>
           Rolle: {loginStatus.user?.organizationInfoList?.length > 0
-            ? loginStatus.user.organizationInfoList[0].rights
+            ? Array.isArray(loginStatus.user?.organizationInfoList?.[0]?.rights)
+  ? loginStatus.user.organizationInfoList[0].rights.join(", ")
+  : loginStatus.user.organizationInfoList[0].rights || "keine Rechte"
             : "keine Organisation"}
-          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button">
+          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button5">
             Rechte zuweisen
           </button>
         </p>
         <p>
           E-Mail: {loginStatus.user?.email || " "}
-          <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button">
+          <button onClick={() => { setModalOpen(true); setEditField("email"); }} className="edit-button5">
             ✎
           </button>
         </p>
         <p>
-          Adresse: {"Keine Adresse angegeben"}
-          <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button">
+          Adresse: {(loginStatus.user?.street && loginStatus.user?.houseNumber + ", " + loginStatus.user?.city && loginStatus.user?.postcode)|| " "}
+          <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button5">
             ✎
           </button>
         </p>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+        <p style={{ marginBottom: '20px' }}>
+          Matrikelnummer: {loginStatus.user?.matricleNumber || ""}
+        </p>
+        <button onClick={handleLogout} className="logout-button5">Logout</button>
       </div>
 
       {isModalOpen && (
-        <div className="modal22">
-          <div className="modal-content22">
+        <div className="modal222">
+          <div className="modal-content222">
             <h3>{editField === "email" ? "Email" : "Adresse"} Bearbeiten</h3>
             {editField === "email" ? (
               <label>
@@ -127,8 +155,8 @@ export function Profile() {
       )}
 
       {isRoleModalOpen && (
-        <div className="modal22">
-          <div className="modal-content22">
+        <div className="modal222">
+          <div className="modal-content222">
             <h3>Rechte zuweisen</h3>
             <label>
               E-Mail des Nutzers:
@@ -144,14 +172,16 @@ export function Profile() {
               <p style={{ color: "red" }}>Diese E-Mail existiert nicht!</p>
             )}
             <label>
-              Rolle:
-              <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                <option value="Guest">Guest</option>
-                <option value="Manager">Member</option>
-                <option value="Admin">Inventaradmin</option>
-                <option value="Admin">Organisationsadmin</option>
-              </select>
-            </label>
+  Rolle:
+  <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+    <option value="SYSTEM_ADMIN">System-Admin</option>
+    <option value="ORGANIZATION_ADMIN">Organisations-Admin</option>
+    <option value="INVENTORY_ADMIN">Inventar-Admin</option>
+    <option value="MEMBER">Mitglied</option>
+    <option value="CUSTOMER">Kunde</option>
+    <option value="WATCHER">Beobachter</option>
+  </select>
+</label>
             <br />
             <div className="modal-buttons">
               <button onClick={handleAssignRole}>Bestätigen</button>

@@ -6,9 +6,9 @@ import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { FormikImagesSelectorComponent } from "../image-selector-with-preview/ImageSelectorWithPreview";
 import { FormikFileSelector } from '../file-selector/FileSelector';
 import { useStorageLocationHelper } from '../../hooks/storage-location-helper';
-import { Suspense, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Button, H3, MenuItem, NonIdealState, Spinner } from '@blueprintjs/core';
-import { MultiSelect } from '@blueprintjs/select';
+import { ItemPredicate, ItemRenderer, MultiSelect } from '@blueprintjs/select';
 import { SubmitErrorState, SubmitSuccessState, SubmitState } from '../../utils/submit-state';
 import { Tag } from '../../models/tag.model';
 import { useGetTagsQuery } from '../../hooks/tag-helpers';
@@ -101,7 +101,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
     return (
         <div className='form-input--wrapper'>
-            <Formik initialValues={initialValue} 
+            <Formik initialValues={initialValue} validate={validate}
                 onSubmit={submit}>{(props: FormikProps<AddInventoryItem>) => (
                 <>
                 { !props.isSubmitting && submitState && <ErrorScreen data={submitState.data} retry={() => props.submitForm()} /> }
@@ -121,10 +121,10 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
                                 <FormikInput fieldName='inventoryNumberExternal' getValue={(val) => val?.toString() ?? ''} modifier={(e) => { console.error(e); return e.target.valueAsNumber}} type="number" id="inventory_number_external" />
                                 
                                 <label htmlFor="storage">Lagerort</label>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' /*options={storagePlaces}*/ options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation' options={data[0]} onChange={() => props.setFieldValue('storageLocation2', '')} />
 
                                 <div></div>
-                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' /*options={storagePlaces2}*/ options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
+                                <FormikSelectionInputWithCustomInput fieldName='storageLocation2' options={props.values.storageLocation !== '' ? data[1](props.values.storageLocation) : []} />
 
                                 <label htmlFor="deposit">Kaution</label>
                                 <FormikInput fieldName='deposit' after={<div className='currency-placeholder'>€</div>} className='deposit-input' type="number" id="deposit" step={0.01} inputMode='numeric' min={0} required modifier={updateDeposit} getValue={getDeposit} />
@@ -145,7 +145,7 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 
                     <FormikFileSelector name='manuals' title='Anleitungen' />
 
-                    <Button type="submit" intent='primary'>{label}</Button>
+                    <Button intent='primary' onClick={async () => props.submitForm()}>{label}</Button>
                 </Form>
                 }
                 </>
@@ -158,6 +158,34 @@ export function ModifyInventoryScreen<T>({ initialValue, label, onClick, ErrorSc
 function FormikTagInput({ fieldName }: { fieldName: string }) {
     const [ field, meta, helper ] = useField<Tag[]>(fieldName);
     const tagsQuery = useGetTagsQuery();
+
+    const areTagsEqual = useCallback((tagA: Tag, tagB: Tag) => {
+        if (Object.hasOwn(tagA, 'id') !== Object.hasOwn(tagB, 'id')) return false;
+        if (Object.hasOwn(tagA,'id') && Object.hasOwn(tagB, 'id')) return (tagA as any).id === (tagB as any).id;
+        return tagA.tag === tagB.tag;
+    }, []);
+
+    const tagIsSelected = useCallback((tag: Tag) => {
+        return field.value.findIndex((val) => areTagsEqual(val, tag)) !== -1;
+    }, [areTagsEqual, field, field.value]);
+
+    const removeTag = useCallback((idx: number) => {
+        helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]);
+    }, [helper, field, field.value]);
+
+    const tagRenderer: ItemRenderer<Tag> = (tag, props) => {
+        if (!props.modifiers.matchesPredicate) {
+            return null;
+        }
+
+        return (
+            <MenuItem roleStructure='listoption' selected={tagIsSelected(tag)}
+                shouldDismissPopover={false} text={tag.tag}
+                active={props.modifiers.active} disabled={props.modifiers.disabled}
+                key={tag.tag} onClick={props.handleClick} onFocus={props.handleFocus}
+                ref={props.ref} />
+        );
+    }
     
     return <MultiSelect<Tag> selectedItems={field.value} items={tagsQuery.data}
         onItemSelect={(selectedTag) => helper.setValue([...field.value, selectedTag])}
@@ -166,17 +194,33 @@ function FormikTagInput({ fieldName }: { fieldName: string }) {
             text={`neuen Tag "${query}" erstellen`} active={active}
             onClick={click} shouldDismissPopover={false} />
         }
-        itemsEqual={(tagA, tagB) => {
-            if ('id' in tagA !== 'id' in tagB) return false;
-            if ('id' in tagA && 'id' in tagB) return tagA.id === tagB.id;
-            return tagA.tag === tagB.tag;
-        }}
+        createNewItemPosition='first'
+        itemsEqual={areTagsEqual}
+        //itemPredicate={filterTags} TODO
         tagRenderer={(tag) => tag.tag}
-        itemRenderer={(tag) => <p>{tag.tag}</p>}
+        itemRenderer={tagRenderer}
         tagInputProps={{
             onRemove: (node, idx) => helper.setValue([...field.value.slice(0, idx), ...field.value.slice(idx + 1, undefined)]),
             tagProps: { minimal: true }
-        }} />
+        }}
+        resetOnSelect
+        placeholder='Auswählen...' />
+}
+
+const validate = (values: AddInventoryItem) => {
+    const errors: any = {};
+
+    if (!values.name || values.name.trim() === '') {
+        errors.name = 'Name darf nicht leer sein!';
+    }
+    if (!values.inventoryNumberInternal) {
+        errors.inventoryNumberInternal = 'Interne Inventarnummer erforderlich!';
+    }
+    if (!values.inventoryNumberExternal) {
+        errors.inventoryNumberExternal = 'Externe Inventarnummer erforderlich!';
+    }
+
+    return errors;
 }
 
 function LoadingScreen() {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate} from "react-router-dom";
 import { useUserInfo } from '../../context/LoginStatusContext';
 import { useQuery, gql, useMutation,} from '@apollo/client';
+import { useGetAllOrganizations } from '../../hooks/organization-helper';
 
 enum OrderStatus {
   PENDING = 'PENDING',
@@ -26,11 +27,11 @@ const statusOrder = {
 function mapOrderStatusToUIStatus(orderStatus: OrderStatus): string {
   switch (orderStatus) {
       case OrderStatus.PENDING:
-          return 'requested';
+          return 'pending';
       case OrderStatus.ACCEPTED:
-          return 'confirmed';
+          return 'accepted';
       case OrderStatus.PICKED:
-          return 'lended';
+          return 'picked';
       case OrderStatus.REJECTED:
           return 'rejected'; 
       case OrderStatus.RETURNED:
@@ -53,8 +54,8 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 const GET_ORDERS = gql`
-  query getOrdersByOrganizations($organizationIds: [String!]){
-    filterOrders(organizations: $organizationIds) {
+  query getOrdersByOrganizations($organizationIds: [String!], $status: [String!]){
+    filterOrders(organizations: $organizationIds, orderStatus: $status) {
       orderId
       fromDate
       tillDate
@@ -64,6 +65,7 @@ const GET_ORDERS = gql`
           node {
             orderStatus
             physId
+            returnNotes
             physicalobject{
               invNumInternal
               invNumExternal
@@ -81,7 +83,7 @@ const GET_ORDERS = gql`
             email
             firstName
             lastName
-            id
+            userId
           }
         }
       }
@@ -98,13 +100,15 @@ mutation UpdateOrderStatus(
     $orderId: String!,
     $physicalObjects: [String]!,
     $returnDate: Date,
-    $status: String
+    $status: String,
+    $returnNotes : String
   ) {
     updateOrderStatus(
       orderId: $orderId,
       physicalObjects: $physicalObjects,
       returnDate: $returnDate,
       status: $status
+      returnNotes: $returnNotes
     ) {
       ok
       infoText
@@ -130,71 +134,88 @@ export function Requests() {
   const UserInfoDispatcher = useUserInfo();
   const OrgList = UserInfoDispatcher.organizationInfoList;
   const UserOrgids = UserInfoDispatcher.organizationInfoList.map((org) => org.id);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['pending', 'accepted', 'picked']);
 
 
   const { loading, error, data, refetch } = useQuery(GET_ORDERS, {
     variables: {
       organizationIds: UserOrgids,
+      status: selectedCategories,
     },
   });
 
   const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS);
   const [DeleteOrder] = useMutation(DELETE_ORDER);
+  const { data: orgs, error: e3} = useGetAllOrganizations();
   const [dropdownVisible, setDropdownVisible] = useState<boolean>(false);
   const [dropdownOrgFilterVisible, setDropdownOrgFilterVisible] = useState<boolean>(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<string[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [popupText, setPopupText] = useState("");
+  const [returnNotes, setReturnNotes] = useState<string>("");
   const [currentRequest, setCurrentRequest] = useState<Quest | null>(null);
   const [currentStatus, setCurrentStatus] = useState("");
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
+  const [isDelete, setisDelete] = useState(false);
 
   
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownOrgFilterRef = useRef<HTMLDivElement>(null);
-const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
+  const buttonOrgFilterRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
-  const showConfirmationPopup = (request: Quest, status: string) => {
-    setCurrentRequest(request);
-    switch (status) {
-      case "requested":
-        setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
-        setCurrentStatus("requested");
-        break;
-      case "confirmed":
-        setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
-        setCurrentStatus("confirmed");
-        break;
-      case "lended":
-        setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
-        setCurrentStatus("lended");
-        break;
-        case "rejectOrder":
-          setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
-          setCurrentStatus("reject");
-          break;
-      default:
-        setPopupText("");
+  const showConfirmationPopup = (request: Quest, status: string, returnNote: string, toDelete?: boolean) => {
+    if (toDelete === undefined){
+      toDelete = false;
+      setisDelete(false);
     }
-    setShowModal(true);
+
+    if (toDelete === true){
+      setisDelete(true);
+      setCurrentRequest(request);
+      setPopupText("Bist du dir sicher, dass du die Order wirklich endgültig löschen möchtest?")
+      setShowModal(true);
+    } else {
+      setCurrentRequest(request);
+      setReturnNotes(returnNote);
+      switch (status) {
+        case "pending":
+          setPopupText("Bist du dir sicher, dass du das jetzt als bestätigt markieren willst?");
+          setCurrentStatus("pending");
+          break;
+        case "accepted":
+          setPopupText("Bist du dir sicher, dass du das jetzt als verliehen markieren willst?");
+          setCurrentStatus("accepted");
+          break;
+        case "picked":
+          setPopupText("Bist du dir sicher, dass du das jetzt als zurückgegeben markieren willst?");
+          setCurrentStatus("picked");
+          break;
+          case "rejectOrder":
+            setPopupText("Bist du dir sicher, dass du die Order ablehnen möchtest?");
+            setCurrentStatus("reject");
+            break;
+        default:
+          setPopupText("");
+      }
+      setShowModal(true);
+    }
   };
 
   const handleConfirm = async () => {
     if (!currentRequest) return;
 
     switch (currentStatus) {
-      case "requested":
+      case "pending":
         await confirmed(currentRequest);
         break;
-      case "confirmed":
+      case "accepted":
         await lended(currentRequest);
         break;
-      case "lended":
+      case "picked":
         await returned(currentRequest);
         break;
       case "reject":
@@ -262,7 +283,7 @@ useEffect(() => {
       id: order.orderId,
       name: username, 
       email: useremail, 
-      userid: order.user?.edges[0]?.node?.id || null,
+      userid: order.users?.edges[0]?.node?.userId || null,
       deposit: order.deposit,
       products: order.physicalobjects.edges.map((edge: any) => ({
           id: edge.node.physId,
@@ -280,6 +301,7 @@ useEffect(() => {
       organizationName: order.organization.name,
       canEditRequests: canEditRequests,
       showButtons: showButtons,
+      returnNotes: order.physicalobjects.edges[0].node.returnNotes
 
   };
 });
@@ -291,18 +313,18 @@ useEffect(() => {
         
         const isWatcher = OrgList.find((org) => org.id === request.organizationId)?.rights === "WATCHER";
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
+        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
 
         if (showCustomerOrders) {
-          return isCustomer && request.customerId === UserInfoDispatcher.id;
+          return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
 
         if (isCustomer) {
-          return request.customerId === UserInfoDispatcher.id;
+          return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
         if (isWatcher)
-          return ["confirmed", "lended"].includes(request.status);
-        const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
-        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationId)
+          return ["accepted", "picked"].includes(request.status);
+        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
         return categoryMatch && organizationMatch;
       })
       .sort((a, b) => {
@@ -334,8 +356,8 @@ useEffect(() => {
     const handleOrgChange = (orgId: string) => {
       setSelectedOrg((prevOrg) =>
         prevOrg.includes(orgId)
-          ? prevOrg.filter((id) => id !== orgId) // Entfernen, wenn bereits ausgewählt
-          : [...prevOrg, orgId] // Hinzufügen, wenn noch nicht ausgewählt
+          ? prevOrg.filter((id) => id !== orgId) 
+          : [...prevOrg, orgId]
       );
     };
 
@@ -350,6 +372,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "accepted",
+            returnNotes: returnNotes,
           },
         });
   
@@ -373,6 +396,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "rejected",
+            returnNotes: returnNotes,
           },
         });
   
@@ -389,8 +413,6 @@ useEffect(() => {
     const lended = async (request : Quest) => {
       try {
         const returnDate = null;
-        console.log(request.id);
-        console.log(request.products.map(product=>product.id));
 
         const { data } = await updateOrderStatus({
           variables: {
@@ -398,6 +420,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "picked",
+            returnNotes: returnNotes,
           },
         });
   
@@ -421,6 +444,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate: returnDate,
             status: 'returned',
+            returnNotes: returnNotes,
           },
         });
   
@@ -435,7 +459,7 @@ useEffect(() => {
     };
 
 
-    const reset = async (request : Quest) => {
+    const reset = async (request : Quest, returnNote : string) => {
       try {
         const returnDate = null;
 
@@ -445,6 +469,7 @@ useEffect(() => {
             physicalObjects: request.products.map(product => product.id),
             returnDate : returnDate,
             status: "pending",
+            returnNotes: returnNotes,
           },
         });
   
@@ -477,8 +502,9 @@ useEffect(() => {
 
 
 
-    const edit = (orderID: string, product: Product) => {
-      navigate(`/requests/edit/${orderID}`);
+    const edit = (orderID: string, product: Product, isUser?: boolean) => {
+      if(isUser === undefined) isUser=false;
+      navigate(`/requests/edit/${orderID}`, {state: {isItUser: isUser}});
   };
 
     return (
@@ -492,108 +518,114 @@ useEffect(() => {
                   type="checkbox"
                   checked={showCustomerOrders}
                   onChange={() => setShowCustomerOrders(!showCustomerOrders)}
+                  style={{  marginRight: "10px", width: "auto"}}
                 />
               Customer
             </label>
             </div>
 
             {/*<DisplayLocations /> */}
-            <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
-            <button
-              style={dropdownButtonStyle}
-              onClick={() => setDropdownVisible(!dropdownVisible)}
-              ref={buttonRef}
-            >
-              Filter Anfragenstatus
-            </button>
-            {dropdownVisible && (
-              <div style={dropdownContentStyle}>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('requested')}
-                    onChange={() => handleCategoryChange('requested')}
-                  />
-                  Angefragt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('confirmed')}
-                    onChange={() => handleCategoryChange('confirmed')}
-                  />
-                  Bestätigt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('lended')}
-                    onChange={() => handleCategoryChange('lended')}
-                  />
-                  Verliehen
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('rejected')}
-                    onChange={() => handleCategoryChange('rejected')}
-                  />
-                  Abgelehnt
-                </label>
-                <label style={checkboxLabelStyle}>
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('returned')}
-                    onChange={() => handleCategoryChange('returned')}
-                  />
-                  Zurückgegeben
-                </label>
+            <div style={{ padding: '20px' }}>
+              <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+                <button
+                  style={dropdownButtonStyle}
+                  onClick={() => setDropdownVisible(!dropdownVisible)}
+                  ref={buttonRef}
+                >
+                  Filter Anfragenstatus
+                </button>
+                {dropdownVisible && (
+                  <div style={dropdownContentStyle}>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('pending')}
+                        onChange={() => handleCategoryChange('pending')}
+                      />
+                      Angefragt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('accepted')}
+                        onChange={() => handleCategoryChange('accepted')}
+                      />
+                      Bestätigt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('picked')}
+                        onChange={() => handleCategoryChange('picked')}
+                      />
+                      Verliehen
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('rejected')}
+                        onChange={() => handleCategoryChange('rejected')}
+                      />
+                      Abgelehnt
+                    </label>
+                    <label style={checkboxLabelStyle}>
+                      <input
+                        type="checkbox"
+                        style={{  marginRight: "10px", width: "auto"}}
+                        checked={selectedCategories.includes('returned')}
+                        onChange={() => handleCategoryChange('returned')}
+                      />
+                      Zurückgegeben
+                    </label>
+                  </div>
+                )}
               </div>
-            )}
-            <button
-              style={dropdownButtonStyle}
-              onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
-              ref={buttonRef}
-            >
-              Filter Organisationen
-            </button>
-            {dropdownOrgFilterVisible && (
-      <div style={dropdownContentStyle}>
-        {[
-          { id: '00000000-0000-0000-0000-000000000003', name: 'Stark Industries' },
-          { id: '1376ac52-85f7-4720-9aaa-b8bccd667aeb', name: 'X-Men' },
-          { id: '69590f30-0959-406d-a9b5-3fefbda28fb4', name: 'Avengers' },
-          { id: 'c9c5feb9-01ff-45de-ba44-c0b38e268170', name: 'root_organization' },
-        ].map((org) => (
-          <label key={org.id} style={checkboxLabelStyle}>
-            <input
-              type="checkbox"
-              checked={selectedOrg.includes(org.id)}
-              onChange={() => handleOrgChange(org.id)}
-            />
-            {org.name}
-          </label>
-        ))}
-      </div>
-    )}
-          </div>
+              <div style={{ position: 'relative', display: 'inline-block', marginLeft: '10px'}} ref={dropdownOrgFilterRef}>
+                <button
+                  style={dropdownButtonStyle}
+                  onClick={() => setDropdownOrgFilterVisible(!dropdownOrgFilterVisible)}
+                  ref={buttonOrgFilterRef}
+                >
+                  Filter Organisationen
+                </button>
+                {dropdownOrgFilterVisible && (
+                  <div style={dropdownContentStyle}>
+                    {orgs.map((org) => (
+                      <label key={org.id} style={checkboxLabelStyle}>
+                        <input
+                          type="checkbox"
+                          style={{  marginRight: "10px", width: "auto"}}
+                          checked={selectedOrg.includes(org.name)}
+                          onChange={() => handleOrgChange(org.name)}
+                        />
+                        {org.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           {filteredRequests.map((request) => (
             <div key={request.id} style={requestCardStyle}>
-                {request.status === "requested" && (
+                {request.status === "pending" && (
                 <div style={{backgroundColor: '#ffff00', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Angefragt
                     </div>
                 </div>
                 )}
-                {request.status === "confirmed" && (
+                {request.status === "accepted" && (
                 <div style={{backgroundColor: '#00ff7f', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Bestätigt
                     </div>
                 </div>
                 )}
-                {request.status === "lended" && (
+                {request.status === "picked" && (
                 <div style={{backgroundColor: '#87cefa', width:'100%', paddingLeft:'10px', paddingTop: '5px', paddingBottom: '5px'}}>
                     <div style={{textAlign: "center"}}>
                         Verliehen
@@ -621,7 +653,7 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + request.deposit}</div>
+                        <div>{"Ausleihgebühr: " + (request.deposit / 100).toFixed(2) + "€"}</div>
                         <hr/>
                     </div>
 
@@ -645,23 +677,23 @@ useEffect(() => {
                     {request.showButtons && (  
                     <div>
                     
-                    {request.status === "requested" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                    {request.status === "pending" && (
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Anfrage bestätigen
                         </button>
                     )}
-                    {request.status === "requested" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder")}>
+                    {request.status === "pending" && (
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, "rejectOrder", request.returnNotes)}>
                             Anfrage ablehnen
                         </button>
                     )}
-                    {request.status === "confirmed" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                    {request.status === "accepted" && (
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Verleihen
                         </button>
                     )}
-                    {request.status === "lended" && (
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status)}>
+                    {request.status === "picked" && (
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes)}>
                             Zurückgegeben
                         </button>
                     )}
@@ -671,18 +703,24 @@ useEffect(() => {
                         </button>
                     )}
 
-                        <button style={buttonStyle} onClick={() => reset(request)}>
+                        <button style={buttonStyle} onClick={() => reset(request, request.returnNotes)}>
                             Zurücksetzen
                         </button>
                         
                     </div>
                     )}
 
-                    {!request.showButtons && (
-                        <button style={buttonStyle} onClick={() => handleDelete(request)}>
+                    {!request.showButtons && request.status === "pending" &&(
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
                           Löschen
-                        </button>
+                        </button>                        
                         )}
+
+                    {!request.showButtons &&(   
+                        <button style={buttonStyle} onClick={() => edit(request.id, request, true)}>
+                          Request Information
+                        </button>
+                    )}
 
                 </div>
             
@@ -702,14 +740,33 @@ useEffect(() => {
                           type="checkbox"
                           checked={checkBoxChecked}
                           onChange={() => setCheckBoxChecked(!checkBoxChecked)}
+                          style={{  marginRight: "10px", width: "auto"}}
                         />
                       Ich bestätige die Aktion
                       </label>
                     </div>
+                    {currentStatus === "picked" && !isDelete && (
+                      <div>
+                        <label htmlFor="returnNotes">Rückgabebemerkungen</label>
+                        <textarea
+                          id="returnNotes"
+                          value={returnNotes}
+                          onChange={(e) => setReturnNotes(e.target.value)}
+                          placeholder="Optional: Geben Sie hier Rückgabebemerkungen ein"
+                          rows={4}
+                        />
+                      </div>
+                    )}
                      <div>
                         <button 
                         style={buttonStyle} 
-                        onClick={handleConfirm}
+                        onClick={() => {
+                          if (isDelete) { 
+                            handleDelete(currentRequest!);
+                          } else {
+                            handleConfirm();
+                          }
+                          }}
                         disabled={!checkBoxChecked}
                         >
                             Bestätigen
@@ -799,7 +856,6 @@ const dropdownContentStyle: React.CSSProperties = {
   };
   
 const checkboxLabelStyle: React.CSSProperties = {
-    display: 'block',
     marginBottom: '10px',
   };
 

@@ -17,6 +17,7 @@ import { ImpressumScreen } from "../impressum/Impressum";
 import { PrivacyScreen } from "../privacy/Privacy";
 import { Profile } from "../profile/Profile";
 import { Suspense } from "react";
+import { CheckLoginCart } from "../cart/CheckLoginCart";
 
 export function Router() {
     return (
@@ -26,14 +27,14 @@ export function Router() {
             <Route path='contact' element={<ContactScreen />}/>
             <Route path='impressum' element={<ImpressumScreen />}/>
             <Route path='privacy' element={<PrivacyScreen />}/>
-            <Route path='cart' element={<Cart />}/>
+            <Route path='cart' element={<CheckLoginCart />}/>
             <Route path='profile' element={<Profile />}/>
             <Route path='*' element={<NotFound />} />
     
             <Route path='inventory'>
               <Route index element={<Inventory />} />
               <Route path="group">
-                <Route path="add" element={<AddGroup />} />
+                <Route path="add/:orgId" element={<AddGroup />} />
                 <Route path="edit/:groupId" element={<EditGroup />} />
               </Route>
               <Route path="add/:orgId" element={<AddInventory />} />

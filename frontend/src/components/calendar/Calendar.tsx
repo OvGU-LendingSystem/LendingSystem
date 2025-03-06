@@ -1,7 +1,7 @@
 import "./Calendar.css";
-import { Card, Checkbox, Divider, H4, H6, Overlay2 } from "@blueprintjs/core";
+import { Card, Checkbox, Divider, H4, H6, NonIdealState, Overlay2, Spinner } from "@blueprintjs/core";
 import { addDays, endOfWeek, isAfter, isWeekend, startOfWeek, subDays } from "date-fns";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, Suspense, useMemo, useState } from "react";
 import { DateRange, DayPicker, rangeIncludesDate } from "react-day-picker";
 import { MdCalendarMonth, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { Order, useGetOrder } from "../../hooks/order-helper";
@@ -40,7 +40,9 @@ export function Calendar() {
             <CalendarHeader selectedWeek={selectedWeek} setSelectedDay={setSelectedDay}
                 showWeekend={showWeekend} setShowWeekend={setShowWeekend} />
             <div className="day-list--calendar">
-                {days.map(day => <CalendarEntry date={day} key={day.getTime()} />)}
+                <Suspense fallback={<NonIdealState><Spinner /></NonIdealState>}>
+                    {days.map(day => <CalendarEntry date={day} key={day.getTime()} />)}
+                </Suspense>
             </div>
         </div>
     );
@@ -164,8 +166,27 @@ export function OrderItem({ order }: { order: Order }) {
             <p>Ausleihe von {order.user.firstName} {order.user.lastName}</p>
             <p>Enthält:</p>
             <ul>
-                {order.physicalObjects.map((object) => <li key={object.physId}>{object.name}</li>)}
+                {order.physicalObjects.map((object) => <li style={{color: getColor(object.orderStatus)}} key={object.physId}>{object.name}</li>)}
             </ul>
         </>
     );
+}
+
+const getColor = (status: string) => {
+    switch (status) {
+        case 'PENDING':
+            return '#ffff00';
+        case 'RESERVED':
+            return '#ffff00';
+        case 'ACCEPTED':
+            return '#00ff7f';
+        case 'PICKED':
+            return '#87cefa';
+        case 'REJECTED':
+            return '#ff0000';
+        case 'RETURNED':
+            return '#ffa500'
+        default:
+            return 'black';
+    }
 }

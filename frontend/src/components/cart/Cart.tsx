@@ -5,51 +5,92 @@ import './Cart.css';
 import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from "../../core/input/Buttons/Calendar_Querry";
 import AGBPopUp from "../AGB/AGBPopUp";
-import { useLoginStatus } from "../../context/LoginStatusContext";
-
-//APOLLO STUFF ZUM TESTEN
+import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
 
 import { useQuery, gql } from '@apollo/client';
 import { useCart, useCartDispatcher } from "../../context/CartContext";
 import { Spinner } from "@blueprintjs/core";
+import { InventoryItemInCart } from "../../models/InventoryItem.model";
+import { useGetDepositForCart } from "../../hooks/deposit-helpers";
+import { isTemplateMiddle } from "typescript";
 
 
 export function Cart() {
+  const [getMaxDeposit, {data: deposit, loading, error}] = useGetDepositForCart();
+  const user = useUserInfo();
   const itemsInCartUnsorted = useCart();
-  console.log(itemsInCartUnsorted);
   itemsInCartUnsorted.sort(function(a, b){
       if (a.organization<b.organization) return -1;
       if (a.organization>b.organization) return 1;
+      if (a.organization==b.organization){
+        if (a.startDate<b.startDate) return -1;
+        if (a.startDate>b.startDate) return 1;
+        if (a.startDate==b.startDate){
+          if (a.endDate<b.endDate) return -1;
+          if (a.endDate>b.endDate) return 1;
+        }
+      }
       return 0;
     }
   );
-  const itemsInCart: Product[][] = [];
-  if (itemsInCartUnsorted.length>0) itemsInCart.push([]);
-  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
-  itemsInCartUnsorted.forEach(item => {
-    const ind = itemsInCart.length-1;
-    if (item.organization == firstOrg){
-      itemsInCart[ind].push(item);
-    }
-    else{
+  const depositForOrg: number[] = [];
+  const itemsInCart: InventoryItemInCart[][] = [];
+  useEffect(() => {
+    if (itemsInCartUnsorted.length>0){
       itemsInCart.push([]);
-      itemsInCart[ind+1].push(item);
-      firstOrg = item.organization;
+      depositForOrg.push(0);
+      //const r = {rights: "CUSTOMER"};
+      const r = user.organizationInfoList.find(org => org.id==itemsInCartUnsorted[0].organizationId);
+      getMaxDeposit({variables: {organizationId: itemsInCartUnsorted[0].organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+      
+      //console.log(deposit);
     }
-  });
+  }, []); 
+  console.log(itemsInCart);
+  let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
+  let firstStartDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].startDate: "";
+  let firstEndDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].endDate: "";
+  let maxD = itemsInCartUnsorted.length>0&&deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxDeposit.maxDeposit : 100000;
+  useEffect(() => {
+    itemsInCartUnsorted.forEach(item => {
+      const ind = itemsInCart.length-1;
+      if (item.organization == firstOrg && item.startDate.toString() == firstStartDate.toString() && item.endDate.toString() == firstEndDate.toString()){
+        itemsInCart[ind].push(item);
+        depositForOrg[ind] += item.deposit;
+        if (depositForOrg[ind]>maxD) depositForOrg[ind]=maxD;
+      }
+      else{
+        //const r = {rights: "CUSTOMER"};
+        const r = user.organizationInfoList.find(org => org.id==item.organizationId);
+        getMaxDeposit({variables: {organizationId: item.organizationId, userRight: r?.rights ?? "CUSTOMER"}});
+        
+        maxD = deposit!=undefined&&deposit.getMaxDeposit.maxDeposit!=null ? deposit.getMaxdeposit.maxDeposit : 100000;
+        //maxD =  10;
+        itemsInCart.push([]);
+        depositForOrg.push(0);
+        itemsInCart[ind+1].push(item);
+        depositForOrg[ind+1] += item.deposit;
+        if (depositForOrg[ind+1]>maxD) depositForOrg[ind+1]=maxD;
+        firstOrg = item.organization;
+        firstStartDate = item.startDate;
+        firstEndDate = item.endDate;
+      }
+    });
+  }, []);
+  
   //const itemsInCart = itemsInCartUnsorted;
-  //console.log(itemsInCart);
+  console.log(itemsInCart);
   const itemsInCartDispatcher = useCartDispatcher();
   const loginDispatcher = useLoginStatus();
 
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<InventoryItemInCart | null>(null);
     const [amount, setAmount] = useState<number>(1);
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
 
-    var productNew: Product;
+    var productNew: InventoryItemInCart;
 
      useEffect(() => {
        if (selectedProduct) {
@@ -58,7 +99,7 @@ export function Cart() {
        }
    }, [selectedProduct]);
 
-    const openModal = (product: Product) => {
+    const openModal = (product: InventoryItemInCart) => {
         setSelectedProduct(product);
         setStartDate(product.startDate ?? null);
         setEndDate(product.endDate ?? null);
@@ -83,7 +124,9 @@ export function Cart() {
      }
     };
 
-    if (loginDispatcher.loggedIn){
+    
+
+    if (!loading){
       return (
           
           <div>
@@ -94,15 +137,15 @@ export function Cart() {
                   {itemsInCart.map((item) => (
                     <div style={aroundProductCardStyle}>
                     {item.map((product) => (
-                      <div key={product.id} style={productCardStyle}>
-                      <img src={product.imageUrl} alt={product.name} style={imageStyle} />
+                      <div key={product.physId} style={productCardStyle}>
+                      <img src={'/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                       <div style={productInfoStyle}>
                         <h3>{product.name}</h3>
                         
                         <div style={descriptionStyle}>
                           <div style={descriptionContentStyle}>{product.description}</div>
                         </div>
-                        <div style={priceStyle}>{product.price}</div>
+                        <div style={priceStyle}>Leihgebühr: {product.deposit/100} €</div>
                         <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
                         <div>Organistation: {product.organization}</div>
 
@@ -117,8 +160,10 @@ export function Cart() {
                     </div>
                     ))}
 
-                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} disabled={!loginDispatcher.loggedIn}>Abschicken</button>
-                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item}/></Suspense>}
+                      <div style={priceStyle}>Leihgebühr: {depositForOrg[itemsInCart.indexOf(item)]/100} €</div>
+                      <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} >Abschicken</button>
+                      
+                      {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item} deposit={depositForOrg[itemsInCart.indexOf(item)]} allProducts={itemsInCart}/></Suspense>}
                       {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
                     </div>
                   
@@ -160,7 +205,7 @@ export function Cart() {
     }
     
     return (
-      <div>Bitte einloggen Seite.</div>
+      <div style={{marginTop: '10px'}}>loading..</div>
     );
 
 }
