@@ -69,10 +69,8 @@ def check_for_phys_object(executive_user, required_rights, phys_id):
     owner_organization = phys_obj.organization
     for user in owner_organization.users:
         if user.user_id == executive_user.user_id:
-            print("User right: ", user.rights, "Required right: ", required_rights)
-            return user.rights < required_rights
+            return user.rights <= required_rights
 
-    print("User is not part of the organization")
     return False
 
 def check_for_tag(executive_user, required_rights, tag_id):
@@ -143,9 +141,11 @@ def check_for_organization(executive_user, required_rights, organization_id):
     organization can only be edited or deleted by user if the user has the required rights in the organization
     """
     organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
-    user_relation = organization.users.filter(UserModel.user_id == executive_user.user_id).first()
-    return user_relation.user_rights > required_rights
 
+    for user in organization.users:
+        if user.user_id == executive_user.user_id:
+            return user.rights <= required_rights
 
+    return False
 
 reject_message = "Sie sind nicht autorisiert diese Aktion auszuführen"

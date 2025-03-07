@@ -26,6 +26,11 @@ class userRights(enum.Enum):
     customer            = 4 # können nur bestellen, abholen, zurückgeben
     watcher             = 5 # können nur gucken
 
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+
     def __lt__(self, other):
         if self.__class__ is other.__class__:
             return self.value < other.value
@@ -35,6 +40,14 @@ class userRights(enum.Enum):
         if self.__class__ is other.__class__:
             return self.value > other.value
         return NotImplemented
+    
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value == other.value
+        return NotImplemented
+    
+    def __hash__(self):
+        return hash(self.name)
 
 class orderStatus(enum.Enum):
     """
@@ -316,6 +329,15 @@ class Organization(Base):
     groups              = relationship("Group",             back_populates = "organization")
     orders              = relationship("Order",             back_populates = "organization")
 
+    def has_user(self, user_id):
+        """
+        checks if a user is in the organization
+        """
+        for user in self.users:
+            if user.user_id == user_id:
+                return True
+        return False
+
     def add_user(self, user, rights = userRights.customer):
         """
         adds a user to the organization
@@ -330,6 +352,15 @@ class Organization(Base):
         """
         self.users.remove(user)
         user.organizations.remove(user)
+
+    def set_user_right(self, user_id, right):
+        """
+        sets the right of a user in the organization
+        """
+        for user in self.users:
+            if user.user_id == user_id:
+                user.rights = right
+                return
 
     def reset_user_agreement(self):
         """
