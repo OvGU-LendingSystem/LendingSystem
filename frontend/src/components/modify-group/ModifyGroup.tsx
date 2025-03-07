@@ -11,6 +11,7 @@ import { MdArrowDropDown, MdArrowRight } from "react-icons/md";
 import { useFilterUserOrganizationInfo } from '../../utils/organization-info-utils';
 import { OrganizationRights } from '../../models/user.model';
 import { SubmitErrorState, SubmitState } from '../../utils/submit-state';
+import { FormikTagInput } from '../../core/input/TagInput';
 
 export function ModifyGroup<T>({ initialValue, label, onSubmit, ErrorScreen, onSuccess }: { initialValue: AddGroupItem, label: string, onSubmit: (value: AddGroupItem) => Promise<SubmitState<T>>, onSuccess: () => void, ErrorScreen: React.FC<{ data: T, retry: () => void }>}) {
     const [ submitState, setSubmitState ] = useState<SubmitErrorState<T>>();
@@ -46,10 +47,16 @@ export function ModifyGroup<T>({ initialValue, label, onSubmit, ErrorScreen, onS
                         <div className='inner-container'>
                             <div>
                                 <FormikImagesSelectorComponent name='pictures' />
+                                
                                 <label>Name</label>
                                 <FormikInput fieldName='name' />
+
                                 <H3><label htmlFor='description'>Beschreibung</label></H3>
                                 <FormikTextarea id='description' rows={6} fieldName='description' />
+                                
+                                <H3><label htmlFor='tags'>Tags</label></H3>
+                                <FormikTagInput fieldName='tags' />
+                                
                                 <Button type="submit" fill={true} intent='primary'>{label}</Button>
                             </div>
                             <Suspense>
