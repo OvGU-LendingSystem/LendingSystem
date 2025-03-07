@@ -44,8 +44,8 @@ export function useUpdateTags() {
 
     const getTagsResult = async (tags: Tag[], setTags: (val: Tag[]) => void): Promise<UpdateResult> => {
         const addTagsResponse = tags.map(async (tag): Promise<{ success: true, tag: RemoteTag } | { success: false, tag: NewTag }> => {
-            if ('id' in tag) {
-                return Promise.resolve({ success: true, tag });
+            if (Object.hasOwn(tag, 'id')) {
+                return Promise.resolve({ success: true, tag: tag as RemoteTag });
             }
 
             const result = await addTagMutation({ variables: { tag: tag.tag } });

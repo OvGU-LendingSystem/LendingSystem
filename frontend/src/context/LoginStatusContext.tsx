@@ -1,6 +1,7 @@
 import { Dispatch, ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { LoginStatus } from "../models/login-status.model";
 import { useCheckSession, useGetUserLazy } from "../hooks/user-helper";
+import { NotLoggedInError } from "../models/user-login-error";
 
 interface LoginStatusDispatcherAction {
     type: 'login' | 'logout' | 'update';
@@ -87,7 +88,7 @@ export function useLoginStatus() {
 export function useUserInfo() {
     const status = useLoginStatus();
     if (!status.loggedIn) {
-        throw new Error("Expected logged in user!");
+        throw new NotLoggedInError();
     }
 
     return status.user;

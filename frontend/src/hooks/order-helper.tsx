@@ -24,8 +24,8 @@ export function useCreateOrder() {
 
 
 const GET_ORDER = gql`
-query All($fromDay: Date, $tillDay: Date) {
-  filterOrders(fromDay: $fromDay, tillDay: $tillDay) {
+query All($fromDay: Date, $tillDay: Date, $organizationIds: [String!], $userIds: [String!]) {
+  filterOrders(fromDay: $fromDay, tillDay: $tillDay, organizations: $organizationIds, users: $userIds) {
     orderId,
     fromDate,
     tillDate,
@@ -97,7 +97,7 @@ export interface Order {
     }
 }
 
-export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined) {
+export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined, organizationIds: string[] | undefined, userIds: string[] | undefined) {
     const mapToOrder = (response: OrderResponse[]) => {
         return response.map(orderResponse => {
             const flattenedOrder = flattenEdges<{ orderStatus: string, physicalobject: {
@@ -129,7 +129,9 @@ export function useGetOrder(fromDay: Date | undefined, tillDay: Date | undefined
     return useSuspenseQueryWithResponseMapped<OrderResponse[], Order[]>(GET_ORDER, 'filterOrders', {
         variables: {
             fromDay: fromDay ? getApolloDateString(fromDay) : undefined,
-            tillDay: tillDay ? getApolloDateString(tillDay) : undefined
+            tillDay: tillDay ? getApolloDateString(tillDay) : undefined,
+            organizationIds,
+            userIds
         },
         fetchPolicy: 'network-only'
     }, mapToOrder);
