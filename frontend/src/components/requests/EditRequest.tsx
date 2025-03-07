@@ -297,6 +297,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
     const [updatedDeposit, setUpdatedDeposit] = useState(data.filterOrders[0].deposit);
+    const [useCustomDeposit, setUseCustomDeposit] = useState(false);
     const orgId = [data.filterOrders[0].organization.organizationId];
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
@@ -305,9 +306,10 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
         setSelectedObjectIds(data?.filterOrders[0]?.physicalobjects?.edges?.map((item) => item.node.physId) ?? []);
         refetch()
         if (data && data.filterOrders.length > 0) {
-            const { fromDate, tillDate } = data.filterOrders[0];
+            const { fromDate, tillDate, deposit } = data.filterOrders[0];
                 setStartDate(fromDate ?? null);
                 setEndDate(tillDate ?? null);
+                setUpdatedDeposit(deposit);
                 if (physicalobjects.edges.length > 0) {
                     setSelectedStatus(physicalobjects.edges[0].node.orderStatus);
                     setReturnNotes(physicalobjects.edges[0].node.returnNotes)
@@ -390,7 +392,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const handleOrderDepositChange = async () => {
       try {
 
-        if (originalDeposit === updatedDeposit){
+        if (!useCustomDeposit){
 
           const userOrganizations = organizations.filter(
             (org) => org.node.organizationId === organizationId
@@ -554,6 +556,10 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
       setUpdatedDeposit(isNaN(newDeposit) ? 0 : newDeposit);
     };
 
+    const handleUseCustomDepositChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setUseCustomDeposit(event.target.checked);
+  };
+
     return (
         <div style={{ padding: "20px" }}>
             <h1>Order Details</h1>
@@ -610,12 +616,24 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 <h3>Deposit Information</h3>
                 <p>Current Deposit: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
                 {!isUser && (
+                <div>
+                  <label style={{ marginRight: '10px' }}>
+                    <input
+                        type="checkbox"
+                        checked={useCustomDeposit}
+                        onChange={handleUseCustomDepositChange}
+                        style={{ marginRight: '5px' }}
+                    />
+                    Custom Deposit Wert Setzen
+                  </label>
                   <input
                       type="number"
                       value={updatedDeposit}
                       onChange={handleDepositChange}
                       style={{ padding: "5px", width: "100px" }}
-                  />
+                      disabled={!useCustomDeposit}
+                   />
+                </div>
                 )}
             </div>
 
