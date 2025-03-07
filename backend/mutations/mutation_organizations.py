@@ -333,17 +333,14 @@ class update_user_rights(graphene.Mutation):
             if not user or not organization:
                 return update_user_rights(ok=False, info_text="Benutzer oder Organisation existieren nicht.", status_code=404)
 
-            # solange die neuen Rechte nicht die eines organization_admin überschreiten
-            if new_rights != userRights.system_admin:
-                for organization in user.organizations:
-                    if organization.organization_id == organization_id:
-                        organization.rights = new_rights
-                        break
-
-                db.commit()
-                return update_user_rights(ok=True, info_text="Benutzerrechte erfolgreich angepasst.", organization=organization, status_code=200)
+            # add user to organization if not already in it
+            if not organization.has_user(user):
+                organization.add_user(user, userRights[new_rights])
             else:
-                return update_user_rights(ok=False, info_text="Nicht genügend Rechte.", status_code=403)
+                organization.set_user_rights(user, userRights[new_rights])
+
+            db.commit()
+            return update_user_rights(ok=True, info_text="Rechte erfolgreich aktualisiert.", organization=organization, status_code=200)
         except Exception as e:
             print(e)
             tb = traceback.format_exc()
