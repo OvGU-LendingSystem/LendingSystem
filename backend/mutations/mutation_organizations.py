@@ -334,10 +334,10 @@ class update_user_rights(graphene.Mutation):
                 return update_user_rights(ok=False, info_text="Benutzer oder Organisation existieren nicht.", status_code=404)
 
             # add user to organization if not already in it
-            if not organization.has_user(user):
+            if not organization.has_user(user.user_id):
                 organization.add_user(user, userRights[new_rights])
             else:
-                organization.set_user_rights(user, userRights[new_rights])
+                organization.set_user_right(user.user_id, userRights[new_rights])
 
             db.commit()
             return update_user_rights(ok=True, info_text="Rechte erfolgreich aktualisiert.", organization=organization, status_code=200)
