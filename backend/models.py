@@ -350,8 +350,8 @@ class Organization(Base):
         """
         removes a user from the organization
         """
-        self.users.remove(user)
-        user.organizations.remove(user)
+        self.users = [user for user in self.users if user.user_id != user.user_id]
+        user.organizations = [organization for organization in user.organizations if organization.organization_id != self.organization_id]
 
     def set_user_right(self, user_id, right):
         """
