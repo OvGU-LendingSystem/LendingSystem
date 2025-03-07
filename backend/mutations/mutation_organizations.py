@@ -276,26 +276,20 @@ class remove_user_from_organization(graphene.Mutation):
         
 
 
-        try:
-            user = UserModel.query.filter(UserModel.user_id == user_id).first()
-            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+        # try:
+        user = UserModel.query.filter(UserModel.user_id == user_id).first()
+        organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
-            if not user or not organization:
-                return remove_user_from_organization(ok=False, info_text="User oder Organisation existieren nicht.", status_code=404)
+        if not user or not organization:
+            return remove_user_from_organization(ok=False, info_text="User oder Organisation existieren nicht.", status_code=404)
 
-            # falls der User orga_admin oder höher, ist kann er nicht entfernt werden
-            for organization in user.organizations:
-                if organization.organization_id == organization_id:
-                    if organization.rights.value <= userRights.organization_admin:
-                        return remove_user_from_organization(ok=False, info_text="User hat zu hohe Rechte um entfernt zu werden", status_code=403)
-
-            organization.remove_user(user)
-            db.commit()
-            return remove_user_from_organization(ok=True, info_text="User erfolgreich aus der Organisation entfernt.", organization=organization, status_code=200)
-        except Exception as e:
-            print(e)
-            tb = traceback.format_exc()
-            return remove_user_from_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb, status_code=500)
+        organization.remove_user(user)
+        db.commit()
+        return remove_user_from_organization(ok=True, info_text="User erfolgreich aus der Organisation entfernt.", organization=organization, status_code=200)
+        # except Exception as e:
+        #     print(e)
+        #     tb = traceback.format_exc()
+        #     return remove_user_from_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb, status_code=500)
 
 
 class update_user_rights(graphene.Mutation):
