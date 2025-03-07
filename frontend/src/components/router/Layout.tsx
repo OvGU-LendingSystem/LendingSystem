@@ -6,6 +6,7 @@ import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Footer } from "../footer/Footer";
 import { OrganizationRights } from "../../models/user.model";
+import { NotLoginErrorBoundary } from "../no-login-screen/NoLoginScreen";
 
 interface ModalProps {
   children: ReactNode;
@@ -125,7 +126,9 @@ export function Layout() {
       </nav>
       <div className="main-scroller">
         <main className="content">
-          <Outlet />
+          <NotLoginErrorBoundary>
+            <Outlet />
+          </NotLoginErrorBoundary>
         </main>
         <Footer />
       </div>
