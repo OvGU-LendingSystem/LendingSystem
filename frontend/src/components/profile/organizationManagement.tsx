@@ -59,7 +59,7 @@ export function OrganizationManagement() {
         </option>
         {userOrganizations.map((org) => (
           <option key={org.id} value={org.id}>
-            {org.name}
+            {/*org.name*/}
           </option>
         ))}
       </select>
