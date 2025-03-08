@@ -99,6 +99,9 @@ export function Login(props: LoginProps) {
       setErrorMessage('Alle Felder müssen ausgefüllt werden!');
       return;
     }
+    if(!email.endsWith("ovgu.de")){
+      setErrorMessage("Die E-Mail-Adresse muss auf 'ovgu.de' enden.")
+    }
 
     if (password !== repeatPassword) {
       setErrorMessage('Die Passwörter stimmen nicht überein!');
