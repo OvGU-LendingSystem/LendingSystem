@@ -60,6 +60,16 @@ const UPDATE_USER_RIGHTS = gql`
   }
 `;
 
+const CHANGE_PASSWORD = gql`
+mutation updateUser($password: String, $userId: String){
+  updateUser(password: $password, userId: $userId){
+    ok
+    statusCode
+    infoText
+  }
+}
+`;
+
 const CREATE_USER = gql`
   mutation createUser($city: String,
   $country: String,

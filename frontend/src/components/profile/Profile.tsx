@@ -6,6 +6,7 @@ import { Login } from "../login/Login";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 import { useUpdateUserRights } from "../../hooks/user-helper";
+import { OrganzationManagement } from "./organizationManagement";
 import './Profile.css';
 
 const CHECK_EMAIL_EXISTENCE = gql`
@@ -14,6 +15,38 @@ const CHECK_EMAIL_EXISTENCE = gql`
       exists
     }
   }
+`;
+
+const CHANGE_RIGHTS = gql`
+  mutation updateUserRights($newRights: String,
+  $organizationId: String
+  $userId: String) {
+    updateUserRights(newRights: $newRights,
+    organizationId: $organizationId,
+    userId: $userId) {
+      ok,
+      infoText,
+      statusCode
+    }
+  }
+`;
+
+const CHANGE_PASSWORD = gql`
+mutation updateUser($password: String, $userId: String){
+  updateUser(password: $password, userId: $userId){
+    ok
+    statusCode
+    infoText
+  }
+}
+`;
+
+const GET_USERID = gql`
+mutation filterUsers($roleEmail: String){
+  filterUsers(email: $roleEmail){
+    userId
+  }
+}
 `;
 
 
@@ -31,6 +64,54 @@ export function Profile() {
   const [selectedRole, setSelectedRole] = useState("User");
   const setLoginAction = useLoginStatusDispatcher();
   const [updateUserRightsMutation] = useUpdateUserRights();
+  const [changeUserRights] = useMutation(CHANGE_RIGHTS);
+  const [changePassword] = useMutation(CHANGE_PASSWORD);
+  const [getUserID] = useMutation(GET_USERID);
+
+  const handleRightsChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!roleEmail) {
+      alert('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    try {
+      console.log(roleEmail);
+      const { data: userData } = await getUserID({
+        variables: { roleEmail },
+      });
+      console.log("userd: "+userData);
+
+      if (!userData?.filterUsers?.userId) {
+        alert("Benutzer-ID konnte nicht gefunden werden.");
+        return;
+      }
+
+    const userId = userData.filterUsers.userId;
+    console.log("stev");
+    console.log(userId);
+    
+      const { data } = await changeUserRights({
+        variables: {
+          userId: userId,
+          newRights: selectedRole,
+          organization: "69590f30-0959-406d-a9b5-3fefbda28fb4"
+        }
+      });
+      console.log("userId");
+
+      if (data?.updateUserRights?.ok) {
+        alert(`Rolle "${selectedRole}" erfolgreich zugewiesen!`);
+      } else {
+        alert(`Fehler: ${data?.updateUserRights?.infoText || "Unbekannter Fehler"}`);
+      }
+    } catch (error) {
+      console.error("Error assigning role:", error);
+      alert("Fehler beim Zuweisen der Rolle.: ");
+    }
+  
+    setRoleModalOpen(false);
+  };
+
 
 
   const handleLogout = () => {
@@ -44,13 +125,10 @@ export function Profile() {
     setModalOpen(false);
   };
 
-  const { data, loading, error } = useQuery(CHECK_EMAIL_EXISTENCE, {
-    variables: { email: roleEmail },
-    skip: !roleEmail, // Only run when there's an email input
-  });
+
 
   const handleAssignRole = async () => {
-    if (loading) return;
+   // if (loading) return;
 
 
     const organizationId = loginStatus.loggedIn
@@ -120,6 +198,7 @@ export function Profile() {
           Matrikelnummer: {loginStatus.user?.matricleNumber || ""}
         </p>
         <button onClick={handleLogout} className="logout-button5">Logout</button>
+        <OrganzationManagement></OrganzationManagement>
       </div>
 
       {isModalOpen && (
@@ -168,23 +247,22 @@ export function Profile() {
               />
             </label>
             <br /><br />
-            {data && !data.checkEmailExists.exists && (
+            {(
               <p style={{ color: "red" }}>Diese E-Mail existiert nicht!</p>
             )}
             <label>
   Rolle:
   <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-    <option value="SYSTEM_ADMIN">System-Admin</option>
-    <option value="ORGANIZATION_ADMIN">Organisations-Admin</option>
-    <option value="INVENTORY_ADMIN">Inventar-Admin</option>
-    <option value="MEMBER">Mitglied</option>
-    <option value="CUSTOMER">Kunde</option>
-    <option value="WATCHER">Beobachter</option>
+    <option value="organization_admin">Organisations-Admin</option>
+    <option value="inventory_admin">Inventar-Admin</option>
+    <option value="member">Mitglied</option>
+    <option value="customer">Kunde</option>
+    <option value="watcher">Beobachter</option>
   </select>
 </label>
             <br />
             <div className="modal-buttons">
-              <button onClick={handleAssignRole}>Bestätigen</button>
+              <button onClick={handleRightsChange}>Bestätigen</button>
               <button onClick={() => setRoleModalOpen(false)}>Abbrechen</button>
             </div>
           </div>

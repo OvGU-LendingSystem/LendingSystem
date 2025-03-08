@@ -9,6 +9,7 @@ export enum OrganizationRights {
 
 export interface OrganizationInfo {
     id: string;
+    name: string;
     rights: OrganizationRights;
     agbDontShow: boolean;
 }
