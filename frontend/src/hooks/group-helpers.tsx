@@ -2,10 +2,11 @@ import { gql } from "@apollo/client";
 import { flattenEdges, GQLResponse, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { AddGroupItem, Group } from "../models/group.model";
 import { InventoryItem } from "../models/InventoryItem.model";
+import { RemoteTag } from "../models/tag.model";
 
 const ADD_GROUP_MUTATION = gql`
-    mutation AddGroup($name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!, $organizationId: String!) {
-        createGroup(name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures, organizationId: $organizationId) {
+    mutation AddGroup($name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!, $organizationId: String!, $tags: [String!]!) {
+        createGroup(name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures, organizationId: $organizationId, tags: $tags) {
             ok,
             infoText
         }
@@ -19,7 +20,8 @@ export interface AddGroupVars {
     description: string,
     physicalObjects: string[],
     pictures: string[],
-    organizationId: string
+    organizationId: string,
+    tags: string[]
 }
 
 export function useAddGroupMutation() {
@@ -29,8 +31,8 @@ export function useAddGroupMutation() {
 }
 
 const EDIT_GROUP_MUTATION = gql`
-    mutation EditGroup($groupId: String!, $name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!) {
-        updateGroup(groupId: $groupId, name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures) {
+    mutation EditGroup($groupId: String!, $name: String!, $physicalObjects: [String!]!, $description: String!, $pictures: [String!]!, $tags: [String!]!) {
+        updateGroup(groupId: $groupId, name: $name, physicalobjects: $physicalObjects, description: $description, pictures: $pictures, tags: $tags) {
             ok,
             infoText
         }
@@ -44,7 +46,8 @@ export interface EditGroupVars {
     name: string,
     description: string,
     physicalObjects: string[],
-    pictures: string[]
+    pictures: string[],
+    tags: string[]
 }
 
 export function useEditGroupMutation() {
@@ -403,6 +406,14 @@ query GetGroupById($groupId: String!) {
         }
       }
     },
+    tags {
+      edges {
+        node {
+          tagId
+          name
+        }
+      }
+    },
     organizationId
   }
 }
@@ -426,6 +437,14 @@ interface GetGroupByIdResponse {
             }
         }[]
     },
+    tags: {
+        edges: {
+            node: {
+                tagId: string;
+                name: string;
+            }
+        }[]
+    },
     organizationId: string
 }
 
@@ -435,17 +454,21 @@ export function useGetAddGroupItemByIdQuery(groupId: string) {
             throw { error: 'Group invalid' };
 
         const flattenedPhysicalObjects = flattenEdges<{ physId: string }, 'physicalobjects', GetGroupByIdResponse>(val[0], 'physicalobjects');
-        const flattenedResponse = flattenEdges<{ fileId: string, path: string }, 'pictures', typeof flattenedPhysicalObjects>(
+        const flattenedPictures = flattenEdges<{ fileId: string, path: string }, 'pictures', typeof flattenedPhysicalObjects>(
             flattenedPhysicalObjects,
             'pictures'
         );
-
+        const flattenedResponse = flattenEdges<{ tagId: string, name: string }, 'tags', typeof flattenedPictures>(
+            flattenedPictures,
+            'tags'
+        );
         const group: AddGroupItem = {
             name: flattenedResponse.name,
             description: flattenedResponse.description,
             physicalObjectIds: flattenedResponse.physicalobjects.map(val => val.physId),
             pictures: flattenedResponse.pictures.map(pic => { return { type: 'remote', fileId: pic.fileId, path: pic.path } }),
-            orgId: flattenedResponse.organizationId
+            orgId: flattenedResponse.organizationId,
+            tags: flattenedResponse.tags.map((tagResponse): RemoteTag => ({ id: tagResponse.tagId, tag: tagResponse.name }))
         }
         
         return group;

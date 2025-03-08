@@ -10,34 +10,43 @@ import { SubmitState } from "../../utils/submit-state";
 import { useToaster } from "../../context/ToasterContext";
 import { Button, NonIdealState } from "@blueprintjs/core";
 import { MdPriorityHigh } from "react-icons/md";
+import { useUpdateTags } from "../../hooks/tag-helpers";
 
 interface EditGroupRetryData {
     imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    tagStatus: Awaited<ReturnType<ReturnType<typeof useUpdateTags>>>,
     editGroupResult?: {
         success: boolean;
         info: any;
     },
-    editGroup: (images: string[]) => Promise<SuccessResponse<EditGroupResponse> | ErrorResponse>
+    editGroup: (images: string[], tags: string[]) => Promise<SuccessResponse<EditGroupResponse> | ErrorResponse>
 }
 
 const retry = async (data: EditGroupRetryData): Promise<SubmitState<EditGroupRetryData>> => {
     let [ imageResult, retryImages ] = data.imageStatus;
+    let [ tagResult, retryTags ] = data.tagStatus;
+    
     if (!imageResult.success)
         imageResult = await retryImages();
 
-    if (!imageResult.success) {
+    if (!tagResult.success)
+        tagResult = await retryTags();
+
+    if (!imageResult.success || !tagResult.success) {
         return new SubmitState.Error({
             imageStatus: [imageResult, retryImages],
+            tagStatus: [tagResult, retryTags],
             editGroup: data.editGroup
         }, retry);
     }
 
-    const editGroupResult = await data.editGroup(imageResult.value);
+    const editGroupResult = await data.editGroup(imageResult.value, tagResult.value);
     if (editGroupResult.success)
         return SubmitState.SUCCESS;
 
     return new SubmitState.Error({
         imageStatus: [imageResult, retryImages],
+        tagStatus: [tagResult, retryTags],
         editGroupResult,
         editGroup: data.editGroup
     }, retry);
@@ -67,27 +76,39 @@ function EditGroupScreen({ groupId }: { groupId: string }) {
     const toaster = useToaster();
     const [ editGroup ] = useEditGroupMutation();
     const updateFiles = useUpdateFiles();
+    const updateTags = useUpdateTags();
     const { data } = useGetAddGroupItemByIdQuery(groupId);
 
     const submit = async (value: AddGroupItem): Promise<SubmitState<EditGroupRetryData>> => {
         let [ imageResult, retryImages ] = await updateFiles(data?.pictures ?? [], value.pictures);
-        const editGroupFn = async (images: string[]) => {
-            return await editGroup({ variables: { groupId: groupId, name: value.name, description: value.description, pictures: images, physicalObjects: value.physicalObjectIds } });
+        let [ tagResult, retryTags ] = await updateTags(value.tags);
+
+        const editGroupFn = async (images: string[], tags: string[]) => {
+            return await editGroup({ variables: {
+                groupId: groupId,
+                name: value.name,
+                description: value.description,
+                pictures: images,
+                physicalObjects: value.physicalObjectIds,
+                tags: tags
+            } });
         }
-        if (!imageResult.success) {
+        if (!imageResult.success || ! tagResult.success) {
             return new SubmitState.Error({
                 imageStatus: [imageResult, retryImages],
+                tagStatus: [imageResult, retryTags],
                 editGroup: editGroupFn
             }, retry);
         }
 
-        const result = await editGroupFn(imageResult.value);
+        const result = await editGroupFn(imageResult.value, tagResult.value);
         if (result.success) {
             return SubmitState.SUCCESS;
         }
 
         return new SubmitState.Error({
             imageStatus: [imageResult, retryImages],
+            tagStatus: [tagResult, retryTags],
             editGroupResult: result,
             editGroup: editGroupFn
         }, retry);
