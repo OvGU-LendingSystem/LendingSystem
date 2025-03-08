@@ -159,6 +159,7 @@ export function Layout() {
                 {isDropdownVisible && (
                   <div className="dropdown-menu">
                     <button onClick={() => { setDropdownVisible(false); navigate("/profile"); }}>Nutzereinstellungen</button>
+                    <button onClick={() => { setDropdownVisible(false); navigate("/organization"); }}>Organisationsverwaltung</button>
                     <button onClick={handleLogout}>Logout</button>
                   </div>
                 )}

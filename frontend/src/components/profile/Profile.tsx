@@ -6,7 +6,7 @@ import { Login } from "../login/Login";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 import { useUpdateUserRights } from "../../hooks/user-helper";
-import { OrganzationManagement } from "./organizationManagement";
+import { OrganizationManagement } from "./organizationManagement";
 import './Profile.css';
 
 const CHECK_EMAIL_EXISTENCE = gql`
@@ -198,7 +198,6 @@ export function Profile() {
           Matrikelnummer: {loginStatus.user?.matricleNumber || ""}
         </p>
         <button onClick={handleLogout} className="logout-button5">Logout</button>
-        <OrganzationManagement></OrganzationManagement>
       </div>
 
       {isModalOpen && (
@@ -247,9 +246,7 @@ export function Profile() {
               />
             </label>
             <br /><br />
-            {(
-              <p style={{ color: "red" }}>Diese E-Mail existiert nicht!</p>
-            )}
+
             <label>
   Rolle:
   <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>

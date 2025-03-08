@@ -109,6 +109,10 @@ export function useUpdateUserRights() {
   return useMutationWithResponse<UpdateUserRightsResponse>(UPDATE_USER_RIGHTS, "updateUserRights");
 }
 
+export function usePasswordChange() {
+  return useMutationWithResponse<LogoutResponse>(CHANGE_PASSWORD, "updateUser");
+}
+
 export interface LogoutResponse {
   ok: boolean;
   infoText: string;
