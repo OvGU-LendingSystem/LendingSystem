@@ -64,6 +64,10 @@ export function Login(props: LoginProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
   const [registerUser] = useMutation(REGISTER_MUTATION);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
 
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -100,7 +104,8 @@ export function Login(props: LoginProps) {
       return;
     }
     if(!email.endsWith("ovgu.de")){
-      setErrorMessage("Die E-Mail-Adresse muss auf 'ovgu.de' enden.")
+      setErrorMessage("Die E-Mail-Adresse muss auf 'ovgu.de' enden.");
+      return;
     }
 
     if (password !== repeatPassword) {
@@ -159,11 +164,20 @@ export function Login(props: LoginProps) {
     setShowPassword(!showPassword);
   };
 
+  const handleForgotPassword = () => {
+    if (newPassword !== confirmNewPassword) {
+      setErrorMessage('Die Passwörter stimmen nicht überein!');
+      return;
+    }
+  };
+  
+
   const [login] = useMutation(query);
 
   return (
     <div className="login-container">
       {isLogin ? (
+        
         <form className="login-form" onSubmit={handleLogin}>
           <h2>Login</h2>
           <div className="form-group">
@@ -179,6 +193,8 @@ export function Login(props: LoginProps) {
           </div>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button type="submit" className="submit-button">Login</button>
+          <p><button type="button" onClick={handleForgotPassword} className="forgot-password">Passwort vergessen?</button></p>
+
           <p>Kein Konto? <button type="button" onClick={toggleForm}>Registrieren</button></p>
         </form>
       ) : (
