@@ -21,7 +21,6 @@ import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
-  console.log(itemsInCart);
 
   // Fetching physical objects
   const { data: products_tmp, error } = useGetPhysicalObjects();
@@ -61,6 +60,8 @@ export function Inventory(): JSX.Element {
 
   const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
+  var ids: string[] = [];
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -90,9 +91,8 @@ export function Inventory(): JSX.Element {
   const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
-    var ids = [];
+    
     ids.push(product.physId);
-    setPhysicalobjectIds(ids);
   };
 
   const closeModal = () => {
@@ -116,7 +116,6 @@ export function Inventory(): JSX.Element {
     if (selectedProduct && startDate && endDate) {
       console.log(selectedProduct);
       if (selectedProduct.physId.substring(0, 5)=="group" && selectedProduct.physicalObjects!=undefined){
-          console.log("GRUPPE");
           selectedProduct.physicalObjects.forEach(obj => {
             itemsInCartDispatcher({
               type: 'add',
@@ -268,7 +267,8 @@ export function Inventory(): JSX.Element {
           <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
               <h2>Objekt hinzufügen</h2>
-              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+              
+              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={ids}/>
 
               <div style={buttonContainerStyle}>
                 <button onClick={addToCart}>Hinzufügen</button>
