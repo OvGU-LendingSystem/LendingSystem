@@ -41,7 +41,7 @@ const [text, setText] = useState<string[]>([]);
 const textRef = useRef<HTMLDivElement>(null);
 const zoomPluginInstance = zoomPlugin();
 
-const {data} = useGetOrganizationByIdQuery(props.products[0].organizationId);
+const {data} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? "00000000-0000-0000-0000-000000000003");
 
 const status = useLoginStatus();
 
@@ -54,8 +54,8 @@ const handleCreateOrder = async () => {
     })
     createOrder({variables: {
         deposit: props.deposit,
-        fromDate: props.products[0].startDate,
-        tillDate: props.products[0].endDate,
+        fromDate: props.products[0]?.startDate ?? "",
+        tillDate: props.products[0]?.endDate ?? "",
         physicalobjects: ids,
     }});
 

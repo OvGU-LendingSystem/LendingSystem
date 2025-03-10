@@ -314,6 +314,7 @@ useEffect(() => {
         const isWatcher = OrgList.find((org) => org.id === request.organizationId)?.rights === "WATCHER";
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
         const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
+        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
 
         if (showCustomerOrders) {
           return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
@@ -322,9 +323,10 @@ useEffect(() => {
         if (isCustomer) {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
-        if (isWatcher)
+        if (isWatcher) {
           return ["accepted", "picked"].includes(request.status);
-        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
+        }
+        
         return categoryMatch && organizationMatch;
       })
       .sort((a, b) => {
@@ -653,7 +655,7 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + (request.deposit / 100).toFixed(2) + "€"}</div>
+                        <div>{"Kaution: " + (request.deposit / 100).toFixed(2) + "€"}</div>
                         <hr/>
                     </div>
 

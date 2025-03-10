@@ -9,6 +9,7 @@ import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { useUserInfo } from '../../context/LoginStatusContext';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -272,6 +273,7 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
+    const UserInfo = useUserInfo();
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -327,7 +329,13 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const {fromDate, tillDate, physicalobjects} = data.filterOrders[0];
     const organizations = data.filterOrders[0]?.users?.edges[0]?.node?.organizations?.edges || [];
     const organizationId = data.filterOrders[0]?.organization.organizationId;    
-    const originalDeposit = data.filterOrders[0]?.deposit;
+    const orderStatus = data.filterOrders[0].physicalobjects.edges[0].node.orderStatus;
+    
+    var isDepositEditable = false;
+
+    if (orderStatus === 'PENDING' || orderStatus === 'ACCEPTED') {
+        isDepositEditable = true;
+    }
 
     const physicalObjectsEdges = physicalobjects?.edges || [];
     const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
@@ -361,6 +369,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
           await handleEditRequest();
         }
 
+        if (isDepositEditable)
         handleOrderDepositChange();
         
       } catch(error) {
@@ -562,7 +571,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
 
     return (
         <div style={{ padding: "20px" }}>
-            <h1>Order Details</h1>
+            <h1>Bestelldetails</h1>
             <h2>Objekte:</h2>
             {!isUser && (
               <div>
@@ -599,7 +608,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                             <p>{"Beschreibung: " + physicalObject.description}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
-                            <p>{"Leihgebühr: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
+                            <p>{"Kaution: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
                         </div>
                     </div>
                 ))
@@ -613,9 +622,9 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 margin: "10px 0",
                 borderRadius: "5px"
             }}>
-                <h3>Deposit Information</h3>
-                <p>Current Deposit: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
-                {!isUser && (
+                <h3>Kaution Information</h3>
+                <p>Aktuelle Kaution: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
+                {!isUser && isDepositEditable && (
                 <div>
                   <label style={{ marginRight: '10px' }}>
                     <input
@@ -624,7 +633,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                         onChange={handleUseCustomDepositChange}
                         style={{ marginRight: '5px' }}
                     />
-                    Custom Deposit Wert Setzen
+                    Kautionwert Setzen 
                   </label>
                   <input
                       type="number"

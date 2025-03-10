@@ -21,7 +21,6 @@ import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 export function Inventory(): JSX.Element {
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
-  console.log(itemsInCart);
 
   // Fetching physical objects
   const { data: products_tmp, error } = useGetPhysicalObjects();
@@ -50,6 +49,8 @@ export function Inventory(): JSX.Element {
   const [dropdownVisible2, setDropdownVisible2] = useState<boolean>(false);
   const [showManual, setShowManual] = useState<boolean>(false);
   const [selectedManualPath, setSelectedManualPath] = useState<string>("");
+  const [showGroupElements, setShowGroupElements] = useState<boolean>(false);
+  const [selectedGroup, setSelectedGroup] = useState<InventoryItem | null>(null);
 
   const textRef = useRef<HTMLDivElement>(null);
   const zoomPluginInstance = zoomPlugin();
@@ -60,6 +61,8 @@ export function Inventory(): JSX.Element {
   const dropdownRef2 = useRef<HTMLDivElement>(null);
 
   const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
+
+  var ids: string[] = [];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -90,9 +93,8 @@ export function Inventory(): JSX.Element {
   const openModal = (product: any) => {
     setSelectedProduct(product);
     setShowModal(true);
-    var ids = [];
+    
     ids.push(product.physId);
-    setPhysicalobjectIds(ids);
   };
 
   const closeModal = () => {
@@ -112,11 +114,20 @@ export function Inventory(): JSX.Element {
     setSelectedManualPath("");
   };
 
+  const openGroupElements = (group: InventoryItem) => {
+    setSelectedGroup(group);
+    setShowGroupElements(true);
+  };
+
+  const closeGroupElements = () => {
+    setShowGroupElements(false);
+    setSelectedGroup(null);
+  };
+
   const addToCart = () => {
     if (selectedProduct && startDate && endDate) {
       console.log(selectedProduct);
       if (selectedProduct.physId.substring(0, 5)=="group" && selectedProduct.physicalObjects!=undefined){
-          console.log("GRUPPE");
           selectedProduct.physicalObjects.forEach(obj => {
             itemsInCartDispatcher({
               type: 'add',
@@ -151,10 +162,22 @@ export function Inventory(): JSX.Element {
   };
 
   const filteredProducts = products?.filter(product =>
-    {return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
+    {
+      var res: boolean = true;
+      if (product.physId.substring(0, 5)=="group"){
+        product.physicalObjects?.forEach(item => {
+          if (itemsInCart.map(obj => obj.physId).includes(item.physId)){ 
+            res=false;
+          }
+        });
+      }
+      
+      return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
       && (selectedCategories.includes(product.category) || selectedCategories.length==0)
       && (selectedOrganizations.includes(product.organization) || selectedOrganizations.length==0)
       && !(itemsInCart.map(obj => obj.physId).includes(product.physId))
+      && (res);
+      //&& (product.borrowable);
     }
   );
 
@@ -241,13 +264,20 @@ export function Inventory(): JSX.Element {
                   <div style={descriptionContentStyle}>{product.description}</div>
                 </div>
                 
-                <div style={descriptionContentStyle}>Leihgebühr: {product.deposit/100} €</div>
+                <div style={descriptionContentStyle}>Kaution: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
                 <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
                 {product.manualPath!="" && 
                     <div>
                       <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
                         Anleitung
+                      </button>
+                    </div>
+                } 
+                {product.physId.substring(0, 5)=="group" && 
+                    <div>
+                      <button onClick={() => openGroupElements(product)} style={linkStyle}>
+                        Objekte der Gruppe anzeigen
                       </button>
                     </div>
                 } 
@@ -268,7 +298,8 @@ export function Inventory(): JSX.Element {
           <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
               <h2>Objekt hinzufügen</h2>
-              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+              
+              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={ids}/>
 
               <div style={buttonContainerStyle}>
                 <button onClick={addToCart}>Hinzufügen</button>
@@ -277,6 +308,40 @@ export function Inventory(): JSX.Element {
             </div>
           </div>
       )}
+
+      {showGroupElements && (
+          <div style={modalOverlayStyle} className='scrollable-div'>
+            <div style={modalContentStyle}>
+              <h2>Objekte in {selectedGroup?.name}</h2>
+              
+              <div style={{ marginTop: '20px' }}>
+                {selectedGroup?.physicalObjects!=undefined &&
+                 selectedGroup?.physicalObjects.map((product) => (
+                  <div key={product.physId} style={productCardStyle}>
+                    {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                    }
+                    <img src={'http://192.168.178.169/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                    <div style={productInfoStyle}>
+                      <div style={descriptionStyle}>
+                        <h3>{product.name}</h3>
+                        <div style={descriptionContentStyle}>{product.description}</div>
+                      </div>
+                      
+                      <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+
+
+
+              <div style={buttonContainerStyle}>
+                <button onClick={closeGroupElements} style={{ marginLeft: '10px' }}> Schließen </button>
+              </div>
+            </div>
+          </div>
+      )} 
 
       {showManual && (
         <div style={modalOverlayStyle}>
@@ -428,5 +493,7 @@ const buttonContainerStyle: React.CSSProperties = {
 };
 
 const linkStyle: React.CSSProperties = {
-  
+  padding: '0px',
+  marginTop: '6px',
+  marginBottom: '6px',
 };
