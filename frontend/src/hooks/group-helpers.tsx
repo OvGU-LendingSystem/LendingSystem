@@ -296,12 +296,12 @@ export function useGetAllGroupsQuery() {
                 inventoryNumberInternal: -1,
                 inventoryNumberExternal: -1,
                 borrowable: true,
-                deposit: sum,//TODO DEPOSIT helper
+                deposit: sum,
                 storageLocation: "group",
                 defects: "group",
                 description: flattenedResponse.description,
                 images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
-                category: groupResponse.tags.edges[0]?.node.name ?? "",//TODO Kategorie
+                category: groupResponse.tags.edges[0]?.node.name ?? "",
                 organizationId: groupResponse.organization.organizationId,
                 organization: groupResponse.organization.name,
                 physicalObjects: phyObj,

@@ -164,7 +164,7 @@ export function Cart() {
                       <div style={descriptionStyle}>
                         <div style={descriptionContentStyle}>{product.description}</div>
                       </div>
-                      <div style={priceStyle}>Leihgebühr: {product.deposit/100} €</div>
+                      <div style={priceStyle}>Kaution: {product.deposit/100} €</div>
                       <div>vom {product.startDate?.toLocaleDateString() ?? 'N/A'} bis zum {product.endDate?.toLocaleDateString() ?? 'N/A'}</div>
                       <div>Organistation: {product.organization}</div>
 
@@ -179,7 +179,7 @@ export function Cart() {
                   </div>
                   ))}
 
-                    <div style={priceStyle}>Leihgebühr: {depositForOrg[itemsInCart.indexOf(item)]/100} €</div>
+                    <div style={priceStyle}>Kaution: {depositForOrg[itemsInCart.indexOf(item)]/100} €</div>
                     <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} >Abschicken</button>
                     
                     {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item} deposit={depositForOrg[itemsInCart.indexOf(item)]} allProducts={itemsInCart}/></Suspense>}
