@@ -1,9 +1,11 @@
 from flask import session
 import graphene
 import traceback
+import os
 
 from authorization_check import is_authorised, reject_message
-from models import db, userRights
+from config import picture_directory, pdf_directory
+from models import db, userRights, File
 from schema import FileModel, Organization, OrganizationModel, Organization_User, Organization_UserModel, PhysicalObjectModel, UserModel
 
 ##################################
@@ -98,7 +100,7 @@ class update_organization(graphene.Mutation):
 
         # organization connections
         physicalobjects = graphene.List(graphene.String)
-        agb             = graphene.Int()
+        agb             = graphene.String()
 
     organization    = graphene.Field(lambda: Organization)
     ok              = graphene.Boolean()
@@ -120,8 +122,6 @@ class update_organization(graphene.Mutation):
         
         try:
             organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
-            if agb:
-                agb = FileModel.query.filter(FileModel.file_id == agb).first()
 
             if not organization:
                 return update_organization(ok=False, info_text="Organisation nicht gefunden.", status_code=404)
@@ -133,12 +133,31 @@ class update_organization(graphene.Mutation):
                 db_physicalobjects = db.query(PhysicalObjectModel).filter(
                     PhysicalObjectModel.phys_id.in_(physicalobjects)).all()
                 organization.physicalobjects = db_physicalobjects
+
             if agb:
-                organization.resetUserAgreement()
-                organization.agb = agb
+                db_agb = FileModel.query.filter(FileModel.file_id == agb).first()
+                
+                # reset user agreement
+                organization.reset_user_agreement()
+                
+                # remove old agb
+                for file in organization.agb:
+                    if file.file_type == File.FileType.picture:
+                        path = os.path.join(picture_directory, file.path)
+                    else:
+                        path = os.path.join(pdf_directory, file.path)
+
+                    if os.path.isfile(path):
+                        os.remove(path)
+
+                    db.delete(file)
+
+                print(organization.agb)
+                organization.agb = [ db_agb ]
+                print(organization.agb)
 
             db.commit()
-            return update_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.", organizations=organization, status_code=200)
+            return update_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.", organization=organization, status_code=200)
 
         except Exception as e:
             print(e)
@@ -276,20 +295,21 @@ class remove_user_from_organization(graphene.Mutation):
         
 
 
-        # try:
-        user = UserModel.query.filter(UserModel.user_id == user_id).first()
-        organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
+        try:
+            user = UserModel.query.filter(UserModel.user_id == user_id).first()
+            organization = OrganizationModel.query.filter(OrganizationModel.organization_id == organization_id).first()
 
-        if not user or not organization:
-            return remove_user_from_organization(ok=False, info_text="User oder Organisation existieren nicht.", status_code=404)
+            if not user or not organization:
+                return remove_user_from_organization(ok=False, info_text="User oder Organisation existieren nicht.", status_code=404)
 
-        organization.remove_user(user)
-        db.commit()
-        return remove_user_from_organization(ok=True, info_text="User erfolgreich aus der Organisation entfernt.", organization=organization, status_code=200)
-        # except Exception as e:
-        #     print(e)
-        #     tb = traceback.format_exc()
-        #     return remove_user_from_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb, status_code=500)
+            organization.remove_user(user)
+            db.commit()
+
+            return remove_user_from_organization(ok=True, info_text="User erfolgreich aus der Organisation entfernt.", organization=organization, status_code=200)
+        except Exception as e:
+            print(e)
+            tb = traceback.format_exc()
+            return remove_user_from_organization(ok=False, info_text="Etwas hat nicht funktioniert. " + str(e) + "\n" + tb, status_code=500)
 
 
 class update_user_rights(graphene.Mutation):

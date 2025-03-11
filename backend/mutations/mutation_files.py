@@ -182,7 +182,13 @@ class delete_file(graphene.Mutation):
 
         file = FileModel.query.filter(FileModel.file_id == file_id).first()
         if file:
-            os.remove(os.path.join(picture_directory, file.path))
+            if file.file_type == File.FileType.picture:
+                path = os.path.join(picture_directory, file.path)
+            else:
+                path = os.path.join(pdf_directory, file.path)
+
+            if os.path.isfile(path):
+                os.remove(path)
 
             db.delete(file)
             db.commit()
