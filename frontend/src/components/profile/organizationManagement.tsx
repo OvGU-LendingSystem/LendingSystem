@@ -157,7 +157,7 @@ const Handleusertest = (email: string) => {
 }
 
 
-  if (loginStatus.loggedIn) {
+  if (!loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
