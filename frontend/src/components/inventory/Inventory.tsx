@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Calendar from '../../core/input/Buttons/Calendar';
 import Calendar_Querry from '../../core/input/Buttons/Calendar_Querry';
 import { useCart, useCartDispatcher } from '../../context/CartContext';
@@ -184,7 +184,7 @@ export function Inventory(): JSX.Element {
   if (error) return <p>Error loading products: {error.message}</p>;
 
   return (
-    <>
+    <Suspense>
       <div style={{ padding: '20px' }}>
         <div style={filterContainerStyle}>
           <input
@@ -372,7 +372,7 @@ export function Inventory(): JSX.Element {
         </div>
       )}
 
-      </>
+      </Suspense>
   );
 }
 
