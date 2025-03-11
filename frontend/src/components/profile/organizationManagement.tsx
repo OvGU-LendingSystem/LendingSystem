@@ -9,7 +9,6 @@ import { useMutationWithResponse } from "../../hooks/response-helper";
 import { Organization } from "../../models/organization.model";
 import { useMutation } from "@apollo/client";
 import { startTransition } from "react";
-import { useGetUserIdbyEmail } from "../../hooks/user-helper";
 import { flattenEdges, useMutationWithResponseMapped, useLazyQueryWithResponseMapped, useSuspenseQueryWithResponseMapped } from "../../hooks/response-helper";
 
 import "./Profile.css";
@@ -152,9 +151,6 @@ const handleUserEdit = (user: UserOrg) => {
   setRoleModalOpen(true); // Open the modal
 };
 
-const Handleusertest = (email: string) => {
-  return useGetUserIdbyEmail(email);
-}
 
 
   if (!loginStatus.loggedIn) {
@@ -192,7 +188,7 @@ const Handleusertest = (email: string) => {
         <button onClick={() => {setRoleModalOpen(true); setSelectedUser(null); setRoleEmail("");}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
           Benutzer hinzufügen
         </button>
-        <button onClick= {() => {console.log(handleTestClick()); Handleusertest("steve.davidson@ovgu.de")}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
+        <button onClick= {() => {console.log(handleTestClick());}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
           test
         </button>
       </div>
