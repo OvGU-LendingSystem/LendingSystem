@@ -118,7 +118,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl={'http://192.168.178.169/pdfs/'+data.agb}  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={'http://192.168.178.169/pdf/'+data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>
