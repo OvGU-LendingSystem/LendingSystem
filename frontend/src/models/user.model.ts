@@ -11,6 +11,7 @@ export interface OrganizationInfo {
     id: string;
     rights: OrganizationRights;
     agbDontShow: boolean;
+    name: string;
 }
 
 export interface User {
