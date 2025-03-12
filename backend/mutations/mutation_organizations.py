@@ -68,14 +68,26 @@ class create_organization(graphene.Mutation):
             db.add(organization)
             db.commit()
 
-            # add executive User to Organization with highest rights
-            organization_user = Organization_UserModel(
-                user_id = session_user_id,
-                organization_id = organization.organization_id,
-                rights = userRights.organization_admin
-            )
 
-            db.add(organization_user)
+            root_user = db.query(UserModel).filter(UserModel.email == "root").first()
+            if root_user.user_id != session_user_id:
+                # add executive User to Organization with highest rights
+                organization_user = Organization_UserModel(
+                    user_id = session_user_id,
+                    organization_id = organization.organization_id,
+                    rights = userRights.organization_admin
+                )
+                db.add(organization_user)
+
+            # add root user to organization
+            organization_user_root = Organization_UserModel(
+                user_id = root_user.user_id,
+                organization_id = organization.organization_id,
+                rights = userRights.system_admin
+            )
+            db.add(organization_user_root)
+
+
             db.commit()
             return create_organization(ok=True, info_text="Organisation erfolgreich erstellt.", organization=organization, status_code=200)
 
@@ -140,21 +152,7 @@ class update_organization(graphene.Mutation):
                 # reset user agreement
                 organization.reset_user_agreement()
                 
-                # remove old agb
-                for file in organization.agb:
-                    if file.file_type == File.FileType.picture:
-                        path = os.path.join(picture_directory, file.path)
-                    else:
-                        path = os.path.join(pdf_directory, file.path)
-
-                    if os.path.isfile(path):
-                        os.remove(path)
-
-                    db.delete(file)
-
-                print(organization.agb)
                 organization.agb = [ db_agb ]
-                print(organization.agb)
 
             db.commit()
             return update_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.", organization=organization, status_code=200)
