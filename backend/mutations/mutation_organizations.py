@@ -140,21 +140,7 @@ class update_organization(graphene.Mutation):
                 # reset user agreement
                 organization.reset_user_agreement()
                 
-                # remove old agb
-                for file in organization.agb:
-                    if file.file_type == File.FileType.picture:
-                        path = os.path.join(picture_directory, file.path)
-                    else:
-                        path = os.path.join(pdf_directory, file.path)
-
-                    if os.path.isfile(path):
-                        os.remove(path)
-
-                    db.delete(file)
-
-                print(organization.agb)
                 organization.agb = [ db_agb ]
-                print(organization.agb)
 
             db.commit()
             return update_organization(ok=True, info_text="Organisation erfolgreich aktualisiert.", organization=organization, status_code=200)
