@@ -629,6 +629,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                         <div>
                             <h3>{physicalObject.name}</h3>
                             <p>{"Beschreibung: " + physicalObject.description}</p>
+                            <p>{"Mängel: " + physicalObject.faults}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
                             <p>{"Kaution: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
