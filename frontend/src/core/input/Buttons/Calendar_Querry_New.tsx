@@ -94,12 +94,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     useEffect(() => {
       probs.setStartDate(range?.from || null);
       probs.setEndDate(range?.to || null);
-      console.log("Change range: " + probs.fromDate);
     }, [range]);
-
-    if (range?.from!=undefined){
-    console.log('range' + range.from);
-    }
 
     const originalFromDate = useRef<Date | null>(probs.fromDate);
     const originalTillDate = useRef<Date | null>(probs.tillDate);
@@ -130,9 +125,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error : {error.message}</p>;
 
-  const today = startOfToday();
-
- console.log("Calendar from" + data?.filterOrders[0].fromDate);
+  const today = startOfToday(); 
 
   const disabledDates = [
     { from: new Date(0), to: addDays(today, -1) },
@@ -171,7 +164,6 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   
   if (range && (range.from !==null)) {
-    console.log(range.from);
     const closestDate = data?.filterOrders
     .filter(order => {
       const orderFrom = new Date(order.fromDate);
