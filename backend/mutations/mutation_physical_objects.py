@@ -46,10 +46,8 @@ class create_physical_object(graphene.Mutation):
     status_code         = graphene.Int()
 
     @staticmethod
-    def mutate(self, info, inv_num_internal, inv_num_external, borrowable, storage_location,
-               storage_location2, name, organization_id,
-               tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None,
-               deposit=None):
+    def mutate(self, info, inv_num_internal, inv_num_external, borrowable, storage_location, deposit, storage_location2, name, organization_id,
+               tags=None, pictures=None, manual=None, orders=None, groups=None, faults=None, description=None):
         
         # Check if user is authorised
         try:
@@ -71,7 +69,9 @@ class create_physical_object(graphene.Mutation):
                 storage_location2=storage_location2,
                 name=name,
                 organization_id=organization_id,
+                deposit = deposit
             )
+            
             if pictures:
                 db_pictures = db.query(FileModel).filter(FileModel.file_id.in_(pictures)).all()
                 physical_object.pictures = db_pictures
@@ -88,8 +88,6 @@ class create_physical_object(graphene.Mutation):
                 physical_object.faults = faults
             if description:
                 physical_object.description = description
-            if deposit:
-                physical_object.deposit = deposit
             if tags:
                 db_tags = db.query(TagModel).filter(TagModel.tag_id.in_(tags)).all()
                 physical_object.tags = db_tags

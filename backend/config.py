@@ -13,6 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 import pytz
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 hostname = socket.gethostname()
 print("Hostname: ", hostname)
@@ -76,6 +77,9 @@ db = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Create Flask app
 app = Flask(__name__)
 app.debug = True
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
 app.secret_key = secret_key
 app.config['SESSION_TYPE'] = 'sqlalchemy'
 # app.config['SESSION_PERMANENT'] = False

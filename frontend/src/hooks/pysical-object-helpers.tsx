@@ -62,7 +62,7 @@ export function useAddPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<AddPhysicalObjectResponse, AddPhysicalObjectVars>(
         ADD_PYSICAL_OBJECT,
         'createPhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -124,7 +124,7 @@ export function useEditPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse, EditPhysicalObjectVars>(
         EDIT_PYSICAL_OBJECT,
         'updatePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -149,7 +149,7 @@ export function useDeletePhysicalObject() {
     return useMutationWithResponse<GQLResponse, DeletePhysicalObjectVars>(
         DELETE_PHYSICAL_OBJECT,
         'deletePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
 }
 
@@ -418,12 +418,21 @@ interface FilterPhysicalObjectsByNameResponse {
     name: string;
     description: string;
     deposit: number;
+    faults: string;
     invNumInternal: number;
     invNumExternal: number;
     pictures: {
         edges: {
             node: {
                 path: string;
+            }
+        }[]
+    }
+    manual: {
+        edges: {
+            node:{
+                manualId: string,
+                path: string
             }
         }[]
     }
@@ -437,6 +446,8 @@ export interface PreviewPhysicalObject {
     invNumExternal?: number;
     deposit?: number;
     imageSrc?: string;
+    manualPath? : string;
+    faults?: string;
 }
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
@@ -453,7 +464,9 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
                 invNumExternal: flattenedVal.invNumExternal,
                 deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
-                imageSrc: imageSrc
+                imageSrc: imageSrc,
+                manualPath: flattenedVal.manual.edges[0]?.node.path || "",
+                faults: flattenedVal.faults,
             }
             return res;
         });

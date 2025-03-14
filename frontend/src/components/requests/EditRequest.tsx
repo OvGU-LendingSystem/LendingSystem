@@ -2,7 +2,7 @@ import './EditRequest.css';
 import { useNavigate, useParams, useLocation  } from "react-router-dom";
 import { useSuspenseQuery, gql, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
 import { MdAdd } from "react-icons/md";
@@ -10,6 +10,9 @@ import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
 import { useUserInfo } from '../../context/LoginStatusContext';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import packageJson from '../../../package.json';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -283,8 +286,16 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null); 
+    const [showManual, setShowManual] = useState<boolean>(false);
+    const [selectedManualPath, setSelectedManualPath] = useState<string>("");
     const [returnNotes, setReturnNotes] = useState<string>("");
     const navigate = useNavigate();
+
+    const textRef = useRef<HTMLDivElement>(null);
+    const zoomPluginInstance = zoomPlugin();
+    const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
+    
+      const { ZoomIn, ZoomOut } = zoomPluginInstance;
 
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
@@ -567,7 +578,19 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
 
     const handleUseCustomDepositChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       setUseCustomDeposit(event.target.checked);
-  };
+    };
+
+    const openManual = (path: string | undefined) => {
+      if (path!=undefined){
+        setSelectedManualPath(path);
+        setShowManual(true);
+      }
+    };
+
+    const closeManual = () => {
+      setShowManual(false);
+      setSelectedManualPath("");
+    };
 
     return (
         <div style={{ padding: "20px" }}>
@@ -606,10 +629,18 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                         <div>
                             <h3>{physicalObject.name}</h3>
                             <p>{"Beschreibung: " + physicalObject.description}</p>
+                            <p>{"Mängel: " + physicalObject.faults}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
                             <p>{"Kaution: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
                         </div>
+                        {physicalObject.manualPath!="" && (
+                        <div>
+                          <button onClick={() => openManual(physicalObject.manualPath)} style={linkStyle}>
+                            Anleitung
+                          </button>
+                        </div>
+                        )} 
                     </div>
                 ))
             ) : (
@@ -626,15 +657,19 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 <p>Aktuelle Kaution: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
                 {!isUser && isDepositEditable && (
                 <div>
+                  <div>
                   <label style={{ marginRight: '10px' }}>
                     <input
                         type="checkbox"
                         checked={useCustomDeposit}
                         onChange={handleUseCustomDepositChange}
-                        style={{ marginRight: '5px' }}
+                        style={{ marginRight: '10px', width: "auto" }}
                     />
                     Kautionwert Setzen 
                   </label>
+                  </div>
+                  <div>
+                    <label> Kaution: </label>
                   <input
                       type="number"
                       value={updatedDeposit}
@@ -642,6 +677,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                       style={{ padding: "5px", width: "100px" }}
                       disabled={!useCustomDeposit}
                    />
+                   </div>
                 </div>
                 )}
             </div>
@@ -726,6 +762,34 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 </div>
             )}
 
+            {showManual && (
+                    <div style={modalOverlayStyle}>
+                      <div style={modalContentStyle}>
+                        <h2>Anleitung</h2>
+                        <div 
+                                ref={textRef} 
+                                style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                            >
+                          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                                <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                            </Worker>
+            
+                        </div>
+                        <div>
+                          <button
+                              onClick={closeManual}>
+                              Zurück
+                          </button>
+                          <ZoomIn>
+                          {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+                          </ZoomIn>
+                          <ZoomOut>
+                          {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+                          </ZoomOut>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
         </div>
     );
@@ -874,4 +938,11 @@ const modalOverlayStyle: React.CSSProperties = {
 
   const buttonContainerStyle: React.CSSProperties = {
     textAlign: 'right',
+  };
+
+  
+  const linkStyle: React.CSSProperties = {
+    padding: '0px',
+    marginTop: '6px',
+    marginBottom: '6px',
   };

@@ -42,7 +42,7 @@ mutation updateUser($password: String, $userId: String){
 `;
 
 const GET_USERID = gql`
-mutation filterUsers($roleEmail: String){
+query filterUsers($roleEmail: String){
   filterUsers(email: $roleEmail){
     userId
   }
@@ -57,6 +57,7 @@ export function Profile() {
   const { email } = location.state || {};
   const [isModalOpen, setModalOpen] = useState(false);
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
+  const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
   const [editField, setEditField] = useState<"email" | "address" | null>(null);
   const [newEmail, setNewEmail] = useState(email);
   const [newAddress, setNewAddress] = useState("");
@@ -66,7 +67,47 @@ export function Profile() {
   const [updateUserRightsMutation] = useUpdateUserRights();
   const [changeUserRights] = useMutation(CHANGE_RIGHTS);
   const [changePassword] = useMutation(CHANGE_PASSWORD);
-  const [getUserID] = useMutation(GET_USERID);
+  const [getUserID] = useMutation(CHANGE_PASSWORD);
+  const [password, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+
+
+  const handlePasswordChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!password || !repeatPassword) {
+      setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+
+    if (password !== repeatPassword) {
+      setErrorMessage('Die Passwörter stimmen nicht überein!');
+      return;
+    }
+    if (!loginStatus.loggedIn){
+      return;
+    }
+
+    try {
+      const { data } = await changePassword({
+        variables: {
+          userId: loginStatus.user?.userId,
+          password: password
+        }
+      });
+
+      if (data?.updateUser?.ok) {
+        setErrorMessage('');
+        alert('Passwortänderung erfolgreich!');
+        setPasswordModalOpen(false);
+      } else {
+        setErrorMessage(data?.updateUser?.message || 'Passwortänderung fehlgeschlagen!');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Passwortänderung. Bitte versuche es später erneut.');
+    }
+  };
 
   const handleRightsChange = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -197,8 +238,11 @@ export function Profile() {
         <p style={{ marginBottom: '20px' }}>
           Matrikelnummer: {loginStatus.user?.matricleNumber || ""}
         </p>
+        <button style={{ marginBottom: '20px' }} onClick={() => setPasswordModalOpen(true)} className="logout-button5">Passwort ändern</button>
+        <br></br>
         <button onClick={handleLogout} className="logout-button5">Logout</button>
       </div>
+      
 
       {isModalOpen && (
         <div className="modal222">
@@ -232,6 +276,37 @@ export function Profile() {
         </div>
       )}
 
+      {isPasswordModalOpen && (
+                <div className="modal222">
+                <div className="modal-content222">
+                  <h3>Passwort ändern</h3>
+                  <label>
+                    Neues Passwort:
+                    <input 
+                      type="password" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="Passwort"
+                    />
+                  </label>
+                  <br /><br />
+                  <label>
+                    Passwort wiederholen:
+                    <input 
+                      type="password" 
+                      value={repeatPassword} 
+                      onChange={(e) => setRepeatPassword(e.target.value)} 
+                      placeholder="Passwort"
+                    />
+                  </label>
+                  {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <div className="modal-buttons">
+              <button onClick={handlePasswordChange}>Bestätigen</button>
+              <button onClick ={() => {setPasswordModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
+            </div>
+      </div>      </div>
+      )}
+
       {isRoleModalOpen && (
         <div className="modal222">
           <div className="modal-content222">
@@ -246,6 +321,12 @@ export function Profile() {
               />
             </label>
             <br /><br />
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <br /><br />
+            <div className="modal-buttons">
+              <button onClick={handlePasswordChange}>Bestätigen</button>
+              <button onClick={() => setPasswordModalOpen(false)}>Abbrechen</button>
+            </div>
 
             <label>
   Rolle:
