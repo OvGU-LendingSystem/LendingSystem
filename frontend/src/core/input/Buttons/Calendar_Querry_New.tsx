@@ -73,6 +73,11 @@ const GET_DATES_ORDEROBJECT = gql(`
  * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
  */
 export default function Calendar_Querry(probs: CalendarProbs) {
+
+    if (!probs.physicalobjects || probs.physicalobjects.length === 0) {
+      return <p>Error: No physical objects provided. Please select an object to add to the order.</p>;
+    }
+
     const { loading, error, data, refetch } = useQuery<DateArray>(GET_DATES_ORDEROBJECT, {
       variables: {physicalobjects: probs.physicalobjects},
     }); 
