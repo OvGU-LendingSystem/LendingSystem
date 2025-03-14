@@ -447,7 +447,7 @@ export interface PreviewPhysicalObject {
     deposit?: number;
     imageSrc?: string;
     manualPath? : string;
-    faults: string;
+    faults?: string;
 }
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
