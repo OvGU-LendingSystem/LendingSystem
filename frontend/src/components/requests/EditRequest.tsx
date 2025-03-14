@@ -657,6 +657,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 <p>Aktuelle Kaution: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
                 {!isUser && isDepositEditable && (
                 <div>
+                  <div>
                   <label style={{ marginRight: '10px' }}>
                     <input
                         type="checkbox"
@@ -666,6 +667,9 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                     />
                     Kautionwert Setzen 
                   </label>
+                  </div>
+                  <div>
+                    <label> Kaution: </label>
                   <input
                       type="number"
                       value={updatedDeposit}
@@ -673,6 +677,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                       style={{ padding: "5px", width: "100px" }}
                       disabled={!useCustomDeposit}
                    />
+                   </div>
                 </div>
                 )}
             </div>
