@@ -4,7 +4,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "ESNext.Array"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,8 +14,10 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
     "module": "esnext",
     "moduleResolution": "node",
+    "maxNodeModuleJsDepth": 10,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

@@ -1,0 +1,131 @@
+.add-image--wrapper {
+    aspect-ratio: 16/9;
+    position: relative;
+    border: 2px solid grey;
+    min-width: 300px;
+    max-width: 600px;
+    margin: 16px;
+}
+
+.add-image--wrapper:has(.add-image--icon) {
+    border: 2px dashed grey;
+}
+
+.add-image--wrapper * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.add-image input {
+    display: none;
+}
+
+.add-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-image--icon {
+    margin: 32px;
+    width: calc(100% - 64px);
+    height: calc(100% - 64px);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #9b9595;
+    opacity: 0.2;
+}
+
+.left, .right {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    margin-top: -20px;
+}
+
+.left {
+    left: 0;
+}
+
+.right {
+    left: unset;
+    right: 0;
+}
+
+.top {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+}
+
+.left:hover, .right:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+}
+
+.left-disabled, .right-disabled {
+    color: var(--color-disabled);
+}
+
+.left-enabled, .right-enabled {
+    color: var(--color-enabled);
+}
+
+.top:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.multi-image-preview--wrapper {
+    display: grid;
+    grid-template-columns: 30px auto 30px;
+    grid-template-rows: 50px;
+    align-items: center;
+    margin-inline: auto;   
+    max-width: 300px;
+}
+
+.multi-image-preview--image-list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+}
+
+.multi-image-preview--image-list li {
+    list-style-type: none;
+    scroll-snap-align: start;
+}
+
+.multi-image-preview--nav {
+    height: 30px;
+    width: 30px;
+}
+
+.multi-image-preview--nav-disabled {
+    color: grey;
+}
+
+.multi-image-preview--image-list li img {
+    aspect-ratio: 16/9;
+    height: 50px;
+}
+
+.preview--active {
+    border: 2px solid black;
+}

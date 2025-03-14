@@ -1,0 +1,32 @@
+.inner-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-block: 16px;
+}
+
+.object-selection--wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-right: 16px;
+    margin-top: 16px;
+}
+
+.physical-object-list--header {
+    cursor: pointer;
+    display: flex;
+    user-select: none;
+    align-items: center;
+}
+
+.physical-object-list--header h3 {
+    margin-bottom: 0;
+}
+
+.physical-object--entry .bp5-checkbox {
+    margin-bottom: 0;
+}

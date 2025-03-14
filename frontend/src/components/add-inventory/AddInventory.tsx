@@ -1,60 +1,138 @@
-import { DragEvent, useRef } from 'react';
-import './AddInventory.css';
-import { MdAddAPhoto } from "react-icons/md";
-import { useFile } from '../../hooks/use-file';
+import '../../styles/style.css';
+import { AddInventoryItem } from '../../models/InventoryItem.model';
+import { ModifyInventory } from '../modify-inventory/ModifyInventory';
+import { useUpdateFiles } from '../../hooks/image-helpers';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AddPhysicalObjectResponse, useAddPhysicalObject } from '../../hooks/pysical-object-helpers';
+import { ErrorResponse, SuccessResponse } from '../../hooks/response-helper';
+import { Button, NonIdealState } from '@blueprintjs/core';
+import { MdPriorityHigh } from 'react-icons/md';
+import { useToaster } from '../../context/ToasterContext';
+import { SubmitState } from '../../utils/submit-state';
+import { useUpdateTags } from '../../hooks/tag-helpers';
 
+interface AddInventoryRetryData {
+    imageStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    manualsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateFiles>>>,
+    tagsStatus: Awaited<ReturnType<ReturnType<typeof useUpdateTags>>>,
+    addObjectResult?: {
+        success: boolean;
+        info: any;
+    },
+    addObject: (images: string[], manuals: string[], tags: string[]) => Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse>
+}
 
+const retry = async (data: AddInventoryRetryData): Promise<SubmitState<AddInventoryRetryData>> => {
+    let [ imageResult, retryImages ] = data.imageStatus;
+    let [ manualsResult, retryManuals ] = data.manualsStatus;
+    let [ tagsResult, retryTags ] = data.tagsStatus;
+    
+    if (!imageResult.success)
+        imageResult = await retryImages();
+
+    if (!manualsResult.success)
+        manualsResult = await retryManuals();
+
+    if (!tagsResult.success)
+        tagsResult = await retryTags();
+
+    if (!imageResult.success || !manualsResult.success || !tagsResult.success) {
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            tagsStatus: [tagsResult, retryTags],
+            addObject: data.addObject
+        }, retry);
+    }
+
+    const addObjectResult = await data.addObject(imageResult.value, manualsResult.value, tagsResult.value);
+    if (addObjectResult.success)
+        return SubmitState.SUCCESS;
+
+    return new SubmitState.Error({
+        imageStatus: [imageResult, retryImages],
+        manualsStatus: [manualsResult, retryManuals],
+        tagsStatus: [tagsResult, retryTags],
+        addObjectResult,
+        addObject: data.addObject
+    }, retry);
+}
 
 export function AddInventory() {
-    const [image, imageUrl, setImage] = useFile();
+    const navigate = useNavigate();
+    const { orgId } = useParams();
+    const toaster = useToaster();
 
-    const submit = (event: any) => {
-        console.error("Hello Add");
-        event.preventDefault();
+    if (!orgId) {
+        throw Error("No organization provided!");
+    }
+
+    const updateFiles = useUpdateFiles();
+    const updateTags = useUpdateTags();
+    const [ addPhysicalObject ] = useAddPhysicalObject();
+
+    const submit = async (values: AddInventoryItem): Promise<SubmitState<AddInventoryRetryData>> => {
+        let [ imageResult, retryImages ] = await updateFiles([], values.images);
+        let [ manualsResult, retryManuals ] = await updateFiles([], values.manuals);
+        let [ tagsResult, retryTags ] = await updateTags(values.tags);
+
+        const addObject = async (images: string[], manuals: string[], tags: string[]): Promise<SuccessResponse<AddPhysicalObjectResponse> | ErrorResponse> => {
+            return await addPhysicalObject({
+                variables: {
+                    invNumInternal: values.inventoryNumberInternal ?? 0, // TODO: mandatory field
+                    invNumExternal: values.inventoryNumberExternal ?? 0, // TODO: mandatory field
+                    storageLocation: values.storageLocation,
+                    name: values.name,
+                    description: values.description,
+                    deposit: values.deposit,
+                    faults: values.defects,
+                    tags: tags,
+                    pictures: images,
+                    manuals: manuals,
+                    borrowable: values.borrowable,
+                    organizationId: values.organizationId,
+                    storageLocation2: values.storageLocation2
+                }
+            });
+        }
+
+        if (imageResult.success && manualsResult.success && tagsResult.success) {
+            const addObjResult = await addObject(imageResult.value, manualsResult.value, tagsResult.value);
+            if (!addObjResult.success) {
+                return new SubmitState.Error<AddInventoryRetryData>({
+                    imageStatus: [imageResult, retryImages],
+                    manualsStatus: [manualsResult, retryManuals],
+                    tagsStatus: [tagsResult, retryTags],
+                    addObjectResult: addObjResult,
+                    addObject: addObject
+                }, retry);
+            }
+
+            return SubmitState.SUCCESS;
+        }
+
+        return new SubmitState.Error({
+            imageStatus: [imageResult, retryImages],
+            manualsStatus: [manualsResult, retryManuals],
+            tagsStatus: [tagsResult, retryTags],
+            addObject: addObject
+        }, retry);
+    }
+
+    const onSuccess = () => {
+        navigate('/internal/inventory');
+        toaster.show({ message: 'Objekt erfolgreich erstellt', intent: 'success' });
     }
 
     return (
-        <form onSubmit={submit}>
-            <AddImageComponent imageUrl={imageUrl} setImage={setImage} />
-            <input type="text" />
-            <input type="text" />
-            <input type="text" />
-            <input type="checkbox" />
-            <input type="submit" value="Add Object" />
-        </form>
+        <ModifyInventory initialValue={{ organizationId: orgId, name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, deposit: 0, images: [], manuals: [], tags: [] }}
+            ErrorScreen={AddInventoryErrorView} onClick={submit} label='Objekt hinzufügen' onSuccess={onSuccess} />
     );
 }
 
-function AddImageComponent({imageUrl, setImage}: {imageUrl: string, setImage: React.Dispatch<React.SetStateAction<File | undefined>>}) {
-    const fileInput = useRef<HTMLInputElement>(null);
-    const getFile = async () => { fileInput.current?.click(); }
-    
-    const onFileSelected = async (event: any) => {
-        if (event.target.files && event.target.files[0]) {
-            setImage(event.target.files[0]);            
-        }
-    }
-    const onFileDropped = async (event: DragEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
-        
-        if (event.dataTransfer.files && event.dataTransfer.files[0]) {
-            setImage(event.dataTransfer.files[0]);
-        }
-    }
-
-    const stopEvent = async (event: any) => {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-
+function AddInventoryErrorView({ data, retry }: { data: AddInventoryRetryData, retry: () => void }) {
     return (
-        <div className='add-image--wrapper'>
-            <img src={imageUrl}></img>
-            <div className="add-image" onDragEnter={stopEvent} onDragOver={stopEvent} onDrop={onFileDropped}>
-                <input type='file' accept='image/*' ref={fileInput} onChange={onFileSelected} />
-                { <MdAddAPhoto className='add-image--icon' onClick={getFile} /> }
-            </div>
-        </div>
+        <NonIdealState title='Fehler' description='Objekt konnte nicht gespeichert werden'
+            action={<Button onClick={retry} intent='primary'>Erneut versuchen</Button>} icon={<MdPriorityHigh color='red' />} />
     );
 }

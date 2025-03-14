@@ -1,0 +1,44 @@
+.calendar--wrapper {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+}
+
+.calendar--header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-inline-start: 16px;
+    font-size: large;
+}
+.calendar--weekend-check {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.day-list--calendar {
+    display: flex;
+    gap: 8px;
+    margin: 8px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.day-list--calendar div {
+    flex: 1 1;
+    overflow: auto;
+}
+
+@media (max-width: 800px) {
+    .day-list--calendar {
+        flex-direction: column;
+        overflow: visible;
+    }
+}
+
+.day-picker-overlay--calendar {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
