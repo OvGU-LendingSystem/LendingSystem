@@ -20,7 +20,7 @@ export interface User {
     firstName: string;
     lastName: string;
     matricleNumber: number;
-
+    userId: string;
     email: string;
     //phoneNumber: string; int?
 
