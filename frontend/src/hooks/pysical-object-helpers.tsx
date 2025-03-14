@@ -62,7 +62,7 @@ export function useAddPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<AddPhysicalObjectResponse, AddPhysicalObjectVars>(
         ADD_PYSICAL_OBJECT,
         'createPhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -124,7 +124,7 @@ export function useEditPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse, EditPhysicalObjectVars>(
         EDIT_PYSICAL_OBJECT,
         'updatePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -149,7 +149,7 @@ export function useDeletePhysicalObject() {
     return useMutationWithResponse<GQLResponse, DeletePhysicalObjectVars>(
         DELETE_PHYSICAL_OBJECT,
         'deletePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
 }
 
