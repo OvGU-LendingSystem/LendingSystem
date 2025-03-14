@@ -427,6 +427,14 @@ interface FilterPhysicalObjectsByNameResponse {
             }
         }[]
     }
+    manual: {
+        edges: {
+            node:{
+                manualId: string,
+                path: string
+            }
+        }[]
+    }
 }
 
 export interface PreviewPhysicalObject {
@@ -437,6 +445,7 @@ export interface PreviewPhysicalObject {
     invNumExternal?: number;
     deposit?: number;
     imageSrc?: string;
+    manualPath? : string;
 }
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
@@ -453,7 +462,8 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
                 invNumExternal: flattenedVal.invNumExternal,
                 deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
-                imageSrc: imageSrc
+                imageSrc: imageSrc,
+                manualPath: flattenedVal.manual.edges[0]?.node.path || ""
             }
             return res;
         });
