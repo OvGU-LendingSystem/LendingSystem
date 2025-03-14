@@ -631,7 +631,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                         type="checkbox"
                         checked={useCustomDeposit}
                         onChange={handleUseCustomDepositChange}
-                        style={{ marginRight: '5px' }}
+                        style={{ marginRight: '10px', width: "auto" }}
                     />
                     Kautionwert Setzen 
                   </label>
