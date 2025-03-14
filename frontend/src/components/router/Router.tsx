@@ -18,6 +18,7 @@ import { PrivacyScreen } from "../privacy/Privacy";
 import { Profile } from "../profile/Profile";
 import { Suspense } from "react";
 import { CheckLoginCart } from "../cart/CheckLoginCart";
+import { OrganizationManagement } from "../profile/organizationManagement";
 
 export function Router() {
     return (
@@ -29,6 +30,7 @@ export function Router() {
             <Route path='privacy' element={<PrivacyScreen />}/>
             <Route path='cart' element={<CheckLoginCart />}/>
             <Route path='profile' element={<Profile />}/>
+            <Route path='organization' element={<OrganizationManagement />}/>
             <Route path='*' element={<NotFound />} />
     
             <Route path='inventory'>
@@ -46,7 +48,7 @@ export function Router() {
               <Route path='calendar' element={<Calendar />} />
             </Route>
 
-            <Route path='login' element={<Login />}/>
+            <Route path='login' element={<Login onClose={() => {}}/>}/>
             <Route path='requests' element={<Requests />}/>
 
             <Route path='requests'>

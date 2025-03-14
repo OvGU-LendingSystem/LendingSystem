@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-interface ProfileProps {
-  onLogout: () => void;
-}
+import './Profile.css'
 
-export function Orders({ onLogout }: ProfileProps) {
+
+export function Orders() {
   const navigate = useNavigate();
   const location = useLocation();
   const { email } = location.state || {};
@@ -17,24 +16,21 @@ export function Orders({ onLogout }: ProfileProps) {
   const [selectedRole, setSelectedRole] = useState("User");
 
   const handleLogout = () => {
-    onLogout();
     navigate("/");
   };
 
   const handleSave = () => {
-    // Save logic for email or address
     setModalOpen(false);
   };
 
   const handleAssignRole = () => {
-    // Logic to assign the role to the email
     console.log(`Assigning ${selectedRole} role to ${roleEmail}`);
     setRoleModalOpen(false);
   };
 
   return (
-      <div style={{marginLeft:"20px"}}>
-          <h2>Offene Anfragen</h2>
+            <div style={{marginTop:"30px"}}>
+          <h2></h2>
           </div>
       ) 
 }

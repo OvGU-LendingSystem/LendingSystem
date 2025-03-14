@@ -1,14 +1,14 @@
-.profile-container {
+.profile-container5 {
   margin: 20px;
   font-family: Arial, sans-serif;
 }
 
-.profile-details {
+.profile-details5 {
   margin-left: 20px;
 }
 
-.edit-button, .logout-button {
-  margin-left: 10px;
+.edit-button5, .logout-button5 {
+  margin-left: 0px;
   padding: 5px 10px;
   cursor: pointer;
   border: none;
@@ -21,7 +21,7 @@
   background-color: #0056b3;
 }
 
-.modal22 {
+.modal222 {
   position: fixed;
   top: 0;
   left: 0;
@@ -34,7 +34,13 @@
   z-index: 1000;
 }
 
-.modal-content22 {
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.modal-content222 {
   background: white;
   padding: 20px;
   border-radius: 8px;

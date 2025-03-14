@@ -46,21 +46,28 @@ const {data} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? 
 const status = useLoginStatus();
 
 
-const [createOrder, {data: resp, loading, error}] = useCreateOrder();
+const [createOrder] = useCreateOrder();
 
 const handleCreateOrder = async () => {
-    const ids = props.products.map(item => {
-        return item.physId;
-    })
-    createOrder({variables: {
-        deposit: props.deposit,
-        fromDate: props.products[0]?.startDate ?? "",
-        tillDate: props.products[0]?.endDate ?? "",
-        physicalobjects: ids,
-    }});
+    try{
+        const ids = props.products.map(item => {
+            return item.physId;
+        })
+        const { data } = await createOrder({variables: {
+            deposit: props.deposit,
+            fromDate: props.products[0]?.startDate ?? null,
+            tillDate: props.products[0]?.endDate ?? null,
+            physicalobjects: ids,
+        }});
 
-    const ind = props.allProducts.indexOf(props.products);
-    props.allProducts.splice(ind, 1);
+        const ind = props.allProducts.indexOf(props.products);
+        props.allProducts.splice(ind, 1);
+
+        console.log("created successfully: ", data);
+    }
+    catch(error){
+        console.log("Error Order Create");
+    }
 };
 
 useEffect(() => {
@@ -111,7 +118,7 @@ return (
                         <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                     ))}*/}
                      <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl={'/pdf/'+data.agb}  plugins={[zoomPluginInstance]}/>
+                            <Viewer fileUrl={'http://192.168.178.169/pdf/'+data.agb}  plugins={[zoomPluginInstance]}/>
                         </Worker>
                 </div>
                 <div style={{ marginTop: '10px' }}>

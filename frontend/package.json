@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@apollo/client": "^3.10.4",
+    "@babel/plugin-proposal-private-property-in-object": "^7.16.7",
     "@blueprintjs/core": "^5.11.0",
     "@blueprintjs/select": "^5.3.11",
     "@react-pdf-viewer/core": "^3.12.0",

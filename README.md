@@ -1,36 +1,94 @@
 # LendingSystem
+## Config file
+- create a backend.env file in the LendingSystem directory
+```env
+# Config file for the LendingSystem 
 
+################################
+# Config of the mysql database #
+################################
+database_host=
+database_name=
+database_port=
+
+# mysql user needs rights to create tables and add, edit and deletes entries
+database_user=
+
+# define either the location for a database password file (for docker usage)
+# or directly the password, leave the unused option empty
+
+# location of the db password file -> simple text file with only the password in it
+# database_password_location=/run/secrets/db-password # for the docker container 
+database_password_location=../db-password.txt
+
+# database password
+database_password=
+
+################################
+# define paths for the storage #
+# of files                     #
+################################
+# root_directory=/backend/ # for container usage
+root_directory=../
+
+picture_directory=pictures
+pdf_directory=pdfs
+template_directory=templates
+
+################################
+# flask session secret key     #
+################################
+secret_key=
+
+################################
+# config for the mail to send  #
+# reminder and password reset  #
+# mails                        #
+################################
+mail_server_address=
+mail_server_port=
+use_ssl= # 0 for no; 1 for yes
+sender_email_address=
+sender_email_password=
+
+################################
+# application settings         #
+################################
+root_user_name=root
+root_user_password=Passw0rd!
+
+timezone=Europe/Berlin
+```
 ## For Backend
-### Create a virtualenv to isolate our package dependencies locally (optional)
-virtualenv env
-source env/bin/activate  # On Windows use `env\Scripts\activate`
-
-### SQLAlchemy and Graphene with SQLAlchemy support
-- pip install SQLAlchemy
-- pip install graphene_sqlalchemy
-
-### Install Flask and GraphQL Flask for exposing the schema through HTTP
-- pip install Flask
-- pip install Flask-GraphQL
-- pip install flask_cors
-
+### Install requirements
+```shell
+pip install -r requirements.txt
+```
 ### For local developing
 - With connected VPN you can connect your current session to the server DB:
-- install pymysql:
-- ```shell
-  pip install pymysql
-  ```
-- you need to place a config.ini file in the root directory of the project
-  ```ini
-  [DB]
-  db_LendingSystem_password = <db password for administrator>
-  ```
-- Create all Tables from models:
-  ```python
-  from config import engine, db
-  from models import *
 
-  Base.metadata.create_all(bind=engine)
+#### Database evolution
+- Database migration with Alembic
+  - Initialize Alembic; folder already in git, but ini file is not
+    ```shell
+    python - m alembic.config init alembic
+    ```
+  - Edit the alembic.ini file in the alembic directory to point to the database
+    ```ini
+    sqlalchemy.url = mysql+pymysql://administrator:<DB Password>@hades.fritz.box:3306/LendingSystem
+    ```
+  - Create a migration
+    ```shell
+    python - m alembic.config revision --autogenerate -m "Comment for the migration"
+    ```
+  - Run the migration
+    ```shell
+    python - m alembic.config upgrade head
+    ```
+  - Downgrade the migration
+    ```shell
+    python - m alembic.config downgrade <relative position / version code (first four characters)>
+    ```
 
 ## For Frontend
 ### Successfully query request with apollo client

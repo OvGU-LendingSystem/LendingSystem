@@ -1,44 +1,82 @@
 services:
-  db:
-    image: mysql:8.4.0
-    restart: always
+  database:
+    image: mysql:9.0.1
+    expose:
+      - 3310
+    ports:
+      - 3310:3306
     volumes:
-      - db-data:/var/lib/mysql
+      - database-data:/var/lib/mysql
     environment:
-      - MYSQL_DATABASE=LendingSystem
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+      - MYSQL_DATABASE=LendingSystem
     secrets:
       - db-password
-    expose:
-      - 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - private
+      - database
+      - public
 
   backend:
-    build:
-      context: backend
-    environment:
-      - DB_PASSWORD=/run/secrets/db-password
-    secrets:
-      - db-password
+    build: ./backend
+    hostname: container
+    depends_on:
+      database:
+        condition: service_healthy
     expose:
       - 5000
     ports:
       - 5000:5000
-    hostname: container
+    volumes:
+      - pdf-files:/backend/pdfs
+      - image-files:/backend/pictures
+      - template-files:/backend/templates
+    env_file:
+      - backend.env
+    secrets:
+      - db-password
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - database
+      - public
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    expose:
+      - 80
+      - 443
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - pdf-files:/var/www/html/pdfs
+      - image-files:/var/www/html/pictures
     networks:
       - public
-      - private
-    depends_on:
-      - db
-
-networks:
-  public:
-  private:
 
 volumes:
-  db-data:
+  database-data:
+  pdf-files:
+  image-files:
+  template-files:
+
+networks:
+  database:
+    internal: true
+  public:
 
 secrets:
   db-password:
-    file: db/password.txt
+    file: db-password.txt
