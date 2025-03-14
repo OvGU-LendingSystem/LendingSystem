@@ -418,6 +418,7 @@ interface FilterPhysicalObjectsByNameResponse {
     name: string;
     description: string;
     deposit: number;
+    faults: string;
     invNumInternal: number;
     invNumExternal: number;
     pictures: {
@@ -446,6 +447,7 @@ export interface PreviewPhysicalObject {
     deposit?: number;
     imageSrc?: string;
     manualPath? : string;
+    faults: string;
 }
 
 const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
@@ -463,7 +465,8 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
                 deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
                 imageSrc: imageSrc,
-                manualPath: flattenedVal.manual.edges[0]?.node.path || ""
+                manualPath: flattenedVal.manual.edges[0]?.node.path || "",
+                faults: flattenedVal.faults,
             }
             return res;
         });
