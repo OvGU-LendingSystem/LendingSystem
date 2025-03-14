@@ -73,6 +73,7 @@ const GET_DATES_ORDEROBJECT = gql(`
  * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
  */
 export default function Calendar_Querry(probs: CalendarProbs) {
+    console.log("ids2: " + probs.physicalobjects);
     const { loading, error, data, refetch } = useQuery<DateArray>(GET_DATES_ORDEROBJECT, {
       variables: {physicalobjects: probs.physicalobjects},
     }); 
@@ -127,7 +128,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   const today = startOfToday();
 
- console.log("Calendar from" + data?.filterOrders[0].fromDate);
+ //console.log("Calendar from" + data?.filterOrders[0].fromDate);
 
   const disabledDates = [
     { from: new Date(0), to: addDays(today, -1) },
