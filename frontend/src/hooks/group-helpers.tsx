@@ -26,7 +26,7 @@ export interface AddGroupVars {
 
 export function useAddGroupMutation() {
     return useMutationWithResponse<AddGroupResponse, AddGroupVars>(ADD_GROUP_MUTATION, 'createGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
+        refetchQueries: [ GET_ALL_GROUPS_QUERY, GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
     });
 }
 
@@ -52,7 +52,7 @@ export interface EditGroupVars {
 
 export function useEditGroupMutation() {
     return useMutationWithResponse<EditGroupResponse, EditGroupVars>(EDIT_GROUP_MUTATION, 'updateGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
+        refetchQueries: [ GET_ALL_GROUPS_QUERY, GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
     });
 }
 
@@ -73,7 +73,7 @@ export interface DeleteGroupVars {
 
 export function useDeleteGroupMutation() {
     return useMutationWithResponse<GQLResponse, DeleteGroupVars>(DELETE_GROUP_MUTATION, 'deleteGroup', {
-        refetchQueries: [ GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
+        refetchQueries: [ GET_ALL_GROUPS_QUERY, GET_GROUPS_QUERY, GET_GROUP_BY_ID_QUERY ]
     });
 }
 
@@ -296,12 +296,12 @@ export function useGetAllGroupsQuery() {
                 inventoryNumberInternal: -1,
                 inventoryNumberExternal: -1,
                 borrowable: true,
-                deposit: sum,//TODO DEPOSIT helper
+                deposit: sum,
                 storageLocation: "group",
                 defects: "group",
                 description: flattenedResponse.description,
                 images: flattenedResponse.pictures.map(pic => { return { ...pic, type: 'remote' } }),
-                category: groupResponse.tags.edges[0]?.node.name ?? "",//TODO Kategorie
+                category: groupResponse.tags.edges[0]?.node.name ?? "",
                 organizationId: groupResponse.organization.organizationId,
                 organization: groupResponse.organization.name,
                 physicalObjects: phyObj,

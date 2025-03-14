@@ -1,59 +1,17 @@
-import { gql, useSuspenseQuery } from "@apollo/client";
+import { useSuspenseQuery } from "@apollo/client";
 import { Suspense, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AddInventoryItem } from "../../models/InventoryItem.model";
 import { ModifyInventory } from "../modify-inventory/ModifyInventory";
 import { useTitle } from "../../hooks/use-title";
 import { useUpdateFiles } from "../../hooks/image-helpers";
-import { EditPhysicalObjectResponse, useEditPhysicalObject } from "../../hooks/pysical-object-helpers";
-import { ErrorResponse, SuccessResponse } from "../../hooks/response-helper";
+import { EditPhysicalObjectResponse, useEditPhysicalObject, useGetAddPhysicalObject } from "../../hooks/pysical-object-helpers";
+import { ErrorResponse, flattenEdges, SuccessResponse } from "../../hooks/response-helper";
 import { useToaster } from "../../context/ToasterContext";
 import { Button, NonIdealState } from "@blueprintjs/core";
 import { MdPriorityHigh } from "react-icons/md";
 import { SubmitState } from "../../utils/submit-state";
 import { useUpdateTags } from "../../hooks/tag-helpers";
-
-const GET_ITEM = gql`
-    query GetPhysicalObject($id: String!) {
-        filterPhysicalObjects(physId: $id) {
-            physId,
-            invNumInternal,
-            invNumExternal,
-            borrowable,
-            storageLocation,
-            name,
-            deposit,
-            faults,
-            description,
-            borrowable,
-            storageLocation2,
-            organizationId,
-            manual {
-                edges {
-                    node {
-                        path,
-                        fileId
-                    }
-                }
-            },
-            pictures {
-                edges {
-                    node {
-                        path,
-                        fileId
-                    }
-                }
-            },
-            tags {
-                edges {
-                    node {
-                        name
-                    }
-                }
-            }
-        }
-    }
-`;
 
 export function EditInventory() {
     useTitle('Edit item');
@@ -76,65 +34,8 @@ interface EditInventoryScreenProps {
     itemId: string;
 }
 
-interface GetItemResponse {
-    filterPhysicalObjects: {
-        name: string, borrowable: boolean, storageLocation: string, description: string,
-        faults: string,
-        deposit: number,
-        invNumInternal: number,
-        invNumExternal: number,
-        storageLocation2: string,
-        organizationId: string,
-        manual: {
-            edges: {
-                node: {
-                    path: string,
-                    fileId: string
-                }
-            }[]
-        },
-        pictures: {
-            edges: {
-                node: {
-                    path: string,
-                    fileId: string
-                }
-            }[]
-        },
-        tags: {
-            edges: {
-                node: {
-                    name: string
-                }
-            }[]
-        }
-    }[]
-}
-
 function EditInventoryScreen({ itemId }: EditInventoryScreenProps) {
-    const { data } = useSuspenseQuery<GetItemResponse>(GET_ITEM, { variables: { id: itemId }});
-    const initialValue = useMemo(() => {
-        const val: AddInventoryItem = {
-            ...data.filterPhysicalObjects[0],
-            defects: data.filterPhysicalObjects[0].faults,
-            inventoryNumberInternal: data.filterPhysicalObjects[0].invNumInternal,
-            inventoryNumberExternal: data.filterPhysicalObjects[0].invNumExternal,
-            images: [],
-            manuals: [],
-            tags: []
-        };
-        val.images = data.filterPhysicalObjects[0].pictures.edges.map((node: any) => {
-            return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
-        });
-        val.manuals = data.filterPhysicalObjects[0].manual.edges.map((node: any) => {
-            return { type: 'remote', path: node.node.path, fileId: node.node.fileId };
-        });
-        val.tags = data.filterPhysicalObjects[0].tags.edges.map((node: any) => {
-            return node.node.name;
-        });
-        return val;
-    }, [data]);
-
+    const { data: initialValue } = useGetAddPhysicalObject(itemId);
     const [ editPhysicalObject ] = useEditPhysicalObject();
     const updateFiles = useUpdateFiles();
     const updateTags = useUpdateTags();
