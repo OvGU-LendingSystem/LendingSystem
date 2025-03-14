@@ -74,9 +74,11 @@ const GET_DATES_ORDEROBJECT = gql(`
  */
 export default function Calendar_Querry(probs: CalendarProbs) {
 
+  var noObjets = false;
     if (!probs.physicalobjects || probs.physicalobjects.length === 0) {
-      return <p>Error: No physical objects provided. Please select an object to add to the order.</p>;
+      var noObjets = true;
     }
+    
 
     const { loading, error, data, refetch } = useQuery<DateArray>(GET_DATES_ORDEROBJECT, {
       variables: {physicalobjects: probs.physicalobjects},
@@ -210,31 +212,33 @@ export default function Calendar_Querry(probs: CalendarProbs) {
   const combinedDisabledDates = [...disabledDates, ...additionalDisabledDates];
 
 
+  if (!noObjets) {
+    return (
+      <>
+        <style>{css}</style>
+        <DayPicker
+          styles={{
+            button: { borderRadius: 20 },
+          }}
+          id="test"
+          mode="range"
+          selected={range}
+          footer={footer}
+          onSelect={setRange}
+          disabled={combinedDisabledDates}
+          modifiersStyles={{
+            disabled: { fontSize: '75%' },
+          }}
+          modifiersClassNames={{
+            selected: 'my-selected',
+            today: 'my-today',
+          }}
+        />
+      </>
+    );
+  }
 
-    return(
-        <>
-    <style>{css}</style>
-    <DayPicker
-      styles={{
-        button : { borderRadius: 20},
-        
-      }}
-      id="test"
-      mode="range"
-      selected={range}
-      footer={footer}
-      onSelect={setRange}
-      disabled={combinedDisabledDates}
-      modifiersStyles={{
-        disabled: { fontSize: '75%' }
-      }}
-      modifiersClassNames={{
-        selected: 'my-selected',
-        today: 'my-today'
-      }}
-    />
-    </>
-  );
+  return <p>Error: No physical objects provided. Please select an object to add to the order.</p>;
 }
 
 const css = `
