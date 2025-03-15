@@ -62,10 +62,11 @@ export function OrganizationManagement() {
   
   const handleRoleChange = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!email) {
+    if (!roleEmail) {
       setErrorMessage('Alle Felder müssen ausgefüllt werden!');
       return;
     }
+
     try {
       const { data } = await updateUserRights({
         variables: {
@@ -210,7 +211,7 @@ const handleUserEdit = (user: UserOrg) => {
 
 
 
-  if (!loginStatus.loggedIn) {
+  if (loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
@@ -320,9 +321,10 @@ const handleUserEdit = (user: UserOrg) => {
               </select>
             </label>
             <br />
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
             <div className="modal-buttons">
-              <button onClick={() => handleRoleChange}>Bestätigen</button>
-              <button onClick={() => setRoleModalOpen(false)}>Abbrechen</button>
+              <button onClick={handleRoleChange}>Bestätigen</button>
+              <button onClick={() => {setRoleModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
             </div>
           </div>
         </div>
