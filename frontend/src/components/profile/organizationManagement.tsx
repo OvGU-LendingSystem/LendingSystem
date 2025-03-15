@@ -57,7 +57,7 @@ export function OrganizationManagement() {
   const [errorMessage, setErrorMessage] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
-  const userId = useGetUserIDbyEmail(roleEmail);
+  const userId = useGetUserIDbyEmail(roleEmail).data.userId;
 
 
   const handleRoleChange = async (event: React.FormEvent) => {

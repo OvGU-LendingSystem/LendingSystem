@@ -102,8 +102,8 @@ const CREATE_USER = gql`
 `;
 
 const GET_USERID = gql`
-query filterUsers($roleEmail: String){
-  filterUsers(email: $roleEmail){
+query filterUsers($email: String){
+  filterUsers(email: $email){
     userId
   }
 }
