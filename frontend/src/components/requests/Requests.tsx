@@ -317,12 +317,13 @@ useEffect(() => {
         const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
 
         if (showCustomerOrders) {
-          return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
+          return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
 
         if (isCustomer) {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
+        
         if (isWatcher) {
           return ["accepted", "picked"].includes(request.status);
         }
