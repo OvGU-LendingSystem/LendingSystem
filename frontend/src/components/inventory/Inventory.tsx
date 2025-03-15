@@ -416,10 +416,7 @@ export function Inventory(): JSX.Element {
                     ref={textRef} 
                     style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
                 >
-              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                    <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
-                </Worker>
-
+                  <Viewer fileUrl={'http://192.168.178.169/pdf/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
             </div>
             <div>
               <button
