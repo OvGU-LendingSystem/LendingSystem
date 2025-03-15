@@ -6,6 +6,7 @@ import { Login } from "../login/Login";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
 import { useUpdateUserRights } from "../../hooks/user-helper";
+import { useLogout } from "../../hooks/user-helper";
 import { OrganizationManagement } from "./organizationManagement";
 import './Profile.css';
 
@@ -74,6 +75,7 @@ export function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginStatus = useLoginStatus();
+  const [logoutMutation] = useLogout();
   const { email } = location.state || {};
   const [isModalOpen, setModalOpen] = useState(false);
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
@@ -183,8 +185,8 @@ export function Profile() {
     if (!loginStatus.loggedIn){
       return;
     }
-    const id = loginStatus.user.userId;
-    console.log(loginStatus.user.userId);
+    const id = loginStatus.user.id;
+    console.log(loginStatus.user.id);
     try {
       const { data } = await changePassword({
         variables: {
