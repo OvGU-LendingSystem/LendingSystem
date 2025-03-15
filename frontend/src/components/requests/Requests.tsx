@@ -323,7 +323,7 @@ useEffect(() => {
         if (isCustomer) {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
-        
+
         if (isWatcher) {
           return ["accepted", "picked"].includes(request.status);
         }
@@ -714,7 +714,7 @@ useEffect(() => {
                     )}
 
                     {!request.showButtons && request.status === "pending" &&(
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes, true)}>
                           Löschen
                         </button>                        
                         )}
