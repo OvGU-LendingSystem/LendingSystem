@@ -402,9 +402,18 @@ const FILTER_INVENTORY_BY_NAME = gql`
             deposit,
             invNumInternal,
             invNumExternal,
+            faults,
             pictures {
                 edges {
                     node {
+                        path
+                    }
+                }
+            },
+            manual  {
+                edges  {
+                    node  {
+                        manualId,
                         path
                     }
                 }
