@@ -137,14 +137,14 @@ export function Layout() {
               >Interner Kalender</Link>
             </li></div>)
           }
-          <li>
+          {/*<li>
             {loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : "Nicht eingeloggt"}
           </li>
           <li>
             {loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0
               ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}`
               : "keine Orga"}
-          </li>
+          </li>*/}
         </ul>
 
         <ul>

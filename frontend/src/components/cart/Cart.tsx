@@ -71,8 +71,10 @@ export function Cart() {
   console.log("TEST MUTATION");
   console.log(maxDep);
 
-  const depositForOrg: number[] = [];
-  const itemsInCart: InventoryItemInCart[][] = [];
+  //const depositForOrg: number[] = [];
+  //const itemsInCart: InventoryItemInCart[][] = [];
+  const [depositForOrg, setDepositForOrg] = useState<number[]>([]);
+  const [itemsInCart, setItemsInCart] = useState<InventoryItemInCart[][]>([]);
   let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   let firstStartDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].startDate: "";
   let firstEndDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].endDate: "";
@@ -80,6 +82,8 @@ export function Cart() {
   if (itemsInCartUnsorted.length > 0) {
     itemsInCart.push([]);
     depositForOrg.push(0);
+    //setItemsInCart(prevEle => [... prevEle, []]);
+    //setDepositForOrg(prevEle => [... prevEle, 0]);
     maxD = maxDep.find(depForOrg => depForOrg.organizationId==itemsInCartUnsorted[0].organizationId)?.deposit ?? 10000; 
   }
 

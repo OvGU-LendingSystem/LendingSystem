@@ -63,10 +63,21 @@ export default function AGBPopUp(props : AGBPopUpProbs){
             const ids = props.products.map(item => {
                 return item.physId;
             })
+
+            const startDateUtc = props.products[0]?.startDate ?? null;
+            const endDateUtc = props.products[0]?.endDate ?? null;
+
+            if (startDateUtc!=null){
+                startDateUtc.setHours(startDateUtc.getHours() + 2);
+            }
+            if (endDateUtc!=null){
+                endDateUtc.setHours(endDateUtc.getHours() + 2);
+            }
+
             const { data } = await createOrder({variables: {
                 deposit: props.deposit,
-                fromDate: props.products[0]?.startDate ?? null,
-                tillDate: props.products[0]?.endDate ?? null,
+                fromDate: startDateUtc,
+                tillDate: endDateUtc,
                 physicalobjects: ids,
             }});
 
@@ -130,7 +141,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
                         ))}*/}
                         { org.agb!="" &&
                           <div>
-                          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                            <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
                                 <Viewer fileUrl={'http://192.168.178.169/pdf/'+org.agb}  plugins={[zoomPluginInstance]}/>
                             </Worker>
                             <div style={{ marginTop: '10px' }}>
