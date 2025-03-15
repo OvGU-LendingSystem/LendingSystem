@@ -219,9 +219,6 @@ export function Profile() {
   ? loginStatus.user.organizationInfoList[0].rights.join(", ")
   : loginStatus.user.organizationInfoList[0].rights || "keine Rechte"
             : "keine Organisation"}
-          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button5">
-            Rechte zuweisen
-          </button>
         </p>
         <p>
           E-Mail: {loginStatus.user?.email || " "}
