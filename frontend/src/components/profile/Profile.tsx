@@ -32,7 +32,7 @@ const CHANGE_RIGHTS = gql`
 `;
 
 const CHANGE_PASSWORD = gql`
-mutation updateUser($password: String, $userId: String){
+mutation updateUser($password: String, $userId: String!){
   updateUser(password: $password, userId: $userId){
     ok
     statusCode
@@ -49,6 +49,26 @@ query filterUsers($roleEmail: String){
 }
 `;
 
+const CHANGE_ADRESS = gql`
+mutation updateUser($street: String, $houseNumber: Int, $city: String, $postcode: Int, $userId: String!){
+  updateUser(street: $street, houseNumber: $houseNumber, city: $city, postcode: $postcode, userId: $userId){
+    ok
+    statusCode
+    infoText
+  }
+}
+`;
+
+const CHANGE_EMAIL = gql`
+mutation updateUser($email: String, $userId: String!){
+  updateUser(email: $email, userId: $userId){
+    ok
+    statusCode
+    infoText
+  }
+}
+`;
+
 
 export function Profile() {
   const navigate = useNavigate();
@@ -59,7 +79,7 @@ export function Profile() {
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
   const [editField, setEditField] = useState<"email" | "address" | null>(null);
-  const [newEmail, setNewEmail] = useState(email);
+  const [newEmail, setNewEmail] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("User");
@@ -71,8 +91,83 @@ export function Profile() {
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [city, setCity] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const [changeAdress] = useMutation(CHANGE_ADRESS);
+  const [changeEmail] = useMutation(CHANGE_EMAIL);
 
 
+
+
+  const handleAdressChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!street || !city || !houseNumber || !postcode) {
+      setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    if (!loginStatus.loggedIn){
+      return;
+    }
+    const id = loginStatus.user.userId;
+    try {
+      const { data } = await changeAdress({
+        variables: {
+          userId: id,
+          street: street,
+          houseNumber: houseNumber,
+          postcode: postcode,
+          city: city,
+        }
+      });
+
+      if (data?.updateUser?.ok) {
+        setErrorMessage('');
+        alert('Adressänderung erfolgreich!');
+        setModalOpen(false);
+        setStreet('');
+        setCity('');
+        setHouseNumber('');
+        setPostcode('');
+      } else {
+        setErrorMessage(data?.updateUser?.message || 'Adressänderung fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Adressänderung. Bitte versuche es später erneut.');
+    }
+  };
+
+  const handleEmailChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!newEmail) {
+      setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    if (!loginStatus.loggedIn){
+      return;
+    }
+    const id = loginStatus.user.userId;
+    try {
+      const { data } = await changeAdress({
+        variables: {
+          userId: id,
+          email: newEmail
+        }
+      });
+
+      if (data?.updateUser?.ok) {
+        setErrorMessage('');
+        alert('Email erfolgreich geändert!');
+        setModalOpen(false);
+        setNewEmail('');
+      } else {
+        setErrorMessage(data?.updateUser?.message || 'Änderung der E-Mail fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Änderung der E-Mail. Bitte versuche es später erneut.');
+    }
+  };
 
   const handlePasswordChange = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -88,11 +183,12 @@ export function Profile() {
     if (!loginStatus.loggedIn){
       return;
     }
-
+    const id = loginStatus.user.userId;
+    console.log(loginStatus.user.userId);
     try {
       const { data } = await changePassword({
         variables: {
-          userId: loginStatus.user?.userId,
+          userId: id,
           password: password
         }
       });
@@ -219,9 +315,6 @@ export function Profile() {
   ? loginStatus.user.organizationInfoList[0].rights.join(", ")
   : loginStatus.user.organizationInfoList[0].rights || "keine Rechte"
             : "keine Organisation"}
-          <button onClick={() => setRoleModalOpen(true)} style={{ marginLeft: '10px' }} className="edit-button5">
-            Rechte zuweisen
-          </button>
         </p>
         <p>
           E-Mail: {loginStatus.user?.email || " "}
@@ -253,24 +346,52 @@ export function Profile() {
                 Email:
                 <input 
                   type="email" 
-                  value={newEmail} 
+                  value={newEmail}
+                  placeholder={loginStatus.user?.email}
                   onChange={(e) => setNewEmail(e.target.value)} 
                 />
               </label>
             ) : (
               <label>
-                Adresse:
+                Straße:
                 <input 
+                style={{marginBottom:"10px"}}
                   type="text" 
-                  value={newAddress} 
-                  onChange={(e) => setNewAddress(e.target.value)} 
+                  value={street} 
+                  placeholder={loginStatus.user?.street}
+                  onChange={(e) => setStreet(e.target.value)} 
+                />
+                Hausnummer:
+                <input 
+                  style={{marginBottom:"10px"}}
+                  type="text" 
+                  value={houseNumber}
+                  placeholder={loginStatus.user?.houseNumber}
+                  onChange={(e) => setHouseNumber(e.target.value)} 
+                />
+                Ort:
+                <input
+                  style={{marginBottom:"10px"}}
+                  type="text" 
+                  value={city}
+                  placeholder={loginStatus.user?.city}
+                  onChange={(e) => setCity(e.target.value)} 
+                />
+                PLZ:
+                <input 
+                  style={{marginBottom:"10px"}}
+                  type="text" 
+                  value={postcode} 
+                  placeholder={loginStatus.user?.postcode.toString()}
+                  onChange={(e) => setPostcode(e.target.value)} 
                 />
               </label>
             )}
             <br />
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
             <div className="modal-buttons">
-              <button onClick={handleSave}>Speichern</button>
-              <button onClick={() => setModalOpen(false)}>Abbrechen</button>
+              <button onClick={handleAdressChange}>Speichern</button>
+              <button onClick ={() => {setModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
             </div>
           </div>
         </div>
@@ -317,7 +438,7 @@ export function Profile() {
                 type="email" 
                 value={roleEmail} 
                 onChange={(e) => setRoleEmail(e.target.value)} 
-                placeholder="Benutzer E-Mail"
+                placeholder= {loginStatus.user?.email}
               />
             </label>
             <br /><br />
