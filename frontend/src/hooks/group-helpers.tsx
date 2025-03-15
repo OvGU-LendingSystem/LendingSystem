@@ -379,7 +379,8 @@ export function useGetGroupsQuery(orgIds: string[], name?: string) {
         variables: {
             orgIds: orgIds,
             name: name
-        }
+        },
+        fetchPolicy: 'network-only'
     }, mapToGroup);
 }
 
