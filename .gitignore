@@ -168,7 +168,24 @@ node_modules/
 pictures/*
 !pictures/readme.md
 
-# Ignore readme (sensible)
-config.ini
+# Ignore content of pdf folder except readme
+pdfs/*
+!pdfs/README.md
+
+# Ignore config file (sensible)
+backend-config.ini
 
 # backend/db_setup.py
+
+# Ignore files and folders for venv
+Scripts/
+pyvenv.cfg
+
+# Alembic ini
+alembic.ini
+
+# Docker
+*.env
+db-password.txt
+
+*.sql

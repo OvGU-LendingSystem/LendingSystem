@@ -1,6 +1,6 @@
 import { Dispatch, ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { LoginStatus } from "../models/login-status.model";
-import { useCheckSession, useGetUserLazy } from "../hooks/user-helper";
+import { useCheckSession, useGetUserLazy, useLogout } from "../hooks/user-helper";
 import { NotLoggedInError } from "../models/user-login-error";
 import { useApolloClient } from "@apollo/client";
 
@@ -19,6 +19,7 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const [ shouldCheck, setShouldCheck ] = useState(0);
     const [ visible, setVisible ] = useState<boolean>(!document.hidden);
     const [ loaded, setLoaded ] = useState<boolean>(false);
+    const [logoutMutation] = useLogout();
     
     useEffect(() => {
         let id: number;

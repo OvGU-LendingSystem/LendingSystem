@@ -11,6 +11,7 @@ import { CartProvider } from './context/CartContext';
 import createUploadLink from 'apollo-upload-client/createUploadLink.mjs';
 import { ToasterProvider } from './context/ToasterContext';
 import { LoginStatusProvider } from './context/LoginStatusContext';
+import { Worker } from '@react-pdf-viewer/core';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
@@ -29,7 +30,9 @@ root.render(
         <CartProvider>
           <ToasterProvider>
             <LoginStatusProvider>
-              <App />
+              <Worker workerUrl='/pdf.worker.min.js'>
+                <App />
+              </Worker>
             </LoginStatusProvider>
           </ToasterProvider>
         </CartProvider>

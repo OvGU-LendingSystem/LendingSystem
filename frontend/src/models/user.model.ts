@@ -11,6 +11,7 @@ export interface OrganizationInfo {
     id: string;
     rights: OrganizationRights;
     agbDontShow: boolean;
+    name: string;
 }
 
 export interface User {
@@ -19,7 +20,7 @@ export interface User {
     firstName: string;
     lastName: string;
     matricleNumber: number;
-
+    userId: string;
     email: string;
     //phoneNumber: string; int?
 

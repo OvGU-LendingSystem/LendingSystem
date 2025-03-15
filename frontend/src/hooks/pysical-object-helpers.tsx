@@ -287,7 +287,7 @@ query GetPhysicalObjects {
     description,
     lendingComment,
     returnComment,
-    pictures(first: 1) {
+    pictures{
       edges {
         node {
           fileId,
@@ -484,7 +484,10 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
     return useSuspenseQueryWithResponseMapped<FilterPhysicalObjectsByNameResponse[], PreviewPhysicalObject[]>(
         FILTER_INVENTORY_BY_NAME,
         'filterPhysicalObjects',
-        { variables: { name: name, orgIds: orgIds } },
+        {
+            variables: { name: name, orgIds: orgIds },
+            fetchPolicy: 'network-only'
+        },
         mapResponseToItem
     );
 }
