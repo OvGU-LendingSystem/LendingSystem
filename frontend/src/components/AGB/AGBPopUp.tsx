@@ -142,7 +142,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
                         { org.agb!="" &&
                           <div>
                             <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                                <Viewer fileUrl={'http://192.168.178.169/pdf/'+org.agb}  plugins={[zoomPluginInstance]}/>
+                                <Viewer fileUrl={process.env.REACT_APP_PDFS_BASE_URL+org.agb}  plugins={[zoomPluginInstance]}/>
                             </Worker>
                             <div style={{ marginTop: '10px' }}>
                                     <input

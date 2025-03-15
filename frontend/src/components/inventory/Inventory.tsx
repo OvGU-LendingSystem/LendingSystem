@@ -296,7 +296,7 @@ export function Inventory(): JSX.Element {
               }
               {product.images.length>1 &&
                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+                  <img src={(product.images.length>0)?process.env.REACT_APP_PICTURES_BASE_URL + product.images[0]?.path: process.env.REACT_APP_PICTURES_BASE_URL+'1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
                   <button 
                     onClick={() => openPictures(product)}
                     style={{
@@ -317,7 +317,7 @@ export function Inventory(): JSX.Element {
                 </div>
               }
               {product.images.length<=1 &&
-                <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+                <img src={(product.images.length>0)?process.env.REACT_APP_PICTURES_BASE_URL + product.images[0]?.path: process.env.REACT_APP_PICTURES_BASE_URL+'1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
               }
               <div style={productInfoStyle}>
                 <div style={descriptionStyle}>
@@ -385,7 +385,7 @@ export function Inventory(): JSX.Element {
                   <div key={product.physId} style={productCardStyle}>
                     {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                     }
-                    <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+                    <img src={(product.images.length>0)?process.env.REACT_APP_PICTURES_BASE_URL + product.images[0]?.path: process.env.REACT_APP_PICTURES_BASE_URL + '1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
                     <div style={productInfoStyle}>
                       <div style={descriptionStyle}>
                         <h3>{product.name}</h3>
@@ -417,7 +417,7 @@ export function Inventory(): JSX.Element {
                     style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
                 >
               <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                    <Viewer fileUrl={'http://192.168.178.169/pdf/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                    <Viewer fileUrl={process.env.REACT_APP_PDFS_BASE_URL + selectedManualPath}  plugins={[zoomPluginInstance]}/>
                 </Worker>
 
             </div>
@@ -446,7 +446,7 @@ export function Inventory(): JSX.Element {
                 { selectedItemForPictures?.images.map((pic) =>(
 
                   <div>
-                    <img src={'http://192.168.178.169/pictures/' + pic.path} style={imageStyle} />
+                    <img src={process.env.REACT_APP_PICTURES_BASE_URL + pic.path} style={imageStyle} />
                   </div>
 
                 ))}
