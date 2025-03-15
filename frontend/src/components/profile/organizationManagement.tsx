@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { FaUserEdit, FaTrash } from "react-icons/fa";
 import { Login } from "../login/Login";
@@ -9,6 +9,8 @@ import { useMutationWithResponse } from "../../hooks/response-helper";
 import { Organization } from "../../models/organization.model";
 import { useMutation } from "@apollo/client";
 import { startTransition } from "react";
+import {  } from "../../hooks/user-helper";
+import { useGetUserIDbyEmail } from "../../hooks/user-helper";
 import { flattenEdges, useMutationWithResponseMapped, useLazyQueryWithResponseMapped, useSuspenseQueryWithResponseMapped } from "../../hooks/response-helper";
 
 import "./Profile.css";
@@ -32,6 +34,17 @@ query getUsersByOrganization($organizationIds: [String!]){
   }
 }`;
 
+const UPDATE_USER_RIGHTS = gql`
+  mutation updateUserRights($newRights: String!, $organizationId: String!, $userId: String!) {
+    updateUserRights(newRights: $newRights, organizationId: $organizationId, userId: $userId) {
+      ok
+      infoText
+      statusCode
+    }
+  }
+`;
+
+
 
 export function OrganizationManagement() {
   const loginStatus = useLoginStatus();
@@ -41,6 +54,40 @@ export function OrganizationManagement() {
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
   const rowsPerPage = 10;
+  const [errorMessage, setErrorMessage] = useState('');
+  const [email, setEmail] = useState<string | null>(null);
+  const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
+  const userId = useGetUserIDbyEmail(roleEmail);
+
+
+  const handleRoleChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email) {
+      setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    try {
+      const { data } = await updateUserRights({
+        variables: {
+          newRights: selectedRole,
+          organizationId: selectedOrganizationId,
+          userId: userId
+        }
+      });
+
+      if (data?.updateUserRights?.ok) {
+        setErrorMessage('');
+        alert('Rechte erfolgreich geändert!');
+        setRoleModalOpen(false);
+      } else {
+        setErrorMessage(data?.updateUserRights?.message || 'Rechteänderung fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Rechteänderung. Bitte versuche es später erneut.');
+    }
+  };
+
+
 
   const handleOrganizationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newOrgId = e.target.value;
@@ -84,6 +131,9 @@ interface UserOrg {
           }
   }[]
 }
+
+
+const ORGANIZATIONS2 = loginStatus?.loggedIn ? loginStatus.user?.organizationInfoList : [];
 
 const ORGANIZATIONS = [
   { organizationId: "", name: "System-Admin" }, // Shows all users
@@ -137,6 +187,11 @@ const handleFetchUsers = () => {
   const totalPages = Math.ceil(totalRows / rowsPerPage);
 
   const organizationData = useGetAllUsersInOrganization([]);
+  const emailID = useGetUserIDbyEmail("steven.pfeif@ovgu.de");
+  
+  const handleTestClick2 = () => {
+    console.log("Fetched Organization Data:", emailID);
+  };
 
 const handleTestClick = () => {
   console.log("Fetched Organization Data:", organizationData);
@@ -153,7 +208,7 @@ const handleUserEdit = (user: UserOrg) => {
 
 
 
-  if (!loginStatus.loggedIn) {
+  if (loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
@@ -191,6 +246,9 @@ const handleUserEdit = (user: UserOrg) => {
         <button onClick= {() => {console.log(handleTestClick());}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
           test
         </button>
+        <button onClick= {() => {console.log(ORGANIZATIONS2);}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
+          test
+        </button>
       </div>
 
       <table className="organization-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
@@ -210,7 +268,7 @@ const handleUserEdit = (user: UserOrg) => {
                 <td style={{ padding: "10px" }}>{user.firstName}</td>
                 <td style={{ padding: "10px" }}>{user.lastName}</td>
                 <td style={{ padding: "10px" }}>{user.email}</td>
-                <td style={{ padding: "10px" }}>{user?.rights || "--"}</td>
+                <td style={{ padding: "10px" }}>{user.firstName || "--"}</td>
                 <td style={{ padding: "10px" }}>
                   <button style={{ marginRight: "5px", backgroundColor: "#28a745", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}
                   onClick={() => handleUserEdit(user)}>
@@ -256,7 +314,7 @@ const handleUserEdit = (user: UserOrg) => {
             </label>
             <br />
             <div className="modal-buttons">
-              <button onClick={() => alert("Benutzer hinzugefügt!")}>Bestätigen</button>
+              <button onClick={() => handleRoleChange}>Bestätigen</button>
               <button onClick={() => setRoleModalOpen(false)}>Abbrechen</button>
             </div>
           </div>

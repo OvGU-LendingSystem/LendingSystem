@@ -1,6 +1,7 @@
-import { gql } from "@apollo/client";
-import { flattenEdges, useLazyQueryWithResponseMapped, useMutationWithResponse } from "./response-helper";
+import { gql, useQuery } from "@apollo/client";
+import { flattenEdges, useLazyQueryWithResponseMapped, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { OrganizationInfo, User } from "../models/user.model";
+import { useLazyQuery } from "@apollo/client";
 
 const CHECK_SESSION = gql`
 mutation CheckSession {
@@ -61,7 +62,7 @@ const UPDATE_USER_RIGHTS = gql`
 `;
 
 const CHANGE_PASSWORD = gql`
-mutation updateUser($password: String, $userId: String){
+mutation updateUser($password: String, $userId: String!){
   updateUser(password: $password, userId: $userId){
     ok
     statusCode
@@ -99,6 +100,43 @@ const CREATE_USER = gql`
     }
   }
 `;
+
+const GET_USERID = gql`
+query filterUsers($roleEmail: String){
+  filterUsers(email: $roleEmail){
+    userId
+  }
+}
+`;
+
+  interface GetUserIdbyEmailResponse{
+    userId: string,
+}
+
+interface UserEmail {
+  userId: string
+}
+
+
+
+export function useGetUserIDbyEmail(email: string) {
+  const mapToGroup = (response: GetUserIdbyEmailResponse[]): UserEmail => {
+
+      const orgRes = response[0];
+
+      return {
+          userId: orgRes.userId,
+      };
+  }
+  
+  return useSuspenseQueryWithResponseMapped(
+      GET_USERID,
+      'filterUsers',
+      { variables: { email: email } },
+      mapToGroup
+  );
+}
+
 
 export interface UpdateUserRightsResponse {
   ok: boolean;
@@ -162,3 +200,4 @@ export function useGetUserLazy() {
 
     return useLazyQueryWithResponseMapped<UserResponse[], User | undefined>(GET_USER, 'filterUsers', mapToUser);
 }
+
