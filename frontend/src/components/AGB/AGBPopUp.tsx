@@ -26,6 +26,7 @@ type AGBPopUpProbs = {
     allProducts: InventoryItemInCart[][],
     products: InventoryItemInCart[],
     deposit: number,
+    successFunc: ()=>void,
 }
 
 /**
@@ -34,7 +35,7 @@ type AGBPopUpProbs = {
  * @returns a PopUp where the user needs to read the AGB before loaning
  */
 export default function AGBPopUp(props : AGBPopUpProbs){
-
+    console.log(props);
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [Close, setClose] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
@@ -44,6 +45,10 @@ export default function AGBPopUp(props : AGBPopUpProbs){
 
     const {data: org} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? "00000000-0000-0000-0000-000000000003");
     console.log(org);
+    /*if (org.agb==""){
+        setIsChecked(true);
+        setClose(true);
+    }*/
 
     const status = useLoginStatus();
     if (status.loggedIn && status.user.organizationInfoList.filter(obj => obj.agbDontShow).map(obj => obj.id).includes(org.id)){
@@ -69,6 +74,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
             props.allProducts.splice(ind, 1);
 
             console.log("created successfully: ", data);
+            props.successFunc();
         }
         catch(error){
             console.log("Error Order Create");
@@ -122,20 +128,28 @@ export default function AGBPopUp(props : AGBPopUpProbs){
                 {/*      {text.map((paragraph, index) => (
                             <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
                         ))}*/}
-                        <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                        { org.agb!="" &&
+                          <div>
+                          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
                                 <Viewer fileUrl={'http://192.168.178.169/pdf/'+org.agb}  plugins={[zoomPluginInstance]}/>
                             </Worker>
+                            <div style={{ marginTop: '10px' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="agreeCheckbox"
+                                        style={{  marginRight: "10px", width: "auto"}}
+                                        checked={isChecked}
+                                        onChange={handleCheckboxChange}
+                                    />
+                                <label htmlFor="agreeCheckbox">Ich stimme den AGB zu.</label>
+                            </div>
+                          </div>
+                        }
+                        { org.agb=="" &&
+                            <div>Es gibt keine AGB.</div>
+                        }
                     </div>
-                    <div style={{ marginTop: '10px' }}>
-                            <input
-                                type="checkbox"
-                                id="agreeCheckbox"
-                                style={{  marginRight: "10px", width: "auto"}}
-                                checked={isChecked}
-                                onChange={handleCheckboxChange}
-                            />
-                        <label htmlFor="agreeCheckbox">Ich stimme den AGB zu.</label>
-                    </div>
+                    
                     <div>
                     <button 
                         onClick={() => {handleCreateOrder(); 

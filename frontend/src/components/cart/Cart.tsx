@@ -13,9 +13,15 @@ import { Spinner } from "@blueprintjs/core";
 import { InventoryItemInCart } from "../../models/InventoryItem.model";
 import { useGetDepositForCart } from "../../hooks/deposit-helpers";
 import { isTemplateMiddle } from "typescript";
+import { useToaster } from '../../context/ToasterContext';
 
 
 export function Cart() {
+  const toaster = useToaster();
+  const onSuccess = () => {
+    toaster.show({ message: 'Bestellung erfolgreich erstellt', intent: 'success' });
+  }
+
   const [GetMaxDeposit] = useGetDepositForCart();
   const user = useUserInfo();
   const itemsInCartUnsorted = useCart();
@@ -182,7 +188,7 @@ export function Cart() {
                     <div style={priceStyle}>Kaution: {depositForOrg[itemsInCart.indexOf(item)]/100} €</div>
                     <button onClick={() => SetButtonPopup(true)} style={addToCartButtonStyle} >Abschicken</button>
                     
-                    {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item} deposit={depositForOrg[itemsInCart.indexOf(item)]} allProducts={itemsInCart}/></Suspense>}
+                    {<Suspense fallback={buttonPopup &&<Spinner/>}><AGBPopUp setTrigger={SetButtonPopup} trigger={buttonPopup} products={item} deposit={depositForOrg[itemsInCart.indexOf(item)]} allProducts={itemsInCart} successFunc={onSuccess}/></Suspense>}
                     {/*<OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup} />*/}
                   </div>
                 
