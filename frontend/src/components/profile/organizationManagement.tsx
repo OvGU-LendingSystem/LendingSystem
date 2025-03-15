@@ -54,12 +54,12 @@ export function OrganizationManagement() {
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
   const rowsPerPage = 10;
+  
   const [errorMessage, setErrorMessage] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
   const userId = useGetUserIDbyEmail(roleEmail).data.userId;
-
-
+  
   const handleRoleChange = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email) {
@@ -299,7 +299,12 @@ const handleUserEdit = (user: UserOrg) => {
               <input 
                 type="email" 
                 value={roleEmail} 
-                onChange={(e) => setRoleEmail(e.target.value)} 
+                onChange={(e) => {
+                  const newEmail = e.target.value;
+                  startTransition(() => {
+                    setRoleEmail(newEmail);
+                  });
+                }}  
                 placeholder="Benutzer E-Mail"
               />
             </label>
