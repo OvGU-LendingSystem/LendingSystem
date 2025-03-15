@@ -13,6 +13,8 @@ import { InventoryItem } from '../../models/InventoryItem.model';
 
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 
 import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
