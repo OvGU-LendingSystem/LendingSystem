@@ -292,7 +292,31 @@ export function Inventory(): JSX.Element {
             <div key={product.physId} style={productCardStyle}>
               {//'http://192.168.178.169/pictures/'<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               }
-              <img onClick={() => openPictures(product)} src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+              {product.images.length>1 &&
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+                  <button 
+                    onClick={() => openPictures(product)}
+                    style={{
+                        color: 'rgba(0, 0, 0, 0.6)',
+                        border: '1px solid #ccc',
+                        marginTop: '10px',
+                        marginRight: '10px',
+                        width: '92%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '20px',
+                        cursor: 'pointer'
+                    }}
+                    >
+                      +
+                  </button>
+                </div>
+              }
+              {product.images.length<=1 &&
+                <img onClick={() => openPictures(product)} src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+              }
               <div style={productInfoStyle}>
                 <div style={descriptionStyle}>
                     {product.physId.substring(0, 5)=="group" &&
@@ -307,24 +331,23 @@ export function Inventory(): JSX.Element {
                 <div style={descriptionContentStyle}>Kaution: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
                 <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
-                {product.manualPath!="" && 
-                    <div>
-                      <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
+                
+                
+                <div>
+                  <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                    In den Warenkorb hinzufügen
+                  </button>
+                  {product.physId.substring(0, 5)=="group" && 
+                    <button onClick={() => openGroupElements(product)} style={addToCartButtonStyle}>
+                      Objekte der Gruppe anzeigen
+                    </button>
+                  }  
+                  {product.manualPath!="" && 
+                      <button onClick={() => openManual(product.manualPath)} style={addToCartButtonStyle}>
                         Anleitung
                       </button>
-                    </div>
-                } 
-                {product.physId.substring(0, 5)=="group" && 
-                    <div>
-                      <button onClick={() => openGroupElements(product)} style={linkStyle}>
-                        Objekte der Gruppe anzeigen
-                      </button>
-                    </div>
-                } 
-
-                <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                  In den Warenkorb hinzufügen
-                </button>
+                  } 
+                </div>
               </div>
             </div>
           ))}
