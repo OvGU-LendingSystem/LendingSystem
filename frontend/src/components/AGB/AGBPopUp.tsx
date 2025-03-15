@@ -16,6 +16,7 @@ import { ALL } from "dns";
 import { InventoryItemInCart } from "../../models/InventoryItem.model";
 import { User } from "../../models/user.model";
 import { useCreateOrder } from "../../hooks/order-helper";
+import { useGetUserLazy } from "../../hooks/user-helper";
 
 const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
 
@@ -25,6 +26,7 @@ type AGBPopUpProbs = {
     allProducts: InventoryItemInCart[][],
     products: InventoryItemInCart[],
     deposit: number,
+    successFunc: ()=>void,
 }
 
 /**
@@ -33,122 +35,145 @@ type AGBPopUpProbs = {
  * @returns a PopUp where the user needs to read the AGB before loaning
  */
 export default function AGBPopUp(props : AGBPopUpProbs){
+    console.log(props);
+    const [buttonPopup, SetButtonPopup] = useState(false);
+    const [Close, setClose] = useState(false);
+    const [isChecked, setIsChecked] = useState(false);
+    const [text, setText] = useState<string[]>([]);
+    const textRef = useRef<HTMLDivElement>(null);
+    const zoomPluginInstance = zoomPlugin();
 
-const [buttonPopup, SetButtonPopup] = useState(false);
-const [Close, setClose] = useState(false);
-const [isChecked, setIsChecked] = useState(false);
-const [text, setText] = useState<string[]>([]);
-const textRef = useRef<HTMLDivElement>(null);
-const zoomPluginInstance = zoomPlugin();
+    const {data: org} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? "00000000-0000-0000-0000-000000000003");
+    console.log(org);
+    /*if (org.agb==""){
+        setIsChecked(true);
+        setClose(true);
+    }*/
 
-const {data} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? "00000000-0000-0000-0000-000000000003");
-
-const status = useLoginStatus();
-
-
-const [createOrder, {data: resp, loading, error}] = useCreateOrder();
-
-const handleCreateOrder = async () => {
-    const ids = props.products.map(item => {
-        return item.physId;
-    })
-    createOrder({variables: {
-        deposit: props.deposit,
-        fromDate: props.products[0]?.startDate ?? "",
-        tillDate: props.products[0]?.endDate ?? "",
-        physicalobjects: ids,
-    }});
-
-    const ind = props.allProducts.indexOf(props.products);
-    props.allProducts.splice(ind, 1);
-};
-
-useEffect(() => {
-    if (!props.trigger) return;
-
-    const element = textRef.current;
-
-    if (!element) return;
-
-    const handleScroll = () => {
-        const tolerance = 10; 
-        const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + tolerance;
-        setClose(isAtBottom);
-    };
-
-    element.addEventListener('scroll', handleScroll);
-    handleScroll(); 
-
-    return () => {
-        element.removeEventListener('scroll', handleScroll);
-    };
-}, [props.trigger]);
-
-
-useEffect(() => {
-    if (props.trigger) {
-        setIsChecked(false);
-        setClose(false);
+    const status = useLoginStatus();
+    if (status.loggedIn && status.user.organizationInfoList.filter(obj => obj.agbDontShow).map(obj => obj.id).includes(org.id)){
+        setIsChecked(true);
+        setClose(true);
     }
-}, [props.trigger]);
+
+    const [createOrder] = useCreateOrder();
+
+    const handleCreateOrder = async () => {
+        try{
+            const ids = props.products.map(item => {
+                return item.physId;
+            })
+            const { data } = await createOrder({variables: {
+                deposit: props.deposit,
+                fromDate: props.products[0]?.startDate ?? null,
+                tillDate: props.products[0]?.endDate ?? null,
+                physicalobjects: ids,
+            }});
+
+            const ind = props.allProducts.indexOf(props.products);
+            props.allProducts.splice(ind, 1);
+
+            console.log("created successfully: ", data);
+            props.successFunc();
+        }
+        catch(error){
+            console.log("Error Order Create");
+        }
+    };
+
+    useEffect(() => {
+        if (!props.trigger) return;
+
+        const element = textRef.current;
+
+        if (!element) return;
+
+        const handleScroll = () => {
+            const tolerance = 10; 
+            const isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + tolerance;
+            setClose(isAtBottom);
+        };
+
+        element.addEventListener('scroll', handleScroll);
+        handleScroll(); 
+
+        return () => {
+            element.removeEventListener('scroll', handleScroll);
+        };
+    }, [props.trigger]);
 
 
-const handleCheckboxChange = () => {
-    setIsChecked(!isChecked);
-};
+    useEffect(() => {
+        if (props.trigger) {
+            setIsChecked(false);
+            setClose(false);
+        }
+    }, [props.trigger]);
 
-const { ZoomIn, ZoomOut } = zoomPluginInstance;
 
-return (
-    props.trigger ?
-        <div className="overlay">
-            <div className="popup">
-                <div 
-                    ref={textRef} 
-                    style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
-                >
-              {/*      {text.map((paragraph, index) => (
-                        <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
-                    ))}*/}
-                     <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
-                            <Viewer fileUrl={'/pdf/'+data.agb}  plugins={[zoomPluginInstance]}/>
-                        </Worker>
-                </div>
-                <div style={{ marginTop: '10px' }}>
-                        <input
-                            type="checkbox"
-                            id="agreeCheckbox"
-                            style={{  marginRight: "10px", width: "auto"}}
-                            checked={isChecked}
-                            onChange={handleCheckboxChange}
-                        />
-                    <label htmlFor="agreeCheckbox">Ich stimme den AGB zu.</label>
-                </div>
-                <div>
-                <button 
-                    onClick={() => {handleCreateOrder(); 
-                         SetButtonPopup(true);
-                         props.setTrigger(false);}}
-                    disabled={!(Close&&isChecked)}
-                >
-                    Akzeptieren
-                </button>
-                <button
-                    onClick={() => {props.setTrigger(false)}}>
-                    Zurück
-                </button>
-                <ZoomIn>
-                {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
-                </ZoomIn>
-                <ZoomOut>
-                {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
-                </ZoomOut>
+    const handleCheckboxChange = () => {
+        setIsChecked(!isChecked);
+    };
+
+    const { ZoomIn, ZoomOut } = zoomPluginInstance;
+
+    return (
+        props.trigger ?
+            <div className="overlay">
+                <div className="popup">
+                    <div 
+                        ref={textRef} 
+                        style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                    >
+                {/*      {text.map((paragraph, index) => (
+                            <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }}></p>
+                        ))}*/}
+                        { org.agb!="" &&
+                          <div>
+                          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
+                                <Viewer fileUrl={'http://192.168.178.169/pdf/'+org.agb}  plugins={[zoomPluginInstance]}/>
+                            </Worker>
+                            <div style={{ marginTop: '10px' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="agreeCheckbox"
+                                        style={{  marginRight: "10px", width: "auto"}}
+                                        checked={isChecked}
+                                        onChange={handleCheckboxChange}
+                                    />
+                                <label htmlFor="agreeCheckbox">Ich stimme den AGB zu.</label>
+                            </div>
+                          </div>
+                        }
+                        { org.agb=="" &&
+                            <div>Es gibt keine AGB.</div>
+                        }
+                    </div>
+                    
+                    <div>
+                    <button 
+                        onClick={() => {handleCreateOrder(); 
+                            props.setTrigger(false);}}
+                        //disabled={!(Close&&isChecked)}
+                    >
+                        Akzeptieren
+                    </button>
+                    <button
+                        onClick={() => {props.setTrigger(false)}}>
+                        Zurück
+                    </button>
+                    <ZoomIn>
+                    {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+                    </ZoomIn>
+                    <ZoomOut>
+                    {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+                    </ZoomOut>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-    : <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup}/>
-);
+            
+        : <OrderPopup trigger={buttonPopup} setTrigger={SetButtonPopup}/>
+    );
 }
 const buttonContainerStyle: React.CSSProperties = {
     textAlign: 'right',

@@ -126,7 +126,7 @@ export function AddInventory() {
 
     return (
         <ModifyInventory initialValue={{ organizationId: orgId, name: '', description: '', defects: '', storageLocation: '', storageLocation2: '', borrowable: true, deposit: 0, images: [], manuals: [], tags: [] }}
-            ErrorScreen={AddInventoryErrorView} onClick={submit} label='Objekt hinzufügen' onSuccess={onSuccess} />
+            ErrorScreen={AddInventoryErrorView} onClick={submit} label='Add Item' onSuccess={onSuccess} />
     );
 }
 

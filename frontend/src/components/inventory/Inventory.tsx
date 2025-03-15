@@ -13,12 +13,15 @@ import { InventoryItem } from '../../models/InventoryItem.model';
 
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 
 import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
-
+import { useLoginStatus } from "../../context/LoginStatusContext";
 
 export function Inventory(): JSX.Element {
+  const loginDispatcher = useLoginStatus();
   const itemsInCart = useCart();
   const itemsInCartDispatcher = useCartDispatcher();
 
@@ -29,18 +32,26 @@ export function Inventory(): JSX.Element {
   const { data: groups, error: e2} = useGetAllGroupsQuery();
   const products = products_tmp.concat(groups);
   products.sort(function(a, b){
-      if (a.name<b.name) return -1;
-      if (a.name>b.name) return 1;
+      if (a.name.toLowerCase()<b.name.toLowerCase()) return -1;
+      if (a.name.toLowerCase()>b.name.toLowerCase()) return 1;
       return 0;
     }
   );
+  products.map(product => {
+    product.physicalObjects?.sort(function(a, b){
+      if (a.name.toLowerCase()<b.name.toLowerCase()) return -1;
+      if (a.name.toLowerCase()>b.name.toLowerCase()) return 1;
+      return 0;
+    });
+    return product;
+  });
   console.log(products);
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [physicalObjectIds, setPhysicalobjectIds] = useState<string[]>([]);
+  const [physicalObjectIds, setPhysicalObjectIds] = useState<string[]>([]);
   const [amount, setAmount] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -51,6 +62,8 @@ export function Inventory(): JSX.Element {
   const [selectedManualPath, setSelectedManualPath] = useState<string>("");
   const [showGroupElements, setShowGroupElements] = useState<boolean>(false);
   const [selectedGroup, setSelectedGroup] = useState<InventoryItem | null>(null);
+  const [showPictures, setShowPictures] = useState<boolean>(false);
+  const [selectedItemForPictures, setSelectedItemForPictures] = useState<InventoryItem | null>(null);
 
   const textRef = useRef<HTMLDivElement>(null);
   const zoomPluginInstance = zoomPlugin();
@@ -61,8 +74,6 @@ export function Inventory(): JSX.Element {
   const dropdownRef2 = useRef<HTMLDivElement>(null);
 
   const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
-
-  var ids: string[] = [];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -90,16 +101,34 @@ export function Inventory(): JSX.Element {
     };
   }, [dropdownRef2]);
 
-  const openModal = (product: any) => {
+  const openModal = (product: InventoryItem) => {
     setSelectedProduct(product);
     setShowModal(true);
     
-    ids.push(product.physId);
+    //ids.push(product.physId);
+    if (product.physId.substring(0, 5)=="group"){
+      product?.physicalObjects?.forEach(obj => {
+        setPhysicalObjectIds(prevIds => [... prevIds, obj.physId]);
+      });
+    }
+    else {
+      setPhysicalObjectIds(prevIds => [... prevIds, product.physId]);
+    }
+
+    console.log("ids: " + physicalObjectIds);
   };
 
   const closeModal = () => {
     setShowModal(false);
+    if (selectedProduct?.physId.substring(0, 5)=="group"){      
+      setPhysicalObjectIds(prevIds => prevIds.filter(id => !selectedProduct.physicalObjects?.map(obj => obj.physId).includes(id)));
+    }
+    else {
+      setPhysicalObjectIds(prevIds => prevIds.filter(id => id !== selectedProduct?.physId));
+    }
     setSelectedProduct(null);
+
+    console.log("ids: " + physicalObjectIds);
   };
 
   const openManual = (path: string | undefined) => {
@@ -122,6 +151,19 @@ export function Inventory(): JSX.Element {
   const closeGroupElements = () => {
     setShowGroupElements(false);
     setSelectedGroup(null);
+  };
+
+  const openPictures = (product: InventoryItem) => {
+    console.log("CLICKED ON PIC");
+    if (product.images.length>1){
+      setSelectedItemForPictures(product);
+      setShowPictures(true);
+    }
+  };
+
+  const closePictures = () => {
+    setShowPictures(false);
+    setSelectedItemForPictures(null);
   };
 
   const addToCart = () => {
@@ -175,9 +217,9 @@ export function Inventory(): JSX.Element {
       return product.name.toLowerCase().includes(searchQuery.toLowerCase()) 
       && (selectedCategories.includes(product.category) || selectedCategories.length==0)
       && (selectedOrganizations.includes(product.organization) || selectedOrganizations.length==0)
-      && !(itemsInCart.map(obj => obj.physId).includes(product.physId))
-      && (res);
-      //&& (product.borrowable);
+      && (res)
+      && (product.borrowable)
+      && (!loginDispatcher.loggedIn || !(itemsInCart.map(obj => obj.physId).includes(product.physId)));
     }
   );
 
@@ -250,9 +292,33 @@ export function Inventory(): JSX.Element {
         <div style={{ marginTop: '20px' }}>
           {filteredProducts.map((product) => (
             <div key={product.physId} style={productCardStyle}>
-              {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              {//'http://192.168.178.169/pictures/'<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
               }
-              <img src={'http://192.168.178.169/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+              {product.images.length>1 &&
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+                  <button 
+                    onClick={() => openPictures(product)}
+                    style={{
+                        color: 'rgba(0, 0, 0, 0.6)',
+                        border: '1px solid #ccc',
+                        marginTop: '10px',
+                        marginRight: '10px',
+                        width: '92%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '20px',
+                        cursor: 'pointer'
+                    }}
+                    >
+                      +
+                  </button>
+                </div>
+              }
+              {product.images.length<=1 &&
+                <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
+              }
               <div style={productInfoStyle}>
                 <div style={descriptionStyle}>
                     {product.physId.substring(0, 5)=="group" &&
@@ -267,24 +333,23 @@ export function Inventory(): JSX.Element {
                 <div style={descriptionContentStyle}>Kaution: {product.deposit/100} €</div>
                 <div style={descriptionContentStyle}>Organisation: {product.organization}</div>
                 <div style={descriptionContentStyle}>Mängel: {product.defects}</div>
-                {product.manualPath!="" && 
-                    <div>
-                      <button onClick={() => openManual(product.manualPath)} style={linkStyle}>
+                
+                
+                <div>
+                  <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
+                    In den Warenkorb hinzufügen
+                  </button>
+                  {product.physId.substring(0, 5)=="group" && 
+                    <button onClick={() => openGroupElements(product)} style={addToCartButtonStyle}>
+                      Objekte der Gruppe anzeigen
+                    </button>
+                  }  
+                  {product.manualPath!="" && 
+                      <button onClick={() => openManual(product.manualPath)} style={addToCartButtonStyle}>
                         Anleitung
                       </button>
-                    </div>
-                } 
-                {product.physId.substring(0, 5)=="group" && 
-                    <div>
-                      <button onClick={() => openGroupElements(product)} style={linkStyle}>
-                        Objekte der Gruppe anzeigen
-                      </button>
-                    </div>
-                } 
-
-                <button style={addToCartButtonStyle} onClick={() => openModal(product)}>
-                  In den Warenkorb hinzufügen
-                </button>
+                  } 
+                </div>
               </div>
             </div>
           ))}
@@ -297,12 +362,12 @@ export function Inventory(): JSX.Element {
       {showModal && (
           <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
-              <h2>Objekt hinzufügen</h2>
+              <h2>{selectedProduct?.name} hinzufügen</h2>
               
-              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={ids}/>
-
+              <CalendarQuerryNew setEndDate={setEndDate} setStartDate={setStartDate} tillDate={endDate} fromDate={startDate} physicalobjects={physicalObjectIds}/>
+      
               <div style={buttonContainerStyle}>
-                <button onClick={addToCart}>Hinzufügen</button>
+                <button onClick={addToCart} disabled={!startDate || !endDate}>Hinzufügen</button>
                 <button onClick={closeModal} style={{ marginLeft: '10px' }}> Schließen </button>
               </div>
             </div>
@@ -310,17 +375,17 @@ export function Inventory(): JSX.Element {
       )}
 
       {showGroupElements && (
-          <div style={modalOverlayStyle} className='scrollable-div'>
+          <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
               <h2>Objekte in {selectedGroup?.name}</h2>
               
-              <div style={{ marginTop: '20px' }}>
+              <div style={{ marginTop: '20px', maxHeight: '500px', overflowY: 'auto' }}>
                 {selectedGroup?.physicalObjects!=undefined &&
                  selectedGroup?.physicalObjects.map((product) => (
                   <div key={product.physId} style={productCardStyle}>
                     {//<img src={'${process.env.REACT_APP_PICTURES_BASE_URL}' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
                     }
-                    <img src={'http://192.168.178.169/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                    <img src={(product.images.length>0)?'http://192.168.178.169/pictures/' + product.images[0]?.path: 'http://192.168.178.169/pictures/1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
                     <div style={productInfoStyle}>
                       <div style={descriptionStyle}>
                         <h3>{product.name}</h3>
@@ -370,6 +435,28 @@ export function Inventory(): JSX.Element {
             </div>
           </div>
         </div>
+      )}
+
+      {showPictures && (
+          <div style={modalOverlayStyle}>
+            <div style={modalContentStyle}>
+              <h2>Bilder zu {selectedItemForPictures?.name}</h2>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', maxHeight: '500px', overflowY: 'auto' }}>
+                { selectedItemForPictures?.images.map((pic) =>(
+
+                  <div>
+                    <img src={'http://192.168.178.169/pictures/' + pic.path} style={imageStyle} />
+                  </div>
+
+                ))}
+              </div>
+
+              <div style={buttonContainerStyle}>
+                <button onClick={closePictures} style={{ marginLeft: '10px' }}> Zurück </button>
+              </div>
+            </div>
+          </div>
       )}
 
       </Suspense>

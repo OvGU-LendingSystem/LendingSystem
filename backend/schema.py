@@ -13,7 +13,10 @@ from models import (PhysicalObject as PhysicalObjectModel,
                     Order as OrderModel,
                     Group as GroupModel,
                     User as UserModel,
-                    Organization_User as Organization_UserModel)
+                    Organization_User as Organization_UserModel,
+                    File as FileModel,
+                    PhysicalObject_Order as PhysicalObject_OrderModel,
+                    )
 
 # class Contact(SQLAlchemyObjectType):
 #     class Meta:
@@ -62,3 +65,15 @@ class Organization_User(SQLAlchemyObjectType):
         model = Organization_UserModel
         interfaces = (relay.Node,)
         description = Organization_UserModel.__doc__
+
+class File(SQLAlchemyObjectType):
+    class Meta:
+        model = FileModel
+        interfaces = (relay.Node,)
+        description = FileModel.__doc__
+
+class PhysicalObject_Order(SQLAlchemyObjectType):
+    class Meta:
+        model = PhysicalObject_OrderModel
+        interfaces = (relay.Node,)
+        description = PhysicalObject_OrderModel.__doc__

@@ -287,7 +287,7 @@ query GetPhysicalObjects {
     description,
     lendingComment,
     returnComment,
-    pictures(first: 1) {
+    pictures{
       edges {
         node {
           fileId,
