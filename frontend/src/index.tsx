@@ -16,13 +16,7 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
   link: createUploadLink({
     uri: process.env.REACT_APP_BACKEND_URL,
-  }),
-  defaultOptions: {
-    watchQuery: {
-      fetchPolicy: 'network-only',
-      nextFetchPolicy: 'cache-and-network'
-    }
-  }
+  })
 });
 
 const root = ReactDOM.createRoot(
