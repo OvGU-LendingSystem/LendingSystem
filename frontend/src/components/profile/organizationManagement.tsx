@@ -202,7 +202,9 @@ const [selectedUser, setSelectedUser] = useState<UserOrg | null>(null); // New s
 
 const handleUserEdit = (user: UserOrg) => {
   setSelectedUser(user); // Set selected user for editing
-  setRoleEmail(user.email); // Pre-fill email in the modal
+  startTransition(() => {
+    setRoleEmail(user.email); // Pre-fill email in the modal
+  });
   setRoleModalOpen(true); // Open the modal
 };
 
@@ -268,7 +270,7 @@ const handleUserEdit = (user: UserOrg) => {
                 <td style={{ padding: "10px" }}>{user.firstName}</td>
                 <td style={{ padding: "10px" }}>{user.lastName}</td>
                 <td style={{ padding: "10px" }}>{user.email}</td>
-                <td style={{ padding: "10px" }}>{user.firstName || "--"}</td>
+                <td style={{ padding: "10px" }}>{user.rights || "--"}</td>
                 <td style={{ padding: "10px" }}>
                   <button style={{ marginRight: "5px", backgroundColor: "#28a745", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}
                   onClick={() => handleUserEdit(user)}>
