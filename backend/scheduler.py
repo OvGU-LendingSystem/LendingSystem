@@ -23,7 +23,7 @@ def reminder_pickup(order, order_id):
     schedule_date = order.from_date - timedelta(days=1)
 
     # Reminder pickup
-    if (datetime.now() < schedule_date):
+    if (datetime.now(timezone) < schedule_date):
         organization_name = order.physicalobjects[0].physicalobject.organization.name
         receiver_mail = order.users[0].email
 
@@ -46,7 +46,7 @@ def reminder_return(order, order_id):
     schedule_date = order.till_date - timedelta(days=1)
 
     # Reminder pickup
-    if (datetime.now() < schedule_date):
+    if (datetime.now(timezone) < schedule_date):
         organization_name = order.physicalobjects[0].physicalobject.organization.name
         receiver_mail = order.users[0].email
 
