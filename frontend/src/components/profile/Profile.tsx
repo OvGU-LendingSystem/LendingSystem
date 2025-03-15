@@ -306,10 +306,10 @@ export function Profile() {
         <p style={{ marginBottom: '20px' }}>
           Vorname: {loginStatus.user?.firstName || ""}
         </p>
-        <p style={{ marginBottom: '20px' }}>
+        <p style={{ marginBottom: '25px' }}>
           Name: {loginStatus.user?.lastName || ""}
         </p>
-        <p>
+        <p style={{ marginBottom: '20px' }}>
           Rolle: {loginStatus.user?.organizationInfoList?.length > 0
             ? Array.isArray(loginStatus.user?.organizationInfoList?.[0]?.rights)
   ? loginStatus.user.organizationInfoList[0].rights.join(", ")
@@ -322,7 +322,7 @@ export function Profile() {
             ✎
           </button>
         </p>
-        <p>
+        <p style={{ marginBottom: '20px' }}>
           Adresse: {(loginStatus.user?.street && loginStatus.user?.houseNumber + ", " + loginStatus.user?.city && loginStatus.user?.postcode)|| " "}
           <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button5">
             ✎

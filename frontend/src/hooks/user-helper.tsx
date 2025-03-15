@@ -121,13 +121,12 @@ interface UserEmail {
 
 export function useGetUserIDbyEmail(email: string) {
   const mapToGroup = (response: GetUserIdbyEmailResponse[]): UserEmail => {
+    if (response.length !== 1) {
+      return { userId: "" };
+    }
 
-      const orgRes = response[0];
-
-      return {
-          userId: orgRes.userId,
-      };
-  }
+    return { userId: response[0].userId };
+  };
   
   return useSuspenseQueryWithResponseMapped(
       GET_USERID,
