@@ -210,7 +210,7 @@ const handleUserEdit = (user: UserOrg) => {
 
 
 
-  if (loginStatus.loggedIn) {
+  if (!loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
