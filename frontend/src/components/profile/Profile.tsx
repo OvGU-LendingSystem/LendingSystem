@@ -32,7 +32,7 @@ const CHANGE_RIGHTS = gql`
 `;
 
 const CHANGE_PASSWORD = gql`
-mutation updateUser($password: String, $userId: String){
+mutation updateUser($password: String!, $userId: String!){
   updateUser(password: $password, userId: $userId){
     ok
     statusCode
