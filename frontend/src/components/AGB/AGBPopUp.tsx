@@ -43,6 +43,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
     const zoomPluginInstance = zoomPlugin();
 
     const {data: org} = useGetOrganizationByIdQuery(props.products[0]?.organizationId ?? "00000000-0000-0000-0000-000000000003");
+    console.log(org);
 
     const status = useLoginStatus();
     if (status.loggedIn && status.user.organizationInfoList.filter(obj => obj.agbDontShow).map(obj => obj.id).includes(org.id)){
@@ -138,7 +139,6 @@ export default function AGBPopUp(props : AGBPopUpProbs){
                     <div>
                     <button 
                         onClick={() => {handleCreateOrder(); 
-                            SetButtonPopup(true);
                             props.setTrigger(false);}}
                         //disabled={!(Close&&isChecked)}
                     >

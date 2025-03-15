@@ -11,7 +11,31 @@ mutation CreateOrder(
     createOrder(deposit: $deposit, fromDate: $fromDate, tillDate: $tillDate, physicalobjects: $physicalobjects){
         ok
         infoText
-        order
+        order{
+          orderId,
+          creationDate,
+          fromDate,
+          tillDate,
+          deposit,
+          organizationId,
+          physicalobjects{
+            edges{
+              node{
+                physId
+              }
+            }
+          }
+          users{
+            edges{
+              node{
+                userId
+              }
+            }
+          }
+          organization{
+            organizationId
+          }
+        }
         statusCode
     }
     
