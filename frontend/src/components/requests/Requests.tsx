@@ -158,6 +158,7 @@ export function Requests() {
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
   const [isDelete, setisDelete] = useState(false);
+  const [customerCheckbox, setCustomerCheckbox] = useState(true);
 
   
 
@@ -277,6 +278,10 @@ useEffect(() => {
     const canEditRequests = !["CUSTOMER", "WATCHER"].includes(userRole);
 
     const showButtons =  userRole !== "CUSTOMER";
+
+    setCustomerCheckbox(OrgList.some((org) => org.rights !== "CUSTOMER"));
+
+
 
 
     return {
@@ -514,7 +519,7 @@ useEffect(() => {
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
-
+          {customerCheckbox && (
             <div style={{ marginTop: '10px' }}>
               <label>
                <input
@@ -526,6 +531,7 @@ useEffect(() => {
               Customer
             </label>
             </div>
+          )}
 
             {/*<DisplayLocations /> */}
             <div style={{ padding: '20px' }}>
