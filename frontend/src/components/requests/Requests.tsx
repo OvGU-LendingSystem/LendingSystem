@@ -466,31 +466,6 @@ useEffect(() => {
       }
     };
 
-
-    const reset = async (request : Quest, returnNote : string) => {
-      try {
-        const returnDate = null;
-
-        const { data } = await updateOrderStatus({
-          variables: {
-            orderId: request.id,
-            physicalObjects: request.products.map(product => product.id),
-            returnDate : returnDate,
-            status: "pending",
-            returnNotes: returnNotes,
-          },
-        });
-  
-        if (data?.updateOrderStatus.ok) {
-          refetch();
-        } else {
-          console.log('Order confirmation failed:', data.updateOrder.infoText);
-        }
-      } catch (error) {
-        console.error('Error confirming order:', error);
-      }
-    };
-
     const handleDelete = async (request : Quest) => {
       try {
           const { data: deleteData } = await DeleteOrder({
@@ -711,11 +686,6 @@ useEffect(() => {
                             Bearbeiten
                         </button>
                     )}
-
-                        <button style={buttonStyle} onClick={() => reset(request, request.returnNotes)}>
-                            Zurücksetzen
-                        </button>
-                        
                     </div>
                     )}
 
