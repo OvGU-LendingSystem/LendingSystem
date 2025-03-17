@@ -770,10 +770,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                                 ref={textRef} 
                                 style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
                             >
-                          <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`}>
                                 <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
-                            </Worker>
-            
                         </div>
                         <div>
                           <button
