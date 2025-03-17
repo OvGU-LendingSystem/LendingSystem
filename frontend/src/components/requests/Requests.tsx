@@ -158,6 +158,7 @@ export function Requests() {
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
   const [isDelete, setisDelete] = useState(false);
+  const [customerCheckbox, setCustomerCheckbox] = useState(true);
 
   
 
@@ -278,6 +279,10 @@ useEffect(() => {
 
     const showButtons =  userRole !== "CUSTOMER";
 
+    setCustomerCheckbox(OrgList.some((org) => org.rights !== "CUSTOMER"));
+
+
+
 
     return {
       id: order.orderId,
@@ -317,12 +322,13 @@ useEffect(() => {
         const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
 
         if (showCustomerOrders) {
-          return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
+          return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
 
         if (isCustomer) {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
+
         if (isWatcher) {
           return ["accepted", "picked"].includes(request.status);
         }
@@ -460,31 +466,6 @@ useEffect(() => {
       }
     };
 
-
-    const reset = async (request : Quest, returnNote : string) => {
-      try {
-        const returnDate = null;
-
-        const { data } = await updateOrderStatus({
-          variables: {
-            orderId: request.id,
-            physicalObjects: request.products.map(product => product.id),
-            returnDate : returnDate,
-            status: "pending",
-            returnNotes: returnNotes,
-          },
-        });
-  
-        if (data?.updateOrderStatus.ok) {
-          refetch();
-        } else {
-          console.log('Order confirmation failed:', data.updateOrder.infoText);
-        }
-      } catch (error) {
-        console.error('Error confirming order:', error);
-      }
-    };
-
     const handleDelete = async (request : Quest) => {
       try {
           const { data: deleteData } = await DeleteOrder({
@@ -513,7 +494,7 @@ useEffect(() => {
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
-
+          {customerCheckbox && (
             <div style={{ marginTop: '10px' }}>
               <label>
                <input
@@ -525,6 +506,7 @@ useEffect(() => {
               Customer
             </label>
             </div>
+          )}
 
             {/*<DisplayLocations /> */}
             <div style={{ padding: '20px' }}>
@@ -704,16 +686,11 @@ useEffect(() => {
                             Bearbeiten
                         </button>
                     )}
-
-                        <button style={buttonStyle} onClick={() => reset(request, request.returnNotes)}>
-                            Zurücksetzen
-                        </button>
-                        
                     </div>
                     )}
 
                     {!request.showButtons && request.status === "pending" &&(
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes, true)}>
                           Löschen
                         </button>                        
                         )}
