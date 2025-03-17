@@ -667,7 +667,7 @@ useEffect(() => {
 
                     
 
-                    {request.showButtons && (  
+                    {request.showButtons && !showCustomerOrders && (  
                     <div>
                     
                     {request.status === "pending" && (
@@ -698,13 +698,13 @@ useEffect(() => {
                     </div>
                     )}
 
-                    {!request.showButtons && request.status === "pending" &&(
+                    {(!request.showButtons || showCustomerOrders) && request.status === "pending" &&(
                         <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes, true)}>
                           Löschen
                         </button>                        
                         )}
 
-                    {!request.showButtons &&(   
+                    {(!request.showButtons || showCustomerOrders) &&(   
                         <button style={buttonStyle} onClick={() => edit(request.id, request, true)}>
                           Request Information
                         </button>
