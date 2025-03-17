@@ -231,9 +231,19 @@ export function Requests() {
   };
 
 
+      
+useEffect(() => {
+    if (!OrgList || OrgList.length === 0) {
+        setCustomerCheckbox(false);
+    } else {
+        const hasNonCustomerRights = OrgList.some((org) => org.rights && org.rights !== "CUSTOMER");
+        setCustomerCheckbox(hasNonCustomerRights);
+    }
+}, [OrgList]);
+
 
 useEffect(() => {
-  refetch();
+  
   function handleClickOutside(event: MouseEvent) {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
     buttonRef.current && !buttonRef.current.contains(event.target as Node))  {
@@ -279,7 +289,6 @@ useEffect(() => {
 
     const showButtons =  userRole !== "CUSTOMER";
 
-    setCustomerCheckbox(OrgList.some((org) => org.rights !== "CUSTOMER"));
 
 
 
