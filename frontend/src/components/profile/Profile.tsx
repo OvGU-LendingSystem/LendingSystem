@@ -112,7 +112,7 @@ export function Profile() {
     if (!loginStatus.loggedIn){
       return;
     }
-    const id = loginStatus.user.userId;
+    const id = loginStatus.user.id;
     try {
       const { data } = await changeAdress({
         variables: {
@@ -149,7 +149,7 @@ export function Profile() {
     if (!loginStatus.loggedIn){
       return;
     }
-    const id = loginStatus.user.userId;
+    const id = loginStatus.user.id;
     try {
       const { data } = await changeAdress({
         variables: {
@@ -342,7 +342,7 @@ export function Profile() {
       {isModalOpen && (
         <div className="modal222">
           <div className="modal-content222">
-            <h3>{editField === "email" ? "Email" : "Adresse"} Bearbeiten</h3>
+            <h3>{editField === "email" ? "Email" : "Adresse"} bearbeiten</h3>
             {editField === "email" ? (
               <label>
                 Email:
@@ -392,7 +392,7 @@ export function Profile() {
             <br />
             {errorMessage && <p className="error-message">{errorMessage}</p>}
             <div className="modal-buttons">
-              <button onClick={handleAdressChange}>Speichern</button>
+              <button onClick={editField === "email" ? handleEmailChange : handleAdressChange}>Speichern</button>
               <button onClick ={() => {setModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
             </div>
           </div>
