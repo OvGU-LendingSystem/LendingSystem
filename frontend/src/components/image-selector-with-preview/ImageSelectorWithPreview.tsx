@@ -122,7 +122,7 @@ function ImageControlsOverlay({leftEnabled, rightEnabled, deleteVisible, onLeftC
     );
 }
 
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICTURES_BASE_URL;
 
 function getImageUrlWithCleanupFn(image: ImageResource): [ url: string, cleanup: () => void ] {
     if (image.type === 'remote')

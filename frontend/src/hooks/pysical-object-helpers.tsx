@@ -459,7 +459,7 @@ export interface PreviewPhysicalObject {
     faults?: string;
 }
 
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICTURES_BASE_URL;
 
 export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string) {
     const mapResponseToItem = (response: FilterPhysicalObjectsByNameResponse[]) => {

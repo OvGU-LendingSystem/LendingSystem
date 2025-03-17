@@ -44,7 +44,7 @@ export function useFileResource(file: FileResource, baseUrl: string) {
     return url;
 }
 
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICTURES_BASE_URL;
 const BASE_PDF_PATH = process.env.REACT_APP_PDFS_BASE_URL;
 
 

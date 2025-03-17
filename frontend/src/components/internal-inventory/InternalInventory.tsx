@@ -288,7 +288,7 @@ const groupDeleteDialogText = {
     toasterMessageLoading: 'Gruppe wird gelöscht...'
 };
 
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICTURES_BASE_URL;
 
 function GroupList({ name, orgId }: { name?: string, orgId: string }) {
     const { data } = useGetGroupsQuery([orgId], name);
