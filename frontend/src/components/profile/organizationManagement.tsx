@@ -11,6 +11,7 @@ import { useMutation } from "@apollo/client";
 import { startTransition } from "react";
 import {  } from "../../hooks/user-helper";
 import { useGetUserIDbyEmail } from "../../hooks/user-helper";
+import { useGetAddGroupItemByIdQuery } from "../../hooks/group-helpers";
 import { flattenEdges, useMutationWithResponseMapped, useLazyQueryWithResponseMapped, useSuspenseQueryWithResponseMapped } from "../../hooks/response-helper";
 
 import "./Profile.css";
@@ -243,6 +244,10 @@ const handleUserEdit = (user: UserOrg) => {
     return <Login onClose={() => {}} />;
   }
 
+  if(!(["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights))){
+    return (<h3 style={{ textAlign: "center", color: "#333" }}>Unzureichende Rechte</h3>);
+  }
+
   return (
     <div style={{ marginTop: "30px", fontFamily: "Arial, sans-serif" }}>
       <h2 style={{ textAlign: "center", color: "#333" }}>Organisationsverwaltung</h2>
@@ -341,11 +346,11 @@ const handleUserEdit = (user: UserOrg) => {
             <label>
               Rolle:
               <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                <option value="organization_admin">Organisations-Admin</option>
-                <option value="inventory_admin">Inventar-Admin</option>
-                <option value="member">Mitglied</option>
-                <option value="customer">Kunde</option>
-                <option value="watcher">Beobachter</option>
+                <option value="organization_admin">Organization-Admin</option>
+                <option value="inventory_admin">Inventory-Admin</option>
+                <option value="member">Member</option>
+                <option value="customer">Customer</option>
+                <option value="watcher">Watcher</option>
               </select>
             </label>
             <br />
