@@ -9,6 +9,7 @@ import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import packageJson from '../../../package.json';
 import { OrderPopup } from "../cart/OrderPopup";
 import {useGetOrganizationByIdQuery} from '../../hooks/organization-helper';
+import { useNavigate } from "react-router-dom";
 
 import { useQuery, gql, useMutation,} from '@apollo/client';
 import { useLoginStatus, useUserInfo } from "../../context/LoginStatusContext";
@@ -35,7 +36,8 @@ type AGBPopUpProbs = {
  * @returns a PopUp where the user needs to read the AGB before loaning
  */
 export default function AGBPopUp(props : AGBPopUpProbs){
-    console.log(props);
+    const navigate = useNavigate();
+    //console.log(props);
     const [buttonPopup, SetButtonPopup] = useState(false);
     const [Close, setClose] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
@@ -83,6 +85,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
 
             const ind = props.allProducts.indexOf(props.products);
             props.allProducts.splice(ind, 1);
+            navigate(0);
 
             console.log("created successfully: ", data);
             props.successFunc();

@@ -25,7 +25,7 @@ export function Cart() {
   const [GetMaxDeposit] = useGetDepositForCart();
   const user = useUserInfo();
   const itemsInCartUnsorted = useCart();
-  itemsInCartUnsorted.sort(function(a, b){
+  itemsInCartUnsorted.sort(function(a , b){
       if (a.organization<b.organization) return -1;
       if (a.organization>b.organization) return 1;
       if (a.organization==b.organization){
@@ -71,10 +71,10 @@ export function Cart() {
   console.log("TEST MUTATION");
   console.log(maxDep);
 
-  //const depositForOrg: number[] = [];
-  //const itemsInCart: InventoryItemInCart[][] = [];
-  const [depositForOrg, setDepositForOrg] = useState<number[]>([]);
-  const [itemsInCart, setItemsInCart] = useState<InventoryItemInCart[][]>([]);
+  const depositForOrg: number[] = [];
+  const itemsInCart: InventoryItemInCart[][] = [];
+  //const [depositForOrg, setDepositForOrg] = useState<number[]>([]);
+  //const [itemsInCart, setItemsInCart] = useState<InventoryItemInCart[][]>([]);
   let firstOrg = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].organization : "";
   let firstStartDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].startDate: "";
   let firstEndDate = itemsInCartUnsorted.length>0 ? itemsInCartUnsorted[0].endDate: "";
@@ -167,7 +167,7 @@ export function Cart() {
                   <div style={aroundProductCardStyle}>
                   {item.map((product) => (
                     <div key={product.physId} style={productCardStyle}>
-                    <img src={'/pictures/' + product.images[0]?.path || 'https://via.placeholder.com/300'} alt={product.name} style={imageStyle} />
+                    <img src={(product.images.length>0)?process.env.REACT_APP_PICTURES_BASE_URL + product.images[0]?.path: process.env.REACT_APP_PICTURES_BASE_URL+'1741980710.2106326_platzhalter_bild.png'} alt={product.name} style={imageStyle} />
                     <div style={productInfoStyle}>
                       <h3>{product.name}</h3>
                       
