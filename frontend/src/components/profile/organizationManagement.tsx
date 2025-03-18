@@ -113,8 +113,8 @@ interface GetOrgByIdResponse {
                   organizationId: string,
                   rights: string,
               }
-          }
-  }[]
+          }[]
+  }
 }
 
 interface UserOrg {
@@ -129,15 +129,15 @@ interface UserOrg {
                   organizationId: string;
                   rights: string;
               }
-          }
-  }[]
+          }[]
+  }
 }
 
 
 const ORGANIZATIONS2 = loginStatus?.loggedIn ? loginStatus.user?.organizationInfoList : [];
 
 const ORGANIZATIONS = [
-  { organizationId: "", name: "System-Admin" }, // Shows all users
+  { organizationId: "", name: "System-Admin" },
   { organizationId: "00000000-0000-0000-0000-000000000003", name: "Stark Industries" },
   { organizationId: "1376ac52-85f7-4720-9aaa-b8bccd667aeb", name: "X-Men" },
   { organizationId: "69590f30-0959-406d-a9b5-3fefbda28fb4", name: "fara" },
@@ -154,7 +154,7 @@ function useGetAllUsersInOrganization(orgId: string[]) {
           lastName: orgRes.lastName,
           email: orgRes.email,
           organizationId: orgRes.organizations,
-          rights: orgRes.rights
+          rights: orgRes.organizations?.edges?.[0]?.node.rights
           }));
   };
 
@@ -211,7 +211,7 @@ const handleUserEdit = (user: UserOrg) => {
 
 
 
-  if (!loginStatus.loggedIn) {
+  if (loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
@@ -271,7 +271,7 @@ const handleUserEdit = (user: UserOrg) => {
                 <td style={{ padding: "10px" }}>{user.firstName}</td>
                 <td style={{ padding: "10px" }}>{user.lastName}</td>
                 <td style={{ padding: "10px" }}>{user.email}</td>
-                <td style={{ padding: "10px" }}>{user.rights || "--"}</td>
+                <td style={{ padding: "10px" }}>{user.organizationId?.edges?.[0]?.node.rights || "--"}</td>
                 <td style={{ padding: "10px" }}>
                   <button style={{ marginRight: "5px", backgroundColor: "#28a745", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}
                   onClick={() => handleUserEdit(user)}>
