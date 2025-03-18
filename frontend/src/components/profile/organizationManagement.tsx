@@ -44,6 +44,34 @@ const UPDATE_USER_RIGHTS = gql`
   }
 `;
 
+export const GetHighestUserRights = () => {
+  const loginStatus = useLoginStatus();
+  if (!loginStatus.loggedIn){
+    return "";
+  }
+
+  if (!loginStatus?.user?.organizationInfoList?.length) {
+    return "";
+  }
+
+  const rightsHierarchy = ["WATCHER", "CUSTOMER", "MEMBER", "ORGANIZATION_ADMIN", "SYSTEM_ADMIN"];
+
+  // Get all user rights from organizations
+  // @ts-ignore
+  const userRights = loginStatus.user.organizationInfoList
+  .map((org: OrganizationInfo) => org.rights) // Explicitly type org
+  .filter(Boolean);
+
+  if (userRights.length === 0) {
+    return ""; // No valid rights found
+  }
+  // @ts-ignore
+  // Find the highest rights based on hierarchy
+  return userRights.reduce((highest, current) => 
+    rightsHierarchy.indexOf(current) > rightsHierarchy.indexOf(highest) ? current : highest
+  );
+};
+
 
 
 export function OrganizationManagement() {
@@ -54,7 +82,7 @@ export function OrganizationManagement() {
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
   const rowsPerPage = 10;
-  
+  const highestUserRights = GetHighestUserRights();
   const [errorMessage, setErrorMessage] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
@@ -211,7 +239,7 @@ const handleUserEdit = (user: UserOrg) => {
 
 
 
-  if (loginStatus.loggedIn) {
+  if (!loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
