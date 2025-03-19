@@ -94,6 +94,14 @@ h2 {
   font-size: 14px;
 }
 
+input2, select2 {
+  width: 100%;
+  margin-top: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
 .toggle-button:hover {
   text-decoration: underline;
 }
@@ -102,6 +110,29 @@ h2 {
   color: red;
   font-size: 14px;
   margin-top: 10px;
+}
+
+.modal2222 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content2222 {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  height: 410px;
+  max-width: 90%;
 }
 
 .form-grid {

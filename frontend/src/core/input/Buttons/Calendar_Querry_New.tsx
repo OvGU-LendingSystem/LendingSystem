@@ -7,6 +7,22 @@ import { addDays, format, startOfToday } from 'date-fns';
 interface Dates {
   fromDate: string;
   tillDate: string;
+  physicalobjects?: {
+    edges: {
+      node: {
+        orderStatus: string;
+        physId: string;
+        physicalobject: {
+          invNumInternal: string;
+          invNumExternal: string;
+          deposit: string;
+          storageLocation: string;
+          name: string;
+          description: string;
+        };
+      };
+    }[];
+  };
 }
 
 interface DateArray {
@@ -73,6 +89,13 @@ const GET_DATES_ORDEROBJECT = gql(`
  * @returns calendar where you can set a range of 2 dates that will be needed to know how long the object will be loaned
  */
 export default function Calendar_Querry(probs: CalendarProbs) {
+
+  var noObjets = false;
+    if (!probs.physicalobjects || probs.physicalobjects.length === 0) {
+      var noObjets = true;
+    }
+    
+
     const { loading, error, data, refetch } = useQuery<DateArray>(GET_DATES_ORDEROBJECT, {
       variables: {physicalobjects: probs.physicalobjects},
     }); 
@@ -89,12 +112,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     useEffect(() => {
       probs.setStartDate(range?.from || null);
       probs.setEndDate(range?.to || null);
-      console.log("Change range: " + probs.fromDate);
     }, [range]);
-
-    if (range?.from!=undefined){
-    console.log('range' + range.from);
-    }
 
     const originalFromDate = useRef<Date | null>(probs.fromDate);
     const originalTillDate = useRef<Date | null>(probs.tillDate);
@@ -125,9 +143,17 @@ export default function Calendar_Querry(probs: CalendarProbs) {
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error : {error.message}</p>;
 
-  const today = startOfToday();
+  const today = startOfToday(); 
 
- console.log("Calendar from" + data?.filterOrders[0].fromDate);
+  const pendingDates = data?.filterOrders
+    .filter(order =>
+      order.physicalobjects!.edges[0]!.node.orderStatus === 'PENDING'
+    )
+    .map(order => ({
+      from: new Date(order.fromDate),
+      to: new Date(order.tillDate),
+    })) || [];
+
 
   const disabledDates = [
     { from: new Date(0), to: addDays(today, -1) },
@@ -156,6 +182,15 @@ export default function Calendar_Querry(probs: CalendarProbs) {
       })) || []),
   ];
 
+  const filteredDisabledDates = disabledDates.filter(
+    (disabledDate) =>
+      !pendingDates.some(
+        (pendingDate) =>
+          pendingDate.from.getTime() === disabledDate.from.getTime() &&
+          pendingDate.to.getTime() === disabledDate.to.getTime()
+      )
+  );
+
 
   let additionalDisabledDates: { from: Date; to: Date; }[] = [];
 
@@ -166,7 +201,6 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   
   if (range && (range.from !==null)) {
-    console.log(range.from);
     const closestDate = data?.filterOrders
     .filter(order => {
       const orderFrom = new Date(order.fromDate);
@@ -210,34 +244,40 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
 
 
-  const combinedDisabledDates = [...disabledDates, ...additionalDisabledDates];
+  const combinedDisabledDates = [...filteredDisabledDates, ...additionalDisabledDates];
 
 
+  if (!noObjets) {
+    return (
+      <>
+        <style>{css}</style>
+        <DayPicker
+          styles={{
+            button: { borderRadius: 20 },
+          }}
+          id="test"
+          mode="range"
+          selected={range}
+          footer={footer}
+          onSelect={setRange}
+          disabled={combinedDisabledDates}
+          modifiers={{
+            highlighted: pendingDates,
+          }}
+          modifiersStyles={{
+            highlighted: { backgroundColor: 'rgba(255, 255, 0, 0.5)', color: 'black' },
+            disabled: { fontSize: '75%' },
+          }}
+          modifiersClassNames={{
+            selected: 'my-selected',
+            today: 'my-today',
+          }}
+        />
+      </>
+    );
+  }
 
-    return(
-        <>
-    <style>{css}</style>
-    <DayPicker
-      styles={{
-        button : { borderRadius: 20},
-        
-      }}
-      id="test"
-      mode="range"
-      selected={range}
-      footer={footer}
-      onSelect={setRange}
-      disabled={combinedDisabledDates}
-      modifiersStyles={{
-        disabled: { fontSize: '75%' }
-      }}
-      modifiersClassNames={{
-        selected: 'my-selected',
-        today: 'my-today'
-      }}
-    />
-    </>
-  );
+  return <p>Error: No physical objects provided. Please select an object to add to the order.</p>;
 }
 
 const css = `

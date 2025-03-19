@@ -6,8 +6,10 @@ import { Login } from "../login/Login";
 import { useLoginStatus } from "../../context/LoginStatusContext";
 import { Footer } from "../footer/Footer";
 import { OrganizationRights } from "../../models/user.model";
+import { NotLoginErrorBoundary } from "../no-login-screen/NoLoginScreen";
 import { VscAccount } from "react-icons/vsc";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
+import { GetHighestUserRights } from "../profile/organizationManagement";
 
 
 interface ModalProps {
@@ -45,6 +47,9 @@ declare global {
     status?: string;
     organization: string;
     organizationId: string;
+    invNumInternal?: string;
+    invNumExternal?: string;
+    storageLocation?: string;
   }
 
   interface Quest {
@@ -60,6 +65,7 @@ declare global {
 
 export function Layout() {
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
+  const highestUserRights = GetHighestUserRights();
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const setLoginAction = useLoginStatusDispatcher();
   const loginStatus = useLoginStatus();
@@ -136,14 +142,14 @@ export function Layout() {
               >Interner Kalender</Link>
             </li></div>)
           }
-          <li>
+          {/*<li>
             {loginStatus.loggedIn ? `Hallo ${loginStatus.user.firstName}` : "Nicht eingeloggt"}
           </li>
           <li>
             {loginStatus.loggedIn && loginStatus.user.organizationInfoList.length > 0
               ? `Organisation Rechte ${loginStatus.user.organizationInfoList[0].rights}`
               : "keine Orga"}
-          </li>
+          </li>*/}
         </ul>
 
         <ul>
@@ -159,6 +165,10 @@ export function Layout() {
                 {isDropdownVisible && (
                   <div className="dropdown-menu">
                     <button onClick={() => { setDropdownVisible(false); navigate("/profile"); }}>Nutzereinstellungen</button>
+                    {["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights) && (
+      <button onClick={() => { setDropdownVisible(false); navigate("/organization"); }}>
+        Organisationsverwaltung
+      </button> )}
                     <button onClick={handleLogout}>Logout</button>
                   </div>
                 )}
@@ -178,7 +188,9 @@ export function Layout() {
       </nav>
       <div className="main-scroller">
         <main className="content">
-          <Outlet />
+          <NotLoginErrorBoundary>
+            <Outlet />
+          </NotLoginErrorBoundary>
         </main>
         <Footer />
       </div>

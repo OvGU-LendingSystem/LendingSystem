@@ -28,8 +28,8 @@ interface GetOrgByIdResponse {
             node: {
                     path: string;
                 }
-            }
-    }[]
+        }[]
+    }
 }
 
 export function useGetAllOrganizations() {
@@ -38,7 +38,7 @@ export function useGetAllOrganizations() {
             id: orgResponse.id, 
             name: orgResponse.name, 
             location: orgResponse.location, 
-            agb: orgResponse.agb[0]?.edges?.node?.path ?? "/agb.pdf" 
+            agb: orgResponse.agb?.edges[0]?.node?.path ?? "" 
         }));
         return res.filter((org) => org.name!='root_organization');
     };
@@ -77,7 +77,7 @@ export function useGetOrganizationByIdQuery(orgId: string) {
             id: orgRes.id,
             name: orgRes.name,
             location: orgRes.location,
-            agb: orgRes.agb[0]?.edges?.node?.path ?? "/agb.pdf"
+            agb: orgRes.agb?.edges[0]?.node?.path ?? ""
         };
     }
     

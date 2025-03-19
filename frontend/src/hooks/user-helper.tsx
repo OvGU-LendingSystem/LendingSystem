@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { flattenEdges, useLazyQueryWithResponseMapped, useMutationWithResponse } from "./response-helper";
+import { flattenEdges, useLazyQueryWithResponseMapped, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { OrganizationInfo, User } from "../models/user.model";
 
 const CHECK_SESSION = gql`
@@ -60,6 +60,16 @@ const UPDATE_USER_RIGHTS = gql`
   }
 `;
 
+const CHANGE_PASSWORD = gql`
+mutation updateUser($password: String, $userId: String!){
+  updateUser(password: $password, userId: $userId){
+    ok
+    statusCode
+    infoText
+  }
+}
+`;
+
 const CREATE_USER = gql`
   mutation createUser($city: String,
   $country: String,
@@ -90,6 +100,42 @@ const CREATE_USER = gql`
   }
 `;
 
+const GET_USERID = gql`
+query filterUsers($email: String){
+  filterUsers(email: $email){
+    userId
+  }
+}
+`;
+
+  interface GetUserIdbyEmailResponse{
+    userId: string,
+}
+
+interface UserEmail {
+  userId: string
+}
+
+
+
+export function useGetUserIDbyEmail(email: string) {
+  const mapToGroup = (response: GetUserIdbyEmailResponse[]): UserEmail => {
+    if (response.length !== 1) {
+      return { userId: "" };
+    }
+
+    return { userId: response[0].userId };
+  };
+  
+  return useSuspenseQueryWithResponseMapped(
+      GET_USERID,
+      'filterUsers',
+      { variables: { email: email } },
+      mapToGroup
+  );
+}
+
+
 export interface UpdateUserRightsResponse {
   ok: boolean;
   infoText: string;
@@ -97,6 +143,10 @@ export interface UpdateUserRightsResponse {
 
 export function useUpdateUserRights() {
   return useMutationWithResponse<UpdateUserRightsResponse>(UPDATE_USER_RIGHTS, "updateUserRights");
+}
+
+export function usePasswordChange() {
+  return useMutationWithResponse<LogoutResponse>(CHANGE_PASSWORD, "updateUser");
 }
 
 export interface LogoutResponse {
@@ -148,3 +198,4 @@ export function useGetUserLazy() {
 
     return useLazyQueryWithResponseMapped<UserResponse[], User | undefined>(GET_USER, 'filterUsers', mapToUser);
 }
+

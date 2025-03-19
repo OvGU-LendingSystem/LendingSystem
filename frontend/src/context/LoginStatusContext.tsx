@@ -1,6 +1,8 @@
 import { Dispatch, ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { LoginStatus } from "../models/login-status.model";
 import { useCheckSession, useGetUserLazy, useLogout } from "../hooks/user-helper";
+import { NotLoggedInError } from "../models/user-login-error";
+import { useApolloClient } from "@apollo/client";
 
 interface LoginStatusDispatcherAction {
     type: 'login' | 'logout' | 'update';
@@ -12,6 +14,7 @@ export const LoginStatusDispatcherContext = createContext<Dispatch<LoginStatusDi
 export function LoginStatusProvider({ children }: { children: ReactNode }) {
     const [ checkSession ] = useCheckSession();
     const getUserInfo = useGetUserLazy();
+    const client = useApolloClient();
     const [ loginStatus, setLoginStatus ] = useState<LoginStatus.Status>({ loggedIn: false });
     const [ shouldCheck, setShouldCheck ] = useState(0);
     const [ visible, setVisible ] = useState<boolean>(!document.hidden);
@@ -69,6 +72,8 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const handleLoginStatusAction = async (action: LoginStatusDispatcherAction) => {
+        setShouldCheck(shouldCheck + 1);
+        client.resetStore();
         if (action.type === "logout") {
             try {
                 const response = await logoutMutation();
@@ -87,6 +92,10 @@ export function LoginStatusProvider({ children }: { children: ReactNode }) {
         }
     };
 
+ 
+        
+    
+
     return (
         <LoginStatusContext.Provider value={loginStatus}>
             <LoginStatusDispatcherContext.Provider value={handleLoginStatusAction}>
@@ -103,7 +112,7 @@ export function useLoginStatus() {
 export function useUserInfo() {
     const status = useLoginStatus();
     if (!status.loggedIn) {
-        throw new Error("Expected logged in user!");
+        throw new NotLoggedInError();
     }
 
     return status.user;

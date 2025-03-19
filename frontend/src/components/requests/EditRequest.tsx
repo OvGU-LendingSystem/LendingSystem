@@ -2,13 +2,17 @@ import './EditRequest.css';
 import { useNavigate, useParams, useLocation  } from "react-router-dom";
 import { useSuspenseQuery, gql, useMutation } from "@apollo/client";
 import { useTitle } from "../../hooks/use-title";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import CalendarQuerryNew from "../../core/input/Buttons/Calendar_Querry_New";
 import React from 'react';
 import { MdAdd } from "react-icons/md";
 import { Checkbox, InputGroup, NonIdealState, Overlay2 } from "@blueprintjs/core";
 import { BaseInventoryList } from '../internal-inventory/InternalInventory';
 import { useFilterPhysicalObjectsByName } from '../../hooks/pysical-object-helpers';
+import { useUserInfo } from '../../context/LoginStatusContext';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import { zoomPlugin, RenderZoomInProps, RenderZoomOutProps } from '@react-pdf-viewer/zoom';
+import packageJson from '../../../package.json';
 
 enum OrderStatus {
     PENDING = 'PENDING',
@@ -272,6 +276,7 @@ interface FilterOrdersData {
 }
 
 function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
+    const UserInfo = useUserInfo();
     const [showSelectOverlay, setShowSelectOverlay] = useState(false);
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
 
@@ -281,8 +286,16 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null); 
+    const [showManual, setShowManual] = useState<boolean>(false);
+    const [selectedManualPath, setSelectedManualPath] = useState<string>("");
     const [returnNotes, setReturnNotes] = useState<string>("");
     const navigate = useNavigate();
+
+    const textRef = useRef<HTMLDivElement>(null);
+    const zoomPluginInstance = zoomPlugin();
+    const pdfjsVersion = packageJson.dependencies['pdfjs-dist'];
+    
+      const { ZoomIn, ZoomOut } = zoomPluginInstance;
 
     const {error, data, refetch } = useSuspenseQuery<FilterOrdersData>(EDIT_ORDER, {
         variables: { orderId }, 
@@ -297,6 +310,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const [GetMaxDeposit] = useMutation(GET_MAX_DEPOSIT);
 
     const [updatedDeposit, setUpdatedDeposit] = useState(data.filterOrders[0].deposit);
+    const [useCustomDeposit, setUseCustomDeposit] = useState(false);
     const orgId = [data.filterOrders[0].organization.organizationId];
     const { data: allPhysicalObjects } = useFilterPhysicalObjectsByName(orgId, undefined); // TODO: filter by organization that only objects of same organization get fetched and can be put into requests?
       
@@ -305,9 +319,10 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
         setSelectedObjectIds(data?.filterOrders[0]?.physicalobjects?.edges?.map((item) => item.node.physId) ?? []);
         refetch()
         if (data && data.filterOrders.length > 0) {
-            const { fromDate, tillDate } = data.filterOrders[0];
+            const { fromDate, tillDate, deposit } = data.filterOrders[0];
                 setStartDate(fromDate ?? null);
                 setEndDate(tillDate ?? null);
+                setUpdatedDeposit(deposit);
                 if (physicalobjects.edges.length > 0) {
                     setSelectedStatus(physicalobjects.edges[0].node.orderStatus);
                     setReturnNotes(physicalobjects.edges[0].node.returnNotes)
@@ -325,7 +340,13 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const {fromDate, tillDate, physicalobjects} = data.filterOrders[0];
     const organizations = data.filterOrders[0]?.users?.edges[0]?.node?.organizations?.edges || [];
     const organizationId = data.filterOrders[0]?.organization.organizationId;    
-    const originalDeposit = data.filterOrders[0]?.deposit;
+    const orderStatus = data.filterOrders[0].physicalobjects.edges[0].node.orderStatus;
+    
+    var isDepositEditable = false;
+
+    if (orderStatus === 'PENDING' || orderStatus === 'ACCEPTED') {
+        isDepositEditable = true;
+    }
 
     const physicalObjectsEdges = physicalobjects?.edges || [];
     const physicalObjectIds = physicalObjectsEdges.map(edge => edge.node.physId);
@@ -359,6 +380,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
           await handleEditRequest();
         }
 
+        if (isDepositEditable)
         handleOrderDepositChange();
         
       } catch(error) {
@@ -390,7 +412,7 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
     const handleOrderDepositChange = async () => {
       try {
 
-        if (originalDeposit === updatedDeposit){
+        if (!useCustomDeposit){
 
           const userOrganizations = organizations.filter(
             (org) => org.node.organizationId === organizationId
@@ -554,9 +576,25 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
       setUpdatedDeposit(isNaN(newDeposit) ? 0 : newDeposit);
     };
 
+    const handleUseCustomDepositChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setUseCustomDeposit(event.target.checked);
+    };
+
+    const openManual = (path: string | undefined) => {
+      if (path!=undefined){
+        setSelectedManualPath(path);
+        setShowManual(true);
+      }
+    };
+
+    const closeManual = () => {
+      setShowManual(false);
+      setSelectedManualPath("");
+    };
+
     return (
         <div style={{ padding: "20px" }}>
-            <h1>Order Details</h1>
+            <h1>Bestelldetails</h1>
             <h2>Objekte:</h2>
             {!isUser && (
               <div>
@@ -591,10 +629,18 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                         <div>
                             <h3>{physicalObject.name}</h3>
                             <p>{"Beschreibung: " + physicalObject.description}</p>
+                            <p>{"Mängel: " + physicalObject.faults}</p>
                             <p>{"Interne Inventarnummer: " + physicalObject.invNumInternal}</p>
                             <p>{"Externe Inventarnummer: " + physicalObject.invNumExternal}</p>
-                            <p>{"Leihgebühr: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
+                            <p>{"Kaution: " + ((physicalObject.deposit ?? 0) / 100).toFixed(2) + "€"}</p>
                         </div>
+                        {physicalObject.manualPath!="" && (
+                        <div>
+                          <button onClick={() => openManual(physicalObject.manualPath)} style={linkStyle}>
+                            Anleitung
+                          </button>
+                        </div>
+                        )} 
                     </div>
                 ))
             ) : (
@@ -607,15 +653,32 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 margin: "10px 0",
                 borderRadius: "5px"
             }}>
-                <h3>Deposit Information</h3>
-                <p>Current Deposit: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
-                {!isUser && (
+                <h3>Kaution Information</h3>
+                <p>Aktuelle Kaution: {(data.filterOrders[0].deposit / 100).toFixed(2) + " €"}</p>
+                {!isUser && isDepositEditable && (
+                <div>
+                  <div>
+                  <label style={{ marginRight: '10px' }}>
+                    <input
+                        type="checkbox"
+                        checked={useCustomDeposit}
+                        onChange={handleUseCustomDepositChange}
+                        style={{ marginRight: '10px', width: "auto" }}
+                    />
+                    Kautionwert Setzen 
+                  </label>
+                  </div>
+                  <div>
+                    <label> Kaution: </label>
                   <input
                       type="number"
                       value={updatedDeposit}
                       onChange={handleDepositChange}
                       style={{ padding: "5px", width: "100px" }}
-                  />
+                      disabled={!useCustomDeposit}
+                   />
+                   </div>
+                </div>
                 )}
             </div>
 
@@ -699,6 +762,31 @@ function EditRequestScreen({ orderId, isUser }: EditRequestProps) {
                 </div>
             )}
 
+            {showManual && (
+                    <div style={modalOverlayStyle}>
+                      <div style={modalContentStyle}>
+                        <h2>Anleitung</h2>
+                        <div 
+                                ref={textRef} 
+                                style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                            >
+                                <Viewer fileUrl={'http://192.168.178.169/pdfs/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                        </div>
+                        <div>
+                          <button
+                              onClick={closeManual}>
+                              Zurück
+                          </button>
+                          <ZoomIn>
+                          {(props: RenderZoomInProps) => <button onClick={props.onClick}>+</button>}
+                          </ZoomIn>
+                          <ZoomOut>
+                          {(props: RenderZoomOutProps) => <button onClick={props.onClick}>-</button>}
+                          </ZoomOut>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
         </div>
     );
@@ -847,4 +935,11 @@ const modalOverlayStyle: React.CSSProperties = {
 
   const buttonContainerStyle: React.CSSProperties = {
     textAlign: 'right',
+  };
+
+  
+  const linkStyle: React.CSSProperties = {
+    padding: '0px',
+    marginTop: '6px',
+    marginBottom: '6px',
   };

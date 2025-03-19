@@ -1,12 +1,13 @@
 from argon2 import PasswordHasher
 from flask import session
 import graphene
+import os
 from string import Template
 import traceback
 import uuid
 
 from authorization_check import reject_message
-from config import db
+from config import db, template_directory
 from schema import User, UserModel
 from sendMail import sendMail
 
@@ -180,7 +181,7 @@ class reset_password(graphene.Mutation):
         db.commit()
 
         # read template text
-        with open("../email_templates/password_reset_template.html", encoding="utf-8") as file:
+        with open(os.path.join("password_reset_template.html"), encoding="utf-8") as file:
             template_password = Template(file.read())
 
         # send mail

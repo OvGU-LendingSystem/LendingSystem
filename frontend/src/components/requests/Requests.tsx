@@ -158,6 +158,7 @@ export function Requests() {
   const [checkBoxChecked, setCheckBoxChecked] = useState<boolean>(false);
   const [showCustomerOrders, setShowCustomerOrders] = useState(false);
   const [isDelete, setisDelete] = useState(false);
+  const [customerCheckbox, setCustomerCheckbox] = useState(true);
 
   
 
@@ -230,9 +231,19 @@ export function Requests() {
   };
 
 
+      
+useEffect(() => {
+    if (!OrgList || OrgList.length === 0) {
+        setCustomerCheckbox(false);
+    } else {
+        const hasNonCustomerRights = OrgList.some((org) => org.rights && org.rights !== "CUSTOMER");
+        setCustomerCheckbox(hasNonCustomerRights);
+    }
+}, [OrgList]);
+
 
 useEffect(() => {
-  refetch();
+  
   function handleClickOutside(event: MouseEvent) {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
     buttonRef.current && !buttonRef.current.contains(event.target as Node))  {
@@ -279,6 +290,9 @@ useEffect(() => {
     const showButtons =  userRole !== "CUSTOMER";
 
 
+
+
+
     return {
       id: order.orderId,
       name: username, 
@@ -295,6 +309,9 @@ useEffect(() => {
           amount: 1,
           startDate: new Date(order.fromDate),
           endDate: new Date(order.tillDate),
+          invNumInternal: edge.node.physicalobject.invNumInternal,
+          invNumExternal: edge.node.physicalobject.invNumExternal,
+          storageLocation: edge.node.physicalobject.storageLocation,
       })),
       status: mapOrderStatusToUIStatus(orderStatus),
       organizationId: organizationId,
@@ -314,17 +331,20 @@ useEffect(() => {
         const isWatcher = OrgList.find((org) => org.id === request.organizationId)?.rights === "WATCHER";
         const isCustomer = OrgList.find((org) => org.id === request.organizationId)?.rights === "CUSTOMER";
         const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(request.status || '')
+        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
 
         if (showCustomerOrders) {
-          return isCustomer && (request.userid === UserInfoDispatcher.id) && categoryMatch;
+          return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
 
         if (isCustomer) {
           return (request.userid === UserInfoDispatcher.id) && categoryMatch;
         }
-        if (isWatcher)
+
+        if (isWatcher) {
           return ["accepted", "picked"].includes(request.status);
-        const organizationMatch = selectedOrg.length === 0 || selectedOrg.includes(request.organizationName)
+        }
+        
         return categoryMatch && organizationMatch;
       })
       .sort((a, b) => {
@@ -458,31 +478,6 @@ useEffect(() => {
       }
     };
 
-
-    const reset = async (request : Quest, returnNote : string) => {
-      try {
-        const returnDate = null;
-
-        const { data } = await updateOrderStatus({
-          variables: {
-            orderId: request.id,
-            physicalObjects: request.products.map(product => product.id),
-            returnDate : returnDate,
-            status: "pending",
-            returnNotes: returnNotes,
-          },
-        });
-  
-        if (data?.updateOrderStatus.ok) {
-          refetch();
-        } else {
-          console.log('Order confirmation failed:', data.updateOrder.infoText);
-        }
-      } catch (error) {
-        console.error('Error confirming order:', error);
-      }
-    };
-
     const handleDelete = async (request : Quest) => {
       try {
           const { data: deleteData } = await DeleteOrder({
@@ -511,7 +506,7 @@ useEffect(() => {
         
         <div style={{padding: '20px'}}>
             <h2 style={{marginBottom: '20px'}}>Anfragen</h2>
-
+          {customerCheckbox && (
             <div style={{ marginTop: '10px' }}>
               <label>
                <input
@@ -523,6 +518,7 @@ useEffect(() => {
               Customer
             </label>
             </div>
+          )}
 
             {/*<DisplayLocations /> */}
             <div style={{ padding: '20px' }}>
@@ -653,18 +649,21 @@ useEffect(() => {
                         <div>{"Email: " + request.email}</div>
                         <div>{"Telefonnummer: " + request.phone}</div>
                         <div>{"Organisationsname: " + request.organizationName}</div>
-                        <div>{"Ausleihgebühr: " + (request.deposit / 100).toFixed(2) + "€"}</div>
+                        <div>{"Kaution: " + (request.deposit / 100).toFixed(2) + "€"}</div>
                         <hr/>
                     </div>
 
                     <div>
                         {request.products.map((product : Product) => (
                             <div key={product.id} style={productInfoStyle}>
-                                <div>{product.name}</div>
-                                <div>{product.description}</div>
-                                <div>{product.amount}</div>
-                                <div>{formatDate(product.startDate)}</div>
-                                <div>{formatDate(product.endDate)}</div>
+                                <div>{"Name: " + product.name}</div>
+                                <div>{"Interne Inventarnummer: " + product.invNumInternal}</div>
+                                <div>{"Externe Inventarnummer: " + product.invNumExternal}</div>
+                                <div>{"Beschreibung: " + product.description}</div>
+                                <div>{"Largerort: " + product.storageLocation}</div>
+                                <div>{"Anzahl: " + product.amount}</div>
+                                <div>{"Von: " + formatDate(product.startDate)}</div>
+                                <div>{"Bis: " + formatDate(product.endDate)}</div>
                                 <hr />
                             </div>
                             
@@ -674,7 +673,7 @@ useEffect(() => {
 
                     
 
-                    {request.showButtons && (  
+                    {request.showButtons && !showCustomerOrders && (  
                     <div>
                     
                     {request.status === "pending" && (
@@ -702,21 +701,16 @@ useEffect(() => {
                             Bearbeiten
                         </button>
                     )}
-
-                        <button style={buttonStyle} onClick={() => reset(request, request.returnNotes)}>
-                            Zurücksetzen
-                        </button>
-                        
                     </div>
                     )}
 
-                    {!request.showButtons && request.status === "pending" &&(
-                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes,)}>
+                    {(!request.showButtons || showCustomerOrders) && request.status === "pending" &&(
+                        <button style={buttonStyle} onClick={() => showConfirmationPopup(request, request.status, request.returnNotes, true)}>
                           Löschen
                         </button>                        
                         )}
 
-                    {!request.showButtons &&(   
+                    {(!request.showButtons || showCustomerOrders) &&(   
                         <button style={buttonStyle} onClick={() => edit(request.id, request, true)}>
                           Request Information
                         </button>

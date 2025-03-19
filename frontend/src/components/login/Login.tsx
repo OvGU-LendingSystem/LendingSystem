@@ -3,6 +3,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Login.css';
 import { gql, useMutation } from "@apollo/client";
 import { useLoginStatusDispatcher } from "../../context/LoginStatusContext";
+import { startTransition } from "react";
 
 interface LoginProps {onClose: () => void;}
 
@@ -45,6 +46,16 @@ const REGISTER_MUTATION = gql`
   }
 `;
 
+const RESET_PASSWORD = gql`
+mutation resetPassword($email: String!) {
+  resetPassword(email: $email) {
+    ok
+    infoText
+    statusCode
+  }
+}
+`;
+
 export function Login(props: LoginProps) {
   const setLoginAction = useLoginStatusDispatcher();
   const [isLogin, setIsLogin] = useState(true);
@@ -64,6 +75,11 @@ export function Login(props: LoginProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoginModalVisible, setLoginModalVisible] = useState(false);
   const [registerUser] = useMutation(REGISTER_MUTATION);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [resetPassword] = useMutation(RESET_PASSWORD);
+
 
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -90,13 +106,36 @@ export function Login(props: LoginProps) {
     }
   };
   
-
+  const handleResetPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      const { data } = await resetPassword({
+        variables: {
+          email: email,
+        }
+      });
+  
+      if (data?.resetPassword?.ok) {
+        setErrorMessage('');
+        alert('Email versendet!');
+        props.onClose();
+      } else {
+        setErrorMessage(data?.login?.infoText || 'Fehler bei der Anfrage!');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Anfrage. Bitte versuche es später erneut.');
+    }
+  };
 
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!first_name || !name || !email || !street || !houseNumber || !postcode || !city || !matricleNumber ||!phoneNumber || !password || !repeatPassword) {
       setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    if(!email.endsWith("ovgu.de")){
+      setErrorMessage("Die E-Mail-Adresse muss auf 'ovgu.de' enden.");
       return;
     }
 
@@ -156,11 +195,17 @@ export function Login(props: LoginProps) {
     setShowPassword(!showPassword);
   };
 
+  const handleForgotPassword = () => {
+    setIsForgotPassword(true);
+  };
+  
+
   const [login] = useMutation(query);
 
   return (
     <div className="login-container">
       {isLogin ? (
+        
         <form className="login-form" onSubmit={handleLogin}>
           <h2>Login</h2>
           <div className="form-group">
@@ -176,6 +221,8 @@ export function Login(props: LoginProps) {
           </div>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
           <button type="submit" className="submit-button">Login</button>
+          <p><button type="button" onClick={handleForgotPassword} className="forgot-password">Passwort vergessen?</button></p>
+
           <p>Kein Konto? <button type="button" onClick={toggleForm}>Registrieren</button></p>
         </form>
       ) : (
@@ -207,6 +254,46 @@ export function Login(props: LoginProps) {
 </form>
 
       )}
+      {isForgotPassword && (
+        <div className="modal2222">
+          <div className="modal-content2222">
+          <h3 style={{textAlign: "center", marginTop: "60px"}}>{"Passwort vergessen"}</h3>            
+          <p style={{ marginBottom: "20px", textAlign: "center", color: "#555" }}>
+      Nach Abschluss des Vorgangs wird Ihnen eine E-Mail mit einem neuen Kennwort zugesandt, 
+      mit dem Sie sich anmelden können. Bitte ändern Sie Ihr Passwort danach in den Nutzereinstellungen.
+    </p>
+
+    <label style={{ marginTop: "40px", display: "block" }}>
+              Email-Adresse:
+              <input 
+              className="input2"
+                type="email" 
+                value={email} 
+                onChange={(e) => {
+                  const email = e.target.value;
+                  startTransition(() => {
+                    setEmail(email);
+                  });
+                }}  
+                placeholder="Email des Kontos angeben"
+                style={{
+                  display: "block",
+                  width: "385px", // Reduce width
+                  padding: "8px",
+                }}
+              />
+            </label>
+            <br />
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <div className="modal-buttons">
+              <button onClick={handleResetPassword}>Bestätigen</button>
+              <button onClick={() => {setIsForgotPassword(false); setErrorMessage(""); setEmail("")}}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )
+
+      }
     </div>
   );
 }

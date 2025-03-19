@@ -4,7 +4,7 @@ import graphene
 import traceback
 
 from authorization_check import is_authorised, reject_message
-from config import db
+from config import db, timezone
 from models import userRights, orderStatus
 from scheduler import AddJob, CancelJob, status_change
 from schema import Order, OrderModel, OrganizationModel, Organization_UserModel, PhysicalObjectModel, PhysicalObject_Order, PhysicalObject_OrderModel, UserModel
@@ -67,7 +67,7 @@ class create_order(graphene.Mutation):
 
             # Create order
             order = OrderModel(
-                creation_date=datetime.datetime.now(),
+                creation_date=datetime.datetime.now(timezone),
                 from_date=from_date,
                 till_date=till_date,
                 users=[executive_user],

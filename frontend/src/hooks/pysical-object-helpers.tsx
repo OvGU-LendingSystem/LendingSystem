@@ -1,6 +1,8 @@
 import { gql } from "@apollo/client";
 import { flattenEdges, GQLResponse, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
-import { InventoryItem } from "../models/InventoryItem.model";
+import { AddInventoryItem, InventoryItem } from "../models/InventoryItem.model";
+import { RemoteFile, RemoteImage } from "../models/file.model";
+import { RemoteTag } from "../models/tag.model";
 
 const ADD_PYSICAL_OBJECT = gql`
     mutation AddPhysicalObject(
@@ -60,7 +62,7 @@ export function useAddPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<AddPhysicalObjectResponse, AddPhysicalObjectVars>(
         ADD_PYSICAL_OBJECT,
         'createPhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -122,7 +124,7 @@ export function useEditPhysicalObject() {
     const [ mutate ] = useMutationWithResponse<EditPhysicalObjectResponse, EditPhysicalObjectVars>(
         EDIT_PYSICAL_OBJECT,
         'updatePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
     );
     return [ mutate ];
 }
@@ -147,7 +149,125 @@ export function useDeletePhysicalObject() {
     return useMutationWithResponse<GQLResponse, DeletePhysicalObjectVars>(
         DELETE_PHYSICAL_OBJECT,
         'deletePhysicalObject',
-        { refetchQueries: [ GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+        { refetchQueries: [ GET_PHYSICAL_OBJECT, GET_PHYSICAL_OBJECTS, FILTER_INVENTORY_BY_NAME ] }
+    );
+}
+
+// -----------------------------------------------------------------------------
+
+const GET_PHYSICAL_OBJECT = gql`
+    query GetPhysicalObject($id: String!) {
+        filterPhysicalObjects(physId: $id) {
+            physId,
+            invNumInternal,
+            invNumExternal,
+            borrowable,
+            storageLocation,
+            name,
+            deposit,
+            faults,
+            description,
+            borrowable,
+            storageLocation2,
+            organizationId,
+            manual {
+                edges {
+                    node {
+                        path,
+                        fileId
+                    }
+                }
+            },
+            pictures {
+                edges {
+                    node {
+                        path,
+                        fileId
+                    }
+                }
+            },
+            tags {
+                edges {
+                    node {
+                        tagId
+                        name
+                    }
+                }
+            }
+        }
+    }
+`;
+
+interface GetPhysicalObjectResponse {
+    name: string,
+    borrowable: boolean,
+    storageLocation: string,
+    description: string,
+    faults: string,
+    deposit: number,
+    invNumInternal: number,
+    invNumExternal: number,
+    storageLocation2: string,
+    organizationId: string,
+    manual: {
+        edges: {
+            node: {
+                path: string,
+                fileId: string
+            }
+        }[]
+    },
+    pictures: {
+        edges: {
+            node: {
+                path: string,
+                fileId: string
+            }
+        }[]
+    },
+    tags: {
+        edges: {
+            node: {
+                tagId: string,
+                name: string
+            }
+        }[]
+    }
+}
+
+export function useGetAddPhysicalObject(id: string) {
+    const mapResponseToItem = (response: GetPhysicalObjectResponse[]) => {
+        if (response.length === 0) {
+            throw new Error('Not found'); // TODO
+        }
+
+        const flattenedPics = flattenEdges<{ fileId: string, path: string }, 'pictures', GetPhysicalObjectResponse>(response[0], 'pictures');
+        const flattenedManuals = flattenEdges<{ fileId: string, path: string }, 'manual', typeof flattenedPics>(flattenedPics, 'manual');
+        const flattened = flattenEdges<{ tagId: string, name: string }, 'tags', typeof flattenedManuals>(flattenedManuals, 'tags');
+
+        const res: AddInventoryItem = {
+            name: flattened.name,
+            inventoryNumberInternal: flattened.invNumInternal,
+            inventoryNumberExternal: flattened.invNumExternal,
+            borrowable: flattened.borrowable,
+            deposit: flattened.deposit,
+            storageLocation: flattened.storageLocation,
+            storageLocation2: flattened.storageLocation2,
+            defects: flattened.faults,
+            description: flattened.description,
+            images: flattened.pictures.map((pic): RemoteImage => ({ type: 'remote', ...pic })),
+            manuals: flattened.manual.map((man): RemoteFile => ({ type: 'remote', ...man })),
+            tags: flattened.tags.map((tag): RemoteTag => ({ id: tag.tagId, tag: tag.name })),
+            organizationId: flattened.organizationId
+        };
+        return res;
+    }
+
+    return useSuspenseQueryWithResponseMapped<GetPhysicalObjectResponse[], AddInventoryItem>(
+        GET_PHYSICAL_OBJECT,
+        'filterPhysicalObjects',
+        { variables: { id: id } },
+        mapResponseToItem
     );
 }
 
@@ -167,7 +287,7 @@ query GetPhysicalObjects {
     description,
     lendingComment,
     returnComment,
-    pictures(first: 1) {
+    pictures{
       edges {
         node {
           fileId,
@@ -282,9 +402,18 @@ const FILTER_INVENTORY_BY_NAME = gql`
             deposit,
             invNumInternal,
             invNumExternal,
+            faults,
             pictures {
                 edges {
                     node {
+                        path
+                    }
+                }
+            },
+            manual  {
+                edges  {
+                    node  {
+                        manualId,
                         path
                     }
                 }
@@ -298,12 +427,21 @@ interface FilterPhysicalObjectsByNameResponse {
     name: string;
     description: string;
     deposit: number;
+    faults: string;
     invNumInternal: number;
     invNumExternal: number;
     pictures: {
         edges: {
             node: {
                 path: string;
+            }
+        }[]
+    }
+    manual: {
+        edges: {
+            node:{
+                manualId: string,
+                path: string
             }
         }[]
     }
@@ -317,9 +455,11 @@ export interface PreviewPhysicalObject {
     invNumExternal?: number;
     deposit?: number;
     imageSrc?: string;
+    manualPath? : string;
+    faults?: string;
 }
 
-const BASE_IMAGE_PATH = process.env.REACT_APP_PICUTRES_BASE_URL;
+const BASE_IMAGE_PATH = process.env.REACT_APP_PICTURES_BASE_URL;
 
 export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string) {
     const mapResponseToItem = (response: FilterPhysicalObjectsByNameResponse[]) => {
@@ -333,7 +473,9 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
                 invNumExternal: flattenedVal.invNumExternal,
                 deposit: flattenedVal.deposit,
                 description: flattenedVal.description,
-                imageSrc: imageSrc
+                imageSrc: imageSrc,
+                manualPath: flattenedVal.manual.edges[0]?.node.path || "",
+                faults: flattenedVal.faults,
             }
             return res;
         });
@@ -342,7 +484,10 @@ export function useFilterPhysicalObjectsByName(orgIds?: string[], name?: string)
     return useSuspenseQueryWithResponseMapped<FilterPhysicalObjectsByNameResponse[], PreviewPhysicalObject[]>(
         FILTER_INVENTORY_BY_NAME,
         'filterPhysicalObjects',
-        { variables: { name: name, orgIds: orgIds } },
+        {
+            variables: { name: name, orgIds: orgIds },
+            fetchPolicy: 'network-only'
+        },
         mapResponseToItem
     );
 }
