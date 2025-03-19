@@ -350,8 +350,17 @@ class Organization(Base):
         """
         removes a user from the organization
         """
-        self.users = [user for user in self.users if user.user_id != user.user_id]
-        user.organizations = [organization for organization in user.organizations if organization.organization_id != self.organization_id]
+        print(user)
+        print(self.users)
+        connection = None
+        for orga_user in self.users:
+            if orga_user.user_id == user.user_id:
+                connection = orga_user
+                break
+        
+        print(connection)
+        self.users.remove(connection)
+        user.organizations.remove(connection)
 
     def set_user_right(self, user_id, right):
         """
