@@ -287,7 +287,7 @@ export function Login(props: LoginProps) {
             {errorMessage && <p className="error-message">{errorMessage}</p>}
             <div className="modal-buttons">
               <button onClick={handleResetPassword}>Bestätigen</button>
-              <button onClick={() => {setIsForgotPassword(false); setErrorMessage("")}}>Abbrechen</button>
+              <button onClick={() => {setIsForgotPassword(false); setErrorMessage(""); setEmail("")}}>Abbrechen</button>
             </div>
           </div>
         </div>
