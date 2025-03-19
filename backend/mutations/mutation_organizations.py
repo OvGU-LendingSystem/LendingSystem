@@ -25,7 +25,7 @@ class create_organization(graphene.Mutation):
         # organization connections
         users           = graphene.List(graphene.String)
         physicalobjects = graphene.List(graphene.String)
-        agb             = graphene.Int()
+        agb             = graphene.String()
 
     organization    = graphene.Field(lambda: Organization)
     ok              = graphene.Boolean()
