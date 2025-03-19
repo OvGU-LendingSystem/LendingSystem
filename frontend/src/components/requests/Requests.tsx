@@ -309,6 +309,9 @@ useEffect(() => {
           amount: 1,
           startDate: new Date(order.fromDate),
           endDate: new Date(order.tillDate),
+          invNumInternal: edge.node.physicalobject.invNumInternal,
+          invNumExternal: edge.node.physicalobject.invNumExternal,
+          storageLocation: edge.node.physicalobject.storageLocation,
       })),
       status: mapOrderStatusToUIStatus(orderStatus),
       organizationId: organizationId,
@@ -653,11 +656,14 @@ useEffect(() => {
                     <div>
                         {request.products.map((product : Product) => (
                             <div key={product.id} style={productInfoStyle}>
-                                <div>{product.name}</div>
-                                <div>{product.description}</div>
-                                <div>{product.amount}</div>
-                                <div>{formatDate(product.startDate)}</div>
-                                <div>{formatDate(product.endDate)}</div>
+                                <div>{"Name: " + product.name}</div>
+                                <div>{"Interne Inventarnummer: " + product.invNumInternal}</div>
+                                <div>{"Externe Inventarnummer: " + product.invNumExternal}</div>
+                                <div>{"Beschreibung: " + product.description}</div>
+                                <div>{"Largerort: " + product.storageLocation}</div>
+                                <div>{"Anzahl: " + product.amount}</div>
+                                <div>{"Von: " + formatDate(product.startDate)}</div>
+                                <div>{"Bis: " + formatDate(product.endDate)}</div>
                                 <hr />
                             </div>
                             
