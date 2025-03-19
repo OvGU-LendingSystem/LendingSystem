@@ -12,6 +12,7 @@ import { startTransition } from "react";
 import {  } from "../../hooks/user-helper";
 import { useGetUserIDbyEmail } from "../../hooks/user-helper";
 import { useGetAddGroupItemByIdQuery } from "../../hooks/group-helpers";
+import { useGetOrganizationByIdQuery } from "../../hooks/organization-helper";
 import { flattenEdges, useMutationWithResponseMapped, useLazyQueryWithResponseMapped, useSuspenseQueryWithResponseMapped } from "../../hooks/response-helper";
 
 import "./Profile.css";
@@ -44,6 +45,10 @@ const UPDATE_USER_RIGHTS = gql`
     }
   }
 `;
+
+export function GetOrgName(orgId: string){
+  return useGetOrganizationByIdQuery(orgId);
+}
 
 export const GetHighestUserRights = () => {
   const loginStatus = useLoginStatus();
@@ -167,14 +172,21 @@ interface UserOrg {
 
 const ORGANIZATIONS2 = loginStatus?.loggedIn ? loginStatus.user?.organizationInfoList : [];
 
+
 const ORGANIZATIONS = [
-  { organizationId: "", name: "System-Admin" },
-  { organizationId: "00000000-0000-0000-0000-000000000003", name: "Stark Industries" },
-  { organizationId: "1376ac52-85f7-4720-9aaa-b8bccd667aeb", name: "X-Men" },
-  { organizationId: "69590f30-0959-406d-a9b5-3fefbda28fb4", name: "fara" },
-  { organizationId: "75c869b4-d191-4b89-91ee-48575e4b48d6", name: "Avengers" },
-  { organizationId: "c9c5feb9-01ff-45de-ba44-c0b38e268170", name: "root_organization" }
+  { id: "", name: "System-Admin" },
+  { id: "00000000-0000-0000-0000-000000000003", name: "Stark Industries" },
+  { id: "1376ac52-85f7-4720-9aaa-b8bccd667aeb", name: "X-Men" },
+  { id: "69590f30-0959-406d-a9b5-3fefbda28fb4", name: "fara" },
+  { id: "75c869b4-d191-4b89-91ee-48575e4b48d6", name: "Avengers" },
+  { id: "c9c5feb9-01ff-45de-ba44-c0b38e268170", name: "root_organization" }
 ];
+
+const orgname = useGetOrganizationByIdQuery("00000000-0000-0000-0000-000000000003").data.name;
+function Tesorgname (){
+  console.log(useGetOrganizationByIdQuery(orgname));
+}
+
 
 
 function useGetAllUsersInOrganization(orgId: string[]) {
@@ -255,16 +267,16 @@ const handleUserEdit = (user: UserOrg) => {
       <h2 style={{ textAlign: "center", color: "#333" }}>Organisationsverwaltung</h2>
       <label style={{ fontWeight: "bold" }}>Organisation wählen:</label>
       <select 
-        value={selectedOrganizationId} 
+        value={selectedOrganizationId}
         onChange={handleOrganizationChange}
         style={{ padding: "8px", margin: "10px 0", borderRadius: "5px", border: "1px solid #ccc" }}
       >
         <option >
           Organisation auswählen
         </option>
-        {ORGANIZATIONS.map((org) => (
-           <option key={org.organizationId} value={org.organizationId}>
-            {org.name}
+        {ORGANIZATIONS2.map((org) => (
+           <option key={org.id} value={org.id}>
+             {GetOrgName(org.id).data.name}
           </option> 
         ))}
       </select>
@@ -280,12 +292,6 @@ const handleUserEdit = (user: UserOrg) => {
         />
         <button onClick={() => {setRoleModalOpen(true); setSelectedUser(null); setRoleEmail("");}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
           Benutzer hinzufügen
-        </button>
-        <button onClick= {() => {console.log(handleTestClick());}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
-          test
-        </button>
-        <button onClick= {() => {console.log(ORGANIZATIONS2);}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
-          test
         </button>
       </div>
 
