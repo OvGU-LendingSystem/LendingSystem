@@ -1,5 +1,5 @@
 # Dockerfile für das React-Frontend und Nginx
-FROM node:16 AS build
+FROM node:18 AS build
 
 # Arbeitsverzeichnis setzen
 WORKDIR /app

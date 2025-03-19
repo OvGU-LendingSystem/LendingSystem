@@ -1,7 +1,6 @@
-import { gql, useQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
 import { flattenEdges, useLazyQueryWithResponseMapped, useMutationWithResponse, useSuspenseQueryWithResponseMapped } from "./response-helper";
 import { OrganizationInfo, User } from "../models/user.model";
-import { useLazyQuery } from "@apollo/client";
 
 const CHECK_SESSION = gql`
 mutation CheckSession {
