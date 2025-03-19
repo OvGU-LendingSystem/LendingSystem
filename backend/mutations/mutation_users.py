@@ -181,7 +181,7 @@ class reset_password(graphene.Mutation):
         db.commit()
 
         # read template text
-        with open(os.path.join("password_reset_template.html"), encoding="utf-8") as file:
+        with open(os.path.join(template_directory, "password_reset_template.html"), encoding="utf-8") as file:
             template_password = Template(file.read())
 
         # send mail

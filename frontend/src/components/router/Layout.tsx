@@ -47,6 +47,9 @@ declare global {
     status?: string;
     organization: string;
     organizationId: string;
+    invNumInternal?: string;
+    invNumExternal?: string;
+    storageLocation?: string;
   }
 
   interface Quest {

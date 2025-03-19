@@ -7,6 +7,22 @@ import { addDays, format, startOfToday } from 'date-fns';
 interface Dates {
   fromDate: string;
   tillDate: string;
+  physicalobjects?: {
+    edges: {
+      node: {
+        orderStatus: string;
+        physId: string;
+        physicalobject: {
+          invNumInternal: string;
+          invNumExternal: string;
+          deposit: string;
+          storageLocation: string;
+          name: string;
+          description: string;
+        };
+      };
+    }[];
+  };
 }
 
 interface DateArray {
@@ -129,6 +145,16 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
   const today = startOfToday(); 
 
+  const pendingDates = data?.filterOrders
+    .filter(order =>
+      order.physicalobjects!.edges[0]!.node.orderStatus === 'PENDING'
+    )
+    .map(order => ({
+      from: new Date(order.fromDate),
+      to: new Date(order.tillDate),
+    })) || [];
+
+
   const disabledDates = [
     { from: new Date(0), to: addDays(today, -1) },
     ...(data?.filterOrders
@@ -155,6 +181,15 @@ export default function Calendar_Querry(probs: CalendarProbs) {
         to: new Date(order.tillDate),
       })) || []),
   ];
+
+  const filteredDisabledDates = disabledDates.filter(
+    (disabledDate) =>
+      !pendingDates.some(
+        (pendingDate) =>
+          pendingDate.from.getTime() === disabledDate.from.getTime() &&
+          pendingDate.to.getTime() === disabledDate.to.getTime()
+      )
+  );
 
 
   let additionalDisabledDates: { from: Date; to: Date; }[] = [];
@@ -209,7 +244,7 @@ export default function Calendar_Querry(probs: CalendarProbs) {
 
 
 
-  const combinedDisabledDates = [...disabledDates, ...additionalDisabledDates];
+  const combinedDisabledDates = [...filteredDisabledDates, ...additionalDisabledDates];
 
 
   if (!noObjets) {
@@ -226,7 +261,11 @@ export default function Calendar_Querry(probs: CalendarProbs) {
           footer={footer}
           onSelect={setRange}
           disabled={combinedDisabledDates}
+          modifiers={{
+            highlighted: pendingDates,
+          }}
           modifiersStyles={{
+            highlighted: { backgroundColor: 'rgba(255, 255, 0, 0.5)', color: 'black' },
             disabled: { fontSize: '75%' },
           }}
           modifiersClassNames={{
