@@ -46,6 +46,16 @@ const UPDATE_USER_RIGHTS = gql`
   }
 `;
 
+const REMOVE_USER_FROM_ORG = gql`
+  mutation removeUserFromOrganization($organizationId: String!, $userId: String!) {
+    removeUserFromOrganization(organizationId: $organizationId, userId: $userId) {
+      ok
+      infoText
+      statusCode
+    }
+  }
+`;
+
 export function GetOrgName(orgId: string){
   return useGetOrganizationByIdQuery(orgId);
 }
@@ -85,6 +95,8 @@ export function OrganizationManagement() {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");  
   const [searchTerm, setSearchTerm] = useState("");
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
+  const [isUserDeleteOpen, setUserDeleteOpen] = useState(false);
+  const [isOrganizationModalOpen, setOrganizationModalOpen] = useState(false);
   const [roleEmail, setRoleEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
   const rowsPerPage = 10;
@@ -92,6 +104,7 @@ export function OrganizationManagement() {
   const [errorMessage, setErrorMessage] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
+  const [deleteUserFromOrganization] = useMutation(REMOVE_USER_FROM_ORG);
   const userId = useGetUserIDbyEmail(roleEmail).data.userId;
   
   const handleRoleChange = async (event: React.FormEvent) => {
@@ -121,6 +134,31 @@ export function OrganizationManagement() {
       }
     } catch (error) {
       setErrorMessage('Fehler bei der Rechteänderung. Bitte versuche es später erneut.');
+    }
+  };
+
+  const handleDeleteUserFromOrg = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      const { data } = await deleteUserFromOrganization({
+        variables: {
+          organizationId: selectedOrganizationId,
+          userId: userId
+        }
+      });
+
+      if (data?.updateUserRights?.ok) {
+        setErrorMessage('');
+        alert('Nutzer erfolgreich entfernt!');
+        setUserDeleteOpen(false);
+
+        refetch({ organizationIds: [selectedOrganizationId] });
+      } else {
+        setErrorMessage(data?.deleteUserFromOrganization?.message || 'Entfernen des Nutzers fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Anfrage. Bitte versuche es später erneut.');
     }
   };
 
@@ -252,13 +290,21 @@ const handleUserEdit = (user: UserOrg) => {
   setRoleModalOpen(true); // Open the modal
 };
 
+const handleUserDelete = (user: UserOrg) => {
+  setSelectedUser(user); // Set selected user for editing
+  startTransition(() => {
+    setRoleEmail(user.email); // Pre-fill email in the modal
+  });
+  setUserDeleteOpen(true); // Open the modal
+};
 
 
-  if (!loginStatus.loggedIn) {
+
+  if (loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
-  if(!(["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights))){
+  if((["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights))){
     return (<h3 style={{ textAlign: "center", color: "#333" }}>Unzureichende Rechte</h3>);
   }
 
@@ -293,6 +339,10 @@ const handleUserEdit = (user: UserOrg) => {
         <button onClick={() => {setRoleModalOpen(true); setSelectedUser(null); setRoleEmail("");}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
           Benutzer hinzufügen
         </button>
+        {["SYSTEM_ADMIN"].includes(highestUserRights) && (
+        <button onClick={() => {setOrganizationModalOpen(true); setSelectedUser(null); setRoleEmail("");}} style={{ padding: "8px 12px", borderRadius: "5px", backgroundColor: "#007bff", color: "white", border: "none", cursor: "pointer" }}>
+          Organisation erstellen
+        </button>)}
       </div>
 
       <table className="organization-table" style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
@@ -318,7 +368,8 @@ const handleUserEdit = (user: UserOrg) => {
                   onClick={() => handleUserEdit(user)}>
                     <FaUserEdit />
                   </button>
-                  <button style={{ backgroundColor: "#dc3545", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}>
+                  <button style={{ backgroundColor: "#dc3545", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}
+                  onClick={() => handleUserDelete(user)}>
                     <FaTrash />
                   </button>
                 </td>
@@ -366,6 +417,45 @@ const handleUserEdit = (user: UserOrg) => {
             <div className="modal-buttons">
               <button onClick={handleRoleChange}>Bestätigen</button>
               <button onClick={() => {setRoleModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isOrganizationModalOpen && (
+        <div className="modal222">
+          <div className="modal-content222">
+          <h3>{selectedUser ? `Rechte verändern (${selectedUser.firstName} ${selectedUser.lastName})` : "Organisation erstellen"}</h3>            <label>
+              Name:
+              <input 
+                type="email" 
+                value={roleEmail} 
+                onChange={(e) => {
+                  const newEmail = e.target.value;
+                  startTransition(() => {
+                    setRoleEmail(newEmail);
+                  });
+                }}  
+                placeholder="Name der Organisation"
+              />
+            </label>
+            <br />
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <div className="modal-buttons">
+              <button onClick={handleRoleChange}>Bestätigen</button>
+              <button onClick={() => {setOrganizationModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isUserDeleteOpen && (
+        <div className="modal222">
+          <div className="modal-content222">
+          <h3>{`Nutzer (${selectedUser?.firstName} ${selectedUser?.lastName}) aus der Organisation entfernen?`}</h3>            <label>
+            </label>
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <div className="modal-buttons">
+              <button onClick={handleDeleteUserFromOrg}>Bestätigen</button>
+              <button onClick={() => {setUserDeleteOpen(false); setErrorMessage("")}}>Abbrechen</button>
             </div>
           </div>
         </div>
