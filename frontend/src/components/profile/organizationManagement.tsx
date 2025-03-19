@@ -109,6 +109,8 @@ export function OrganizationManagement() {
         setErrorMessage('');
         alert('Rechte erfolgreich geändert!');
         setRoleModalOpen(false);
+
+        refetch({ organizationIds: [selectedOrganizationId] });
       } else {
         setErrorMessage(data?.updateUserRights?.message || 'Rechteänderung fehlgeschlagen.');
       }
@@ -127,7 +129,7 @@ export function OrganizationManagement() {
   };
 
 
-const [fetchUsers, { data, loading, error }] = useLazyQuery(GET_USERS);
+const [fetchUsers, { data, loading, error, refetch }] = useLazyQuery(GET_USERS);
 
 
 interface GetOrgByIdResponse {
