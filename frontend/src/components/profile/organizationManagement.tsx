@@ -300,11 +300,11 @@ const handleUserDelete = (user: UserOrg) => {
 
 
 
-  if (loginStatus.loggedIn) {
+  if (!loginStatus.loggedIn) {
     return <Login onClose={() => {}} />;
   }
 
-  if((["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights))){
+  if(!(["ORGANIZATION_ADMIN", "SYSTEM_ADMIN"].includes(highestUserRights))){
     return (<h3 style={{ textAlign: "center", color: "#333" }}>Unzureichende Rechte</h3>);
   }
 
