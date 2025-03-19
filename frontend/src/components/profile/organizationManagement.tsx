@@ -92,7 +92,7 @@ export const GetHighestUserRights = () => {
 
 export function OrganizationManagement() {
   const loginStatus = useLoginStatus();
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");  
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("nichts");  
   const [searchTerm, setSearchTerm] = useState("");
   const [isRoleModalOpen, setRoleModalOpen] = useState(false);
   const [isUserDeleteOpen, setUserDeleteOpen] = useState(false);
@@ -128,7 +128,11 @@ export function OrganizationManagement() {
         alert('Rechte erfolgreich geändert!');
         setRoleModalOpen(false);
 
-        refetch({ organizationIds: [selectedOrganizationId] });
+        if (refetch) {
+          refetch({ organizationIds: [selectedOrganizationId] });
+        } else {
+          fetchUsers({ variables: { organizationIds: [selectedOrganizationId] } });
+        }
       } else {
         setErrorMessage(data?.updateUserRights?.message || 'Rechteänderung fehlgeschlagen.');
       }
@@ -153,7 +157,11 @@ export function OrganizationManagement() {
         alert('Nutzer erfolgreich entfernt!');
         setUserDeleteOpen(false);
 
-        refetch({ organizationIds: [selectedOrganizationId] });
+        if (refetch) {
+          refetch({ organizationIds: [selectedOrganizationId] });
+        } else {
+          fetchUsers({ variables: { organizationIds: [selectedOrganizationId] } });
+        }
       } else {
         setErrorMessage(data?.deleteUserFromOrganization?.message || 'Entfernen des Nutzers fehlgeschlagen.');
       }
