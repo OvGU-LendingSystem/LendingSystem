@@ -416,7 +416,7 @@ export function Inventory(): JSX.Element {
                     ref={textRef} 
                     style={{ margin: 0, padding: '10px', overflowY: 'auto' }}
                 >
-                  <Viewer fileUrl={'http://192.168.178.169/pdf/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
+                  <Viewer fileUrl={process.env.REACT_APP_PDFS_BASE_URL + selectedManualPath}  plugins={[zoomPluginInstance]}/>
             </div>
             <div>
               <button
