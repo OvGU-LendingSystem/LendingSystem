@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, ReactNode, useEffect, Suspense } from "react";
 import "./Layout.css";
 import { MdOutlineShoppingBasket } from "react-icons/md";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -189,7 +189,9 @@ export function Layout() {
       <div className="main-scroller">
         <main className="content">
           <NotLoginErrorBoundary>
-            <Outlet />
+            <Suspense>
+              <Outlet />
+            </Suspense>
           </NotLoginErrorBoundary>
         </main>
         <Footer />

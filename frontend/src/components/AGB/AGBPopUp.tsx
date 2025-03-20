@@ -168,7 +168,7 @@ export default function AGBPopUp(props : AGBPopUpProbs){
                     <button 
                         onClick={() => {handleCreateOrder(); 
                             props.setTrigger(false);}}
-                        //disabled={!(Close&&isChecked)}
+                        disabled={!(isChecked)}
                     >
                         Akzeptieren
                     </button>
