@@ -414,7 +414,7 @@ export function Inventory(): JSX.Element {
             <h2>Anleitung</h2>
             <div 
                     ref={textRef} 
-                    style={{ margin: 0, padding: '10px', maxHeight: '400px', overflowY: 'auto' }}
+                    style={{ margin: 0, padding: '10px', overflowY: 'auto' }}
                 >
                   <Viewer fileUrl={'http://192.168.178.169/pdf/' + selectedManualPath}  plugins={[zoomPluginInstance]}/>
             </div>
@@ -566,6 +566,11 @@ const modalContentStyle: React.CSSProperties = {
   backgroundColor: '#fff',
   padding: '20px',
   borderRadius: '5px',
+  display: 'grid',
+  gridTemplateRows: 'auto 1fr auto',
+  gridTemplateColumns: 'auto',
+  width: '90%',
+  height: '90%'
 };
 
 const inputContainerStyle: React.CSSProperties = {
