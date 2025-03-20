@@ -325,7 +325,9 @@ export function Profile() {
           </button>
         </p>
         <p style={{ marginBottom: '20px' }}>
-          Adresse: {(loginStatus.user?.street && loginStatus.user?.houseNumber + ", " + loginStatus.user?.city && loginStatus.user?.postcode)|| " "}
+          Adresse: {loginStatus.user?.street && loginStatus.user?.houseNumber 
+    ? `${loginStatus.user.street} ${loginStatus.user.houseNumber}, ${loginStatus.user.postcode} ${loginStatus.user.city}`
+    : " "}
           <button onClick={() => { setModalOpen(true); setEditField("address"); }} className="edit-button5">
             ✎
           </button>

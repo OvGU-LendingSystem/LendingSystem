@@ -178,7 +178,8 @@ export function OrganizationManagement() {
         setErrorMessage('');
         alert('Rechte erfolgreich geändert!');
         setRoleModalOpen(false);
-
+        refetch({ organizationIds: [selectedOrganizationId] });
+        fetchUsers({ variables: { organizationIds: [selectedOrganizationId] } });
         if (refetch) {
           refetch({ organizationIds: [selectedOrganizationId] });
         } else {
