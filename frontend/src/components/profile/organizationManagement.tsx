@@ -306,6 +306,16 @@ const handleUserDelete = (user: UserOrg) => {
   setUserDeleteOpen(true); // Open the modal
 };
 
+const getUserRightsForOrganization = (user: UserOrg): string => {
+  if (!user.organizationId?.edges) return "--"; // Handle missing data
+
+  const matchedOrg = user.organizationId.edges.find(
+    edge => edge.node.organizationId === selectedOrganizationId
+  );
+
+  return matchedOrg ? matchedOrg.node.rights : "--"; // Return rights if found, otherwise "--"
+};
+
 
 
   if (!loginStatus.loggedIn) {
@@ -370,7 +380,7 @@ const handleUserDelete = (user: UserOrg) => {
                 <td style={{ padding: "10px" }}>{user.firstName}</td>
                 <td style={{ padding: "10px" }}>{user.lastName}</td>
                 <td style={{ padding: "10px" }}>{user.email}</td>
-                <td style={{ padding: "10px" }}>{user.organizationId?.edges?.[0]?.node.rights || "--"}</td>
+                <td style={{ padding: "10px" }}>{getUserRightsForOrganization(user) || "--"}</td>
                 <td style={{ padding: "10px" }}>
                   <button style={{ marginRight: "5px", backgroundColor: "#28a745", color: "white", border: "none", padding: "5px", borderRadius: "5px", cursor: "pointer" }}
                   onClick={() => handleUserEdit(user)}>

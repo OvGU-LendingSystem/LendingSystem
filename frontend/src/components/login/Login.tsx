@@ -84,8 +84,6 @@ export function Login(props: LoginProps) {
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log('Login email:', email);
-    console.log('Login Password:', password);
     try {
       const { data } = await login({
         variables: {
