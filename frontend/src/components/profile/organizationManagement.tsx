@@ -56,6 +56,16 @@ const REMOVE_USER_FROM_ORG = gql`
   }
 `;
 
+const CREATE_ORGANIZATION = gql`
+  mutation createOrganization($agb: String, $location: String!, $name: String!, $physicalobjects: [String], $users: [String]) {
+    createOrganization(agb: $agb, location: $location, name: $name, physicalobjects: $physicalobjects, users: $users, ) {
+      ok
+      infoText
+      statusCode
+    }
+  }
+`;
+
 export function GetOrgName(orgId: string){
   return useGetOrganizationByIdQuery(orgId);
 }
@@ -98,14 +108,55 @@ export function OrganizationManagement() {
   const [isUserDeleteOpen, setUserDeleteOpen] = useState(false);
   const [isOrganizationModalOpen, setOrganizationModalOpen] = useState(false);
   const [roleEmail, setRoleEmail] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [selectedRole, setSelectedRole] = useState("member");
   const rowsPerPage = 10;
   const highestUserRights = GetHighestUserRights();
   const [errorMessage, setErrorMessage] = useState('');
   const [email, setEmail] = useState<string | null>(null);
   const [updateUserRights] = useMutation(UPDATE_USER_RIGHTS);
+  const [createOrganization] = useMutation(CREATE_ORGANIZATION);
   const [deleteUserFromOrganization] = useMutation(REMOVE_USER_FROM_ORG);
   const userId = useGetUserIDbyEmail(roleEmail).data.userId;
+
+  const handleCreateOrganization = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!orgName) {
+      setErrorMessage('Alle Felder müssen ausgefüllt werden!');
+      return;
+    }
+    if (!loginStatus.loggedIn){
+      return;
+    }
+
+    try {
+      const { data } = await createOrganization({
+        variables: {
+          name: orgName,
+          users: [loginStatus.user?.id],
+          agb: "",
+          physicalobjects: [""],
+          location: "Everywhere"
+        }
+      });
+
+      if (data?.createOrganization?.ok) {
+        setErrorMessage('');
+        alert('Organisation erfolgreich erstellt!');
+        setOrganizationModalOpen(false);
+
+        if (refetch) {
+          refetch({ organizationIds: [selectedOrganizationId] });
+        } else {
+          fetchUsers({ variables: { organizationIds: [selectedOrganizationId] } });
+        }
+      } else {
+        setErrorMessage(data?.createOrganization?.message || 'Organisationserstellung fehlgeschlagen.');
+      }
+    } catch (error) {
+      setErrorMessage('Fehler bei der Organisationserstellung. Bitte versuche es später erneut.');
+    }
+  };
   
   const handleRoleChange = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -445,12 +496,12 @@ const getUserRightsForOrganization = (user: UserOrg): string => {
           <h3>{selectedUser ? `Rechte verändern (${selectedUser.firstName} ${selectedUser.lastName})` : "Organisation erstellen"}</h3>            <label>
               Name:
               <input 
-                type="email" 
-                value={roleEmail} 
+                type="orgName" 
+                value={orgName} 
                 onChange={(e) => {
-                  const newEmail = e.target.value;
+                  const orgName = e.target.value;
                   startTransition(() => {
-                    setRoleEmail(newEmail);
+                    setOrgName(orgName);
                   });
                 }}  
                 placeholder="Name der Organisation"
@@ -459,7 +510,7 @@ const getUserRightsForOrganization = (user: UserOrg): string => {
             <br />
             {errorMessage && <p className="error-message">{errorMessage}</p>}
             <div className="modal-buttons">
-              <button onClick={handleRoleChange}>Bestätigen</button>
+              <button onClick={handleCreateOrganization}>Bestätigen</button>
               <button onClick={() => {setOrganizationModalOpen(false); setErrorMessage("")}}>Abbrechen</button>
             </div>
           </div>
